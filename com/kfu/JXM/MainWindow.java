@@ -116,6 +116,14 @@ public static void main(String[] args) { new MainWindow(); }
     private JCheckBox powerCheckBox;
     
     public MainWindow() {
+
+    try {
+	UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+    }
+    catch(Exception e) {
+	// Well, we tried
+    }
+
         JFrame frame = new JFrame("JXM");
 	frame.addWindowListener(new WindowAdapter() {
 	    public void windowClosing(WindowEvent e) {

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: RadioCommander.java,v 1.19 2004/04/07 08:14:03 nsayer Exp $
+ $Id: RadioCommander.java,v 1.20 2004/04/08 04:37:10 nsayer Exp $
  
  */
 
@@ -1051,15 +1051,21 @@ t.printStackTrace();
 	// The radio power-up may have failed, and we may only now be hearing about it.
 	//this.checkDisposed();
 
-	// Audio is now going. Notify the UI.
+	// Do this now so that the GUI can load the list in its callback
+	synchronized(this.channelList) {
+	    this.channelList.clear();
+	}
+
+	// Notify the UI.
         this.notifyGUI(POWERED_ON);
 
 	// Argh! The last channel is stored by service ID, not by channel number.
 	// So we're going to have to ask the surfer to look it up in the cache. Ick!
 	int chan = this.getChannelInfoByServiceID(reply.getLastAudioService()).getChannelNumber();
 	if (chan < 0)
-		chan = 1;
+		chan = 1; // don't know? Use Preview.
 
+	// But the user may not want to go there...
 	if (initialChannel >= 1 && initialChannel <= 255)
 	    chan = initialChannel;
 
@@ -1072,9 +1078,6 @@ t.printStackTrace();
 		
 	// Set up the channel surfer
 	this.lastChannel = 0;
-	synchronized(this.channelList) {
-	    this.channelList.clear();
-	}
 	this.theSurfer = new Timer();
 	this.theSurfer.schedule(new TimerTask() {
 	    public void run() {

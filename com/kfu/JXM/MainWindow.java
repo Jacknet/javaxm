@@ -267,6 +267,9 @@ public static void main(String[] args) { new MainWindow(); }
 
     private String deviceName = null;
 
+    // XXX - There appears to be no need to do this other than at startup
+    // javax.comm will not give back a different CommPortIdentifier enumeration
+    // once it has probed the drivers. :-(
     private void refreshDeviceMenu() {
 	while(this.deviceMenu.getItemCount() > 0)
 	    this.deviceMenu.remove(0);
@@ -282,14 +285,6 @@ public static void main(String[] args) { new MainWindow(); }
 	    });
 	    this.deviceMenu.add(jmi);
 	}
-	this.deviceMenu.addSeparator();
-	JMenuItem jmi = new JMenuItem("Refresh device list");
-	jmi.addActionListener(new ActionListener() {
-	    public void actionPerformed(ActionEvent e) {
-		MainWindow.this.refreshDeviceMenu();
-	    }
-	});
-	this.deviceMenu.add(jmi);
     }
 
     // the RadioEventHandler interface

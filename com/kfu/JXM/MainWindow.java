@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.93 2004/04/17 18:43:08 nsayer Exp $
+ $Id: MainWindow.java,v 1.94 2004/04/19 23:14:04 nsayer Exp $
  
  */
 
@@ -458,13 +458,18 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    } else {
 		jmi.addActionListener(new ActionListener() {
 		    public void actionPerformed(ActionEvent e) {
-			MainWindow.this.memoryPanel.memorize(ChannelPopupMenu.this.channelInfo);
+			MainWindow.this.memorize(ChannelPopupMenu.this.channelInfo);
 		    }
 		});
 	    }
 	    this.add(jmi);
 	    this.add(new MainWindow.BookmarkMenu(this.channelInfo));
 	}
+    }
+
+    private void memorize(ChannelInfo info) {
+	this.forceNormalView();
+	this.memoryPanel.memorize(info);
     }
 
     private void bookmarkSurf(Bookmark b, ChannelInfo i) {
@@ -1056,7 +1061,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.memoryButton = new JButton("Add to notebook");
 	this.memoryButton.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
-		MainWindow.this.memoryPanel.memorize(MainWindow.this.currentChannelInfo);
+		MainWindow.this.memorize(MainWindow.this.currentChannelInfo);
 	    }
 	});
 	this.memoryButton.setEnabled(false);
@@ -1869,7 +1874,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    case PlatformFactory.PLAT_CB_SMART_MUTE:	this.smartMuteClicked(); break;
 	    case PlatformFactory.PLAT_CB_NORM_MUTE:	this.muteClicked(); break;
 	    case PlatformFactory.PLAT_CB_CHANNEL:	this.setChannel(((Integer)arg).intValue()); break;
-	    case PlatformFactory.PLAT_CB_MEMORY:	this.memoryPanel.memorize((ChannelInfo)arg); break;
+	    case PlatformFactory.PLAT_CB_MEMORY:	this.memorize((ChannelInfo)arg); break;
 	    default: throw new IllegalArgumentException("Which platform callback type??");
 	}
     }

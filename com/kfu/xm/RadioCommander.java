@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: RadioCommander.java,v 1.13 2004/03/11 06:51:04 nsayer Exp $
+ $Id: RadioCommander.java,v 1.14 2004/03/19 16:27:17 nsayer Exp $
  
  */
 
@@ -978,7 +978,8 @@ t.printStackTrace();
 	    this.mySerialPort = sp;
 
         }
-        catch (Exception e) {
+        catch (Throwable e) {
+	    this.Dispose();
             throw new RadioException("Cannot open device: " + e.getMessage());
         }
 		
@@ -1110,6 +1111,7 @@ t.printStackTrace();
 	if (this.disposing)
 	    return;
 	this.disposing = true;
+try {
         if (this.theSurfer != null)
             this.theSurfer.cancel();
         this.theSurfer = null;
@@ -1149,7 +1151,10 @@ t.printStackTrace();
 	}
 	*/
         this.myReplyWatcher = null;
+}
+finally {
 	this.disposing = false;
+}
     }
    
     private boolean poweringDown = false; 

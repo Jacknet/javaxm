@@ -38,6 +38,7 @@ public class PreferencesDialog extends JDialog {
 
     public PreferencesDialog(JFrame parent) {
 	super(parent, "JXM Preferences", true);
+	this.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 	this.getContentPane().setLayout(new BorderLayout());
 
 	JTabbedPane jtp = new JTabbedPane();

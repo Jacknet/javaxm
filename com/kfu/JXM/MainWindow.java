@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.65 2004/03/19 05:23:21 nsayer Exp $
+ $Id: MainWindow.java,v 1.66 2004/03/19 09:51:27 nsayer Exp $
  
  */
 
@@ -41,6 +41,128 @@ import java.util.regex.*;
 import com.kfu.xm.*;
 
 public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, IPreferenceCallbackHandler {
+
+    public class CompactViewPanel extends JWindow {
+	class WindowMover extends MouseInputAdapter {
+	    private Container window;
+	    public WindowMover(Container c) { this.window = c; }
+	    int originX, originY;
+	    public void mousePressed(MouseEvent e) {
+		this.originX = e.getX();
+		this.originY = e.getY();
+	    }
+	    public void mouseDragged(MouseEvent e) {
+		Point p = MainWindow.this.compactView.getLocation();
+		MainWindow.this.compactView.setLocation(p.x + e.getX() - originX, p.y + e.getY() - originY);
+	    }
+	}
+
+	private SpinnerListModel compactSpinnerModel;
+	private JLabel compactViewName, compactViewArtist, compactViewTitle;
+
+	public void refreshSpinnerModel() {
+	    ArrayList al = new ArrayList();
+	    ChannelInfo[] sourceList = MainWindow.this.sortedChannelList;
+	    for(int i = 0; i < sourceList.length; i++)
+		al.add(new Integer(sourceList[i].getChannelNumber()));
+	    Collections.sort(al);
+	    this.compactSpinnerModel.setList(al);
+	    //this.compactSpinnerModel.setValue(new Integer(MainWindow.this.currentChannelInfo.getChannelNumber()));
+	}
+
+	public void show() {
+	    this.refreshSpinnerModel();
+	    this.timerIgnore = true;
+	    try {
+		this.compactSpinnerModel.setValue(new Integer(MainWindow.this.currentChannelInfo.getChannelNumber()));
+	    }
+	    finally {
+		this.timerIgnore = false;
+	    }
+	    super.show();
+	}
+
+	private boolean timerIgnore = false;
+	public void setTimerOff() {
+	    this.timerIgnore = true;
+	    try {
+		MainWindow.this.setChannel(((Integer)this.compactSpinnerModel.getValue()).intValue());
+		this.changeTimer.cancel();
+		this.changeTimer = null;
+	    }
+	    finally {
+		this.timerIgnore = false;
+	    }
+	}
+
+	private java.util.Timer changeTimer = null;
+
+	public CompactViewPanel() {
+	    super();
+	    JPanel fake = new JPanel();
+	    FlowLayout l = new FlowLayout();
+	    l.setHgap(10);
+	    fake.setLayout(l);
+	    MouseInputAdapter mia = new WindowMover(this);
+	    this.addMouseMotionListener(mia);
+	    this.addMouseListener(mia);
+	    this.compactSpinnerModel = new SpinnerListModel();
+	    JSpinner jsp = new JSpinner(this.compactSpinnerModel);
+	    jsp.setPreferredSize(new Dimension(60, (int)jsp.getPreferredSize().getHeight()));
+	    // If the spinner stays put for 1 second, then change the channel. This lets the user slam through a bunch of changes quickly.
+	    jsp.addChangeListener(new ChangeListener() {
+		public void stateChanged(ChangeEvent e) {
+		    // ARGH! If *WE'RE* why it's frigging changing, then we don't frigging care!
+		    if (CompactViewPanel.this.timerIgnore)
+			return;
+		    int chan = ((Integer)CompactViewPanel.this.compactSpinnerModel.getValue()).intValue();
+		    int sid = MainWindow.this.sidForChannel(chan);
+		    if (sid >= 0) {
+			ChannelInfo info = (ChannelInfo)MainWindow.this.channelList.get(new Integer(sid));
+			if (info != null)
+			    CompactViewPanel.this.setChannelInfo(info);
+		    }
+		    if (CompactViewPanel.this.changeTimer != null)
+			CompactViewPanel.this.changeTimer.cancel();
+		    CompactViewPanel.this.changeTimer = new java.util.Timer();
+		    CompactViewPanel.this.changeTimer.schedule(new TimerTask() {
+			public void run() {
+			    CompactViewPanel.this.setTimerOff();
+			}
+		    }, 1000);
+		}
+	    });
+	    fake.add(jsp);
+	    this.compactViewName = new JLabel(" ");
+	    this.compactViewName.setPreferredSize(new Dimension(150, (int)this.compactViewName.getPreferredSize().getHeight()));
+	    fake.add(this.compactViewName);
+	    this.compactViewArtist = new JLabel(" ");
+	    this.compactViewArtist.setPreferredSize(new Dimension(150, (int)this.compactViewArtist.getPreferredSize().getHeight()));
+	    this.compactViewArtist.setHorizontalAlignment(SwingConstants.CENTER);
+	    fake.add(this.compactViewArtist);
+	    this.compactViewTitle = new JLabel(" ");
+	    this.compactViewTitle.setPreferredSize(new Dimension(150, (int)this.compactViewTitle.getPreferredSize().getHeight()));
+	    this.compactViewTitle.setHorizontalAlignment(SwingConstants.CENTER);
+	    fake.add(this.compactViewArtist);
+	    fake.add(this.compactViewTitle);
+	    JButton jb = new JButton("Restore");
+	    jb.addActionListener(new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+		    MainWindow.this.toggleCompactView();
+		}
+	    });
+	    fake.add(jb);
+	    fake.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED), BorderFactory.createBevelBorder(BevelBorder.RAISED)));
+	    this.getContentPane().add(fake);
+	    this.pack();
+	}
+	public void setChannelInfo(ChannelInfo i) {
+	    this.compactSpinnerModel.setValue(new Integer(i.getChannelNumber()));
+	    this.compactViewName.setText(i.getChannelName());
+	    this.compactViewArtist.setText(i.getChannelArtist());
+	    this.compactViewTitle.setText(i.getChannelTitle());
+	}
+    }
 
     public static class ChannelInfoPanel extends JPanel {
 	private class SongTimeProgressBar extends JProgressBar {
@@ -422,6 +544,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	return sb.toString();
     }
 
+    private CompactViewPanel compactView;
     private FilterPanel filterPanel;
     private MemoryPanel memoryPanel;
     private PreferencesDialog preferences;
@@ -436,6 +559,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private JFrame myFrame;
     private JMenu bookmarkMenu;
     private JMenuItem filterMenuItem;
+    private JMenuItem compactMenuItem;
     private Bookmark[] bookmarks;
     private JProgressBar satelliteMeter;
     private JProgressBar terrestrialMeter;
@@ -571,6 +695,17 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	}
 	// -----
 	// PUT MENUS HERE
+	jm = new JMenu("Actions");
+	this.compactMenuItem = new JMenuItem("Toggle Normal / Compact view");
+	this.compactMenuItem.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		MainWindow.this.toggleCompactView();
+	    }
+	});
+	this.compactMenuItem.setEnabled(false);
+	jm.add(this.compactMenuItem);
+	this.myFrame.getJMenuBar().add(jm);
+
 	class DynamicBookmarkMenu extends JMenu {
 	    // Stupid Nick! How many times do we have to reimplement this same thing!?
 	    // This one fetches the current channel info every time it is opened.
@@ -1196,6 +1331,9 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	
         this.myFrame.pack();
         this.myFrame.setResizable(true);
+
+	this.compactView = new CompactViewPanel();
+
         this.myFrame.setVisible(true);
 
 	java.util.Timer t = new java.util.Timer();
@@ -1293,6 +1431,20 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.channelLogo.setIcon(logo);
     }
 
+    private void toggleCompactView() {
+	if (this.compactView.isVisible()) {
+	    this.compactView.hide();
+	    this.myFrame.show();
+	} else {
+	    this.myFrame.hide();
+	    this.compactView.show();
+	}
+    }
+
+    private void forceNormalView() {
+	if (this.compactView.isVisible())
+	    this.toggleCompactView();
+    }
     private void muteClicked() {
 	this.smartMuteButton.setSelected(false);
 	boolean muteState;
@@ -1477,6 +1629,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private void poweredUp() {
 	this.loadChannelList();
 	this.rebuildSortedChannelList();
+	this.compactView.refreshSpinnerModel(); // we need to force this once
 	this.muteButton.setEnabled(true);
 	this.smartMuteButton.setEnabled(true);
 	//this.itmsButton.setEnabled(true);
@@ -1488,6 +1641,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.rebuildFavoritesMenu();
 	this.favoriteCheckbox.setEnabled(true);
 	this.filterMenuItem.setEnabled(true);
+	this.compactMenuItem.setEnabled(true);
 	this.preferences.saveDevice();
 	this.bookmarkMenu.setEnabled(true);
 	this.channelChanged(); // We need to fake the first one
@@ -1523,11 +1677,14 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		MainWindow.this.sortedChannelList = new ChannelInfo[0];
 		MainWindow.this.channelTableModel.fireTableDataChanged();
 		MainWindow.this.nowPlayingPanel.setChannelInfo(null);
+		MainWindow.this.compactView.setChannelInfo(null);
 		MainWindow.this.nowPlayingPanel.setSongTime(null, null);
 		MainWindow.this.powerCheckBox.setSelected(false);
 		MainWindow.this.muteButton.setEnabled(false);
 		MainWindow.this.smartMuteButton.setEnabled(false);
 		MainWindow.this.filterMenuItem.setEnabled(false);
+		MainWindow.this.compactMenuItem.setEnabled(false);
+		MainWindow.this.forceNormalView();
 		//MainWindow.this.itmsButton.setEnabled(false);
 		MainWindow.this.memoryButton.setEnabled(false);
 		MainWindow.this.muteButton.setSelected(false);
@@ -1587,6 +1744,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	final Integer sid = new Integer(this.sidForChannel(channel));
 	this.currentChannelInfo = (ChannelInfo)this.channelList.get(sid);
 	this.nowPlayingPanel.setChannelInfo(this.currentChannelInfo);
+	this.compactView.setChannelInfo(this.currentChannelInfo);
 	this.nowPlayingPanel.setSongTime(null, null);
 	this.favoriteCheckbox.setSelected(this.favoriteList.contains(sid));
 	this.scrollToCurrentChannel();
@@ -1899,6 +2057,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    this.updateRatingSlider(i);
 	    // This is an update for the current channel - fix the labels.
 	    this.nowPlayingPanel.setChannelInfo(i);
+	    this.compactView.setChannelInfo(i);
 	    if (this.smartMuteInfo != null && !i.equals(this.smartMuteInfo)) {
 		this.smartMuteClicked(); // Quickie hack! Since we're muted, this will unmute.
 	    }

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: FilterPanel.java,v 1.5 2004/03/22 04:31:56 nsayer Exp $
+ $Id: FilterPanel.java,v 1.6 2004/03/30 17:21:04 nsayer Exp $
  
  */
 
@@ -431,9 +431,14 @@ public class FilterPanel extends JDialog {
 	    String[] keys = orderNode.keys();
 	    Arrays.sort(keys, new Comparator() {
 		public int compare(Object o1, Object o2) {
+		    try {
 		    int i1 = Integer.parseInt((String)o1);
 		    int i2 = Integer.parseInt((String)o2);
 		    return new Integer(i1).compareTo(new Integer(i2));
+		    }
+		    catch(NumberFormatException e) {
+			return 0;
+		    }
 		}
 	    });
 	    Preferences node = JXM.myUserNode().node(FILTER_SET_KEY);

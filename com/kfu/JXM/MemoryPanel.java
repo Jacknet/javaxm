@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MemoryPanel.java,v 1.5 2004/03/19 17:41:29 nsayer Exp $
+ $Id: MemoryPanel.java,v 1.6 2004/03/30 17:18:21 nsayer Exp $
  
  */
 
@@ -44,6 +44,8 @@ public class MemoryPanel extends JDialog {
     private JList memoryList;
     private DefaultListModel memoryListModel;
     private JButton deleteButton;
+    private JTextArea notesField;
+    private boolean ignoreNotesChange = false;
 
     private static final int memoryCellHeight = 80;
     private static final int memoryCellWidth = 300;
@@ -126,7 +128,22 @@ public class MemoryPanel extends JDialog {
 	    public void valueChanged(ListSelectionEvent e) {
 		if (e.getValueIsAdjusting())
 		    return;
-		MemoryPanel.this.deleteButton.setEnabled(MemoryPanel.this.memoryList.getSelectedIndex() >= 0);
+		int[] selections = MemoryPanel.this.memoryList.getSelectedIndices();
+		MemoryPanel.this.deleteButton.setEnabled(selections.length >= 0);
+		MemoryPanel.this.ignoreNotesChange = true;
+		try {
+		if (selections.length == 1) {
+		    MemoryPanel.this.notesField.setEnabled(true);
+		    MemoryListItem mli = (MemoryListItem)MemoryPanel.this.memoryList.getSelectedValue();
+		    MemoryPanel.this.notesField.setText(mli.getNotes());
+		} else {
+		    MemoryPanel.this.notesField.setEnabled(false);
+		    MemoryPanel.this.notesField.setText("");
+		}
+		}
+		finally {
+		    MemoryPanel.this.ignoreNotesChange = false;
+		}
 	    }
 	});
 	this.memoryList.setFixedCellHeight(memoryCellHeight);
@@ -142,6 +159,24 @@ public class MemoryPanel extends JDialog {
 	gbc.fill = GridBagConstraints.BOTH;
 	gbc.insets = new Insets(10, 10, 5, 10);
 	this.getContentPane().add(jsp, gbc);
+	this.notesField = new JTextArea();
+	this.notesField.setRows(5);
+	this.notesField.getDocument().addDocumentListener(new DocumentListener() {
+	    public void changedUpdate(DocumentEvent e) { this.doIt(); }
+            public void insertUpdate(DocumentEvent e) { this.doIt(); }
+            public void removeUpdate(DocumentEvent e) { this.doIt(); }
+            private void doIt() {
+		if (MemoryPanel.this.ignoreNotesChange)
+		    return;
+		MemoryListItem mli = (MemoryListItem)MemoryPanel.this.memoryList.getSelectedValue();
+		mli.setNotes(MemoryPanel.this.notesField.getText());
+	    }
+	});
+	jsp = new JScrollPane(this.notesField);
+	jsp.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.BLACK), "Notes"));
+	this.notesField.setEnabled(false);
+	gbc.gridy = 1;
+	this.getContentPane().add(jsp, gbc);
 	this.deleteButton = new JButton("Delete");
 	this.deleteButton.setEnabled(false);
 	this.deleteButton.addActionListener(new ActionListener() {
@@ -154,7 +189,7 @@ public class MemoryPanel extends JDialog {
 	});
 	gbc.weightx = 0;
 	gbc.weighty = 0;
-	gbc.gridy = 1;
+	gbc.gridy = 2;
 	gbc.insets = new Insets(0, 10, 10, 10);
 	gbc.fill = GridBagConstraints.NONE;
 	gbc.anchor = GridBagConstraints.CENTER;
@@ -182,31 +217,18 @@ public class MemoryPanel extends JDialog {
 	this.memoryListModel.removeAllElements();
 	for(int i = 0; i < keys.length; i++) {
 	    String record = node.get(keys[i], "");
-	    String[] fields = record.split(":");
-	    if (fields.length != 7)
-		continue;
+	    MemoryListItem mli;
 	    try {
-		Date when = new Date(Long.parseLong(fields[0]));
-		int chan = Integer.parseInt(fields[1]);
-		int sid = Integer.parseInt(fields[2]);
-		String name = URLDecoder.decode(fields[3], "US-ASCII");
-		String genre = URLDecoder.decode(fields[4], "US-ASCII");
-		String artist = URLDecoder.decode(fields[5], "US-ASCII");
-		String title = URLDecoder.decode(fields[6], "US-ASCII");
-		ChannelInfo ci = new ChannelInfo(chan, sid, genre, name, artist, title);
-		MemoryListItem mli = new MemoryListItem(when, ci);
-		int j;
-		for(j = 0; j < this.memoryListModel.getSize(); j++)
-		    if (((MemoryListItem)this.memoryListModel.getElementAt(j)).getDate().getTime() > when.getTime())
-			break;
-		this.memoryListModel.add(j, mli);
+		mli = new MemoryListItem(record);
 	    }
-	    catch(NumberFormatException e) {
-		// ignore
+	    catch(IllegalArgumentException e) {
+		continue;
 	    }
-	    catch(UnsupportedEncodingException e) {
-		// impossible
-	    }
+	    int j;
+	    for(j = 0; j < this.memoryListModel.getSize(); j++)
+		if (((MemoryListItem)this.memoryListModel.getElementAt(j)).getDate().getTime() > mli.getDate().getTime())
+		    break;
+	    this.memoryListModel.add(j, mli);
 	}
     }
     private void saveMemory() {
@@ -218,32 +240,16 @@ public class MemoryPanel extends JDialog {
 	    return;
 	}
 	for(int i = 0; i < this.memoryListModel.getSize(); i++) {
-	    try{
 	    MemoryListItem mli = ((MemoryListItem)this.memoryListModel.getElementAt(i));
-	    StringBuffer sb = new StringBuffer();
-	    sb.append(Long.toString(mli.getDate().getTime()));
-	    sb.append(":");
-	    sb.append(mli.getChannelInfo().getChannelNumber());
-	    sb.append(":");
-	    sb.append(mli.getChannelInfo().getServiceID());
-	    sb.append(":");
-	    sb.append(URLEncoder.encode(mli.getChannelInfo().getChannelName(), "US-ASCII"));
-	    sb.append(":");
-	    sb.append(URLEncoder.encode(mli.getChannelInfo().getChannelGenre(), "US-ASCII"));
-	    sb.append(":");
-	    sb.append(URLEncoder.encode(mli.getChannelInfo().getChannelArtist(), "US-ASCII"));
-	    sb.append(":");
-	    sb.append(URLEncoder.encode(mli.getChannelInfo().getChannelTitle(), "US-ASCII"));
-	    node.put(Integer.toString(i), sb.toString());
-	    }
-	    catch(UnsupportedEncodingException e) {
-		// impossible;
-	    }
+	    String s = mli.serialize();
+	    node.put(Integer.toString(i), s);
 	}
     }
 
     public void memorize(ChannelInfo i) {
 	MemoryListItem mli = new MemoryListItem(i);
 	this.memoryListModel.add(this.memoryListModel.getSize(), mli);
+	this.memoryList.setSelectedValue(mli, true);
+	this.show();
     }
 }

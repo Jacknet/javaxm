@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: RadioCommander.java,v 1.15 2004/03/20 01:32:47 nsayer Exp $
+ $Id: RadioCommander.java,v 1.16 2004/03/22 05:00:48 nsayer Exp $
  
  */
 
@@ -954,9 +954,13 @@ t.printStackTrace();
 	    }
 	}
     }
-	
-    // Device *must* be one of the strings returned from getPotentialDevices() !
+
     public void turnOn(String device) throws RadioException {
+	this.turnOn(device, -1);
+    }
+
+    // Device *must* be one of the strings returned from getPotentialDevices() !
+    public void turnOn(String device, int initialChannel) throws RadioException {
         if (this.myDeviceIn != null || this.myDeviceOut != null)
             throw new IllegalStateException("Radio is already on");
 	this.powerChanging = true;
@@ -1043,7 +1047,10 @@ t.printStackTrace();
 	int chan = this.getChannelInfoByServiceID(reply.getLastAudioService()).getChannelNumber();
 	if (chan < 0)
 		chan = 1;
-		
+
+	if (initialChannel >= 1 && initialChannel <= 255)
+	    chan = initialChannel;
+
 	// Let's try going back where we once were. If it doesn't work, we'll wind up with -1, which is fine.
 	this.setChannel(chan);
 

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.73 2004/03/22 04:31:56 nsayer Exp $
+ $Id: MainWindow.java,v 1.74 2004/03/22 05:00:46 nsayer Exp $
  
  */
 
@@ -956,8 +956,19 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		if (MainWindow.this.ignoreFavoriteMenu)
 		    return;
 		Object o = MainWindow.this.favoriteMenu.getSelectedItem();
-		if (!(o instanceof Integer))
-		    return; // They must have selected "Favorites"
+		if (!(o instanceof Integer)) {
+		    // They must have selected "Favorites"
+		    // So go reselect the current channel
+		    if (MainWindow.this.currentChannelInfo == null)
+			return;
+		    Integer sid = new Integer(MainWindow.this.currentChannelInfo.getServiceID());
+		    if (MainWindow.this.favoriteList.contains(sid)) {
+			MainWindow.this.ignoreFavoriteMenu = true;
+			MainWindow.this.favoriteMenu.setSelectedItem(sid);
+			MainWindow.this.ignoreFavoriteMenu = false;
+		    }
+		    return;
+		}
 		Integer sid = (Integer)o;
 		MainWindow.this.favoriteMenu.setSelectedIndex(0);
 		ChannelInfo i = (ChannelInfo)MainWindow.this.channelList.get(sid);
@@ -1451,10 +1462,20 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.loadTickList();
 	this.memoryPanel = new MemoryPanel(this);
 
+	int initialChannel = -1;
+	String[] args = JXM.getCommandLine();
+	if (args.length >= 1) {
+	    try {
+		initialChannel = Integer.parseInt(args[0]);
+	    }
+	    catch(NumberFormatException ex) {
+		// ignore
+	    }
+	}
 	// We have a device saved... Try and power up
 	String deviceName = this.preferences.getDevice();
 	if (deviceName != null)
-	    this.turnPowerOn();
+	    this.turnPowerOn(initialChannel);
 
 	new java.util.Timer().schedule(new TimerTask() {
 	    public void run() {
@@ -1676,6 +1697,9 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     }
 
     private void turnPowerOn() {
+	this.turnPowerOn(-1);
+    }
+    private void turnPowerOn(int initialChannel) {
 	// Figure out which device was selected
 	String deviceName = this.preferences.getDevice();
 	if (deviceName == null) {
@@ -1686,7 +1710,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	}
 	// Attempt to power up the radio
 	try {
-	    RadioCommander.theRadio().turnOn(deviceName);
+	    RadioCommander.theRadio().turnOn(deviceName, initialChannel);
 	}
 	catch(RadioException e) {
 	    this.powerCheckBox.setSelected(false);

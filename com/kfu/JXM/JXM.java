@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: JXM.java,v 1.10 2004/03/20 21:56:20 nsayer Exp $
+ $Id: JXM.java,v 1.11 2004/03/22 05:00:46 nsayer Exp $
  
  */
 
@@ -30,7 +30,10 @@ import java.util.*;
 import java.util.prefs.*;
 
 public class JXM {
+    private static String[] commandLine;
+
     public static void main(String[] args) {
+	commandLine = args;
         try {
             Class.forName("javax.comm.CommPortIdentifier");
         }
@@ -54,6 +57,8 @@ public class JXM {
     public static String userAgentString() {
 	return "JXM v" + version();
     }
+
+    public static String[] getCommandLine() { return commandLine; }
 
     public static Preferences myUserNode() {
         return Preferences.userNodeForPackage(JXM.class);

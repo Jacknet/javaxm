@@ -863,7 +863,9 @@ ArrayList l = new ArrayList();
                 }
                 catch(IOException e) {
                     Dispose();
-                    notifyGUI(EXCEPTION, new RadioException(e.getMessage()));
+		    // If we're disposing, then ignore these. They can happen when read() is interrupted in some javax.comm implementations
+		    if (myDeviceIn != null)
+                        notifyGUI(EXCEPTION, e);
                 }
                 catch(RadioException e) {
                     Dispose();
@@ -1303,6 +1305,10 @@ ArrayList l = new ArrayList();
     }
 	
     private void tryToExtendChannelInfo(ChannelInfo info) throws RadioException {
+	// This must have happened while turning off
+	if (this.myDeviceIn == null)
+	    return;
+
         respExtendedChannelInfo result2 = (respExtendedChannelInfo)this.performCommand(new cmdExtendedChannelInfo(info.getChannelNumber()), respExtendedChannelInfo.class);
         String a = result2.getArtist();
         if (a != null)

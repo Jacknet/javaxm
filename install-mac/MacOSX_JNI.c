@@ -17,29 +17,16 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MacOSX_JNI.c,v 1.1 2004/03/20 16:24:37 nsayer Exp $
+ $Id: MacOSX_JNI.c,v 1.2 2004/03/20 18:53:32 nsayer Exp $
 
  Build with this command:
 
  gcc -dynamiclib -fPIC -I/Library/Java/Home/include -O -o libMacOSX.jnilib -framework CoreFoundation -framework IOKit MacOSX_JNI.c
+
  Put libMacOSX.jnilib in the Contents/Resources/Java directory of the bundle. For other platforms, it doesn't matter, since it
  won't load anyhow.
 
  */
-
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/ioctl.h>
-#include <errno.h>
-#include <paths.h>
-#include <termios.h>
-#include <sysexits.h>
-#include <sys/param.h>
-#include <sys/select.h>
-#include <sys/time.h>
-#include <time.h>
 
 #include <CoreFoundation/CoreFoundation.h>
 

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.69 2004/03/20 18:49:01 nsayer Exp $
+ $Id: MainWindow.java,v 1.70 2004/03/20 21:56:20 nsayer Exp $
  
  */
 
@@ -69,7 +69,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    for(int i = 0; i < sourceList.length; i++)
 		al.add(new Integer(sourceList[i].getChannelNumber()));
 	    Collections.sort(al);
-	    this.compactSpinnerModel.setList(al);
+	    if (al.size() != 0)
+	        this.compactSpinnerModel.setList(al);
 	    //this.compactSpinnerModel.setValue(new Integer(MainWindow.this.currentChannelInfo.getChannelNumber()));
 	    }
 	    finally {
@@ -641,9 +642,11 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	System.exit(0);
     }
     public void prefs() {
+	this.forceNormalView();
 	this.preferences.show();
     }
     public void about() {
+	this.forceNormalView();
 	this.aboutDialog.show();
     }
 

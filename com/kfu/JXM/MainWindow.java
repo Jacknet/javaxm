@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.103 2004/05/04 15:52:06 nsayer Exp $
+ $Id: MainWindow.java,v 1.104 2004/05/04 16:01:35 nsayer Exp $
  
  */
 
@@ -2315,7 +2315,13 @@ public class MainWindow
 				MainWindow.this.terrestrialMeter.setValue(0);
 				MainWindow.this.setChannelLogo(-1);
 				MainWindow.this.favoriteMenu.setEnabled(false);
-				MainWindow.this.favoriteMenu.setSelectedIndex(0);
+				MainWindow.this.ignoreFavoriteMenu = true;
+				try {
+					MainWindow.this.favoriteMenu.setSelectedIndex(0);
+				}
+				finally {
+					MainWindow.this.ignoreFavoriteMenu = false;
+				}
 				MainWindow.this.favoriteCheckbox.setEnabled(false);
 				MainWindow.this.bookmarkMenu.setEnabled(false);
 				MainWindow.this.sleepButton.setEnabled(false);

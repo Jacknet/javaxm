@@ -38,9 +38,12 @@ public class PreferencesDialog extends JDialog {
     JTextField trackerUser;
     JPasswordField trackerPassword;
     JCheckBox trackerEnabled;
+    JTextField browserPath = null;
+    IPreferenceCallbackHandler handler;
 
-    public PreferencesDialog(JFrame parent) {
+    public PreferencesDialog(JFrame parent, IPreferenceCallbackHandler handler) {
 	super(parent, "JXM Preferences", true);
+	this.handler = handler;
 	this.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 	this.getContentPane().setLayout(new BorderLayout());
 
@@ -118,6 +121,31 @@ public class PreferencesDialog extends JDialog {
 	jtp.addTab("XM Tracker", jp);
 
 	jp = new JPanel();
+	jp.setLayout(new GridBagLayout());
+	gbc = new GridBagConstraints();
+	if (PlatformFactory.ourPlatform().needsBrowserPath()) {
+	    jl = new JLabel("Path to Browser: ");
+	    gbc.gridx = 0;
+	    gbc.gridy = 0;
+	    gbc.anchor = GridBagConstraints.LINE_END;
+	    jp.add(jl, gbc);
+
+	    this.browserPath = new JTextField();
+	    gbc.gridx = 1;
+	    gbc.weightx = 1;
+	    gbc.fill = GridBagConstraints.HORIZONTAL;
+	    jp.add(this.browserPath, gbc);
+	}
+	JButton jb = new JButton("Clear channel use statistics");
+	jb.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		PreferencesDialog.this.handler.clearChannelStats();
+	    }
+	});
+	gbc.gridy++;
+	gbc.gridx = 0;
+	gbc.gridwidth = 2;
+	jp.add(jb, gbc);
 
 	jtp.addTab("Misc", jp);
 
@@ -186,6 +214,7 @@ public class PreferencesDialog extends JDialog {
     private final static String XMTRACKER_USER = "TrackerUser";
     private final static String XMTRACKER_PASS = "TrackerPassword";
     private final static String XMTRACKER_ENABLED = "TrackerEnabled";
+    private final static String BROWSER_PATH = "BrowserPath";
 
     private void reloadFromDefaults() {
 	this.trackerURL.setText(this.myNode().get(XMTRACKER_URL, "http://www.xmnation.net/tracker/"));
@@ -193,6 +222,10 @@ public class PreferencesDialog extends JDialog {
 	this.trackerPassword.setText(this.myNode().get(XMTRACKER_PASS, ""));
 	this.trackerEnabled.setSelected(this.myNode().getBoolean(XMTRACKER_ENABLED, false));
 	this.trackerCheckboxClicked();
+	if (this.browserPath != null) {
+	    this.browserPath.setText(this.myNode().get(BROWSER_PATH, ""));
+	    PlatformFactory.ourPlatform().setBrowserPath(this.browserPath.getText());
+	}
     }
 
     private void saveToDefaults() {
@@ -200,6 +233,10 @@ public class PreferencesDialog extends JDialog {
 	this.myNode().put(XMTRACKER_USER, this.trackerUser.getText());
 	this.myNode().put(XMTRACKER_PASS, new String(this.trackerPassword.getPassword()));
 	this.myNode().putBoolean(XMTRACKER_ENABLED, this.trackerEnabled.isSelected());
+	if (this.browserPath != null) {
+	    this.myNode().put(BROWSER_PATH, this.browserPath.getText());
+	    PlatformFactory.ourPlatform().setBrowserPath(this.browserPath.getText());
+	}
     }
 
     // This is called when the radio is turned on

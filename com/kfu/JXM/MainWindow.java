@@ -33,13 +33,11 @@ import java.net.*;
 import java.security.*;
 import java.util.*;
 import java.util.prefs.*;
-
-// BrowserLauncher
-import edu.stanford.ejalbert.*;
+import java.util.regex.*;
 
 import com.kfu.xm.*;
 
-public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler {
+public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, IPreferenceCallbackHandler {
 
     // A popup menu for a given channel
     private class ChannelPopupMenu extends JPopupMenu {
@@ -69,7 +67,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler {
 	    jmi = new JMenuItem("Google Search for Artist");
 	    jmi.addActionListener(new ActionListener() {
 		public void actionPerformed(ActionEvent e) {
-		    MainWindow.this.googleSearch(ChannelPopupMenu.this.channelInfo.getChannelArtist(), null);
+		    MainWindow.this.genericSurf("http://www.google.com/search?q=%22{ARTIST}%22", ChannelPopupMenu.this.channelInfo);
 		}
 	    });
 	    this.add(jmi);
@@ -77,7 +75,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler {
 	    jmi = new JMenuItem("Google Search for Title");
 	    jmi.addActionListener(new ActionListener() {
 		public void actionPerformed(ActionEvent e) {
-		    MainWindow.this.googleSearch(null, ChannelPopupMenu.this.channelInfo.getChannelTitle());
+		    MainWindow.this.genericSurf("http://www.google.com/search?q=%22{TITLE}%22", ChannelPopupMenu.this.channelInfo);
 		}
 	    });
 	    this.add(jmi);
@@ -85,7 +83,15 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler {
 	    jmi = new JMenuItem("Google Search for Artist and Title");
 	    jmi.addActionListener(new ActionListener() {
 		public void actionPerformed(ActionEvent e) {
-		    MainWindow.this.googleSearch(ChannelPopupMenu.this.channelInfo.getChannelArtist(), ChannelPopupMenu.this.channelInfo.getChannelTitle());
+		    MainWindow.this.genericSurf("http://www.google.com/search?q=%22{ARTIST}%22+%22{TITLE}%22", ChannelPopupMenu.this.channelInfo);
+		}
+	    });
+	    this.add(jmi);
+
+	    jmi = new JMenuItem("XMNation forum for channel");
+	    jmi.addActionListener(new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+		    MainWindow.this.genericSurf("http://www.xmnation.net/forum_for_channel.php?ch={NUMBER}", ChannelPopupMenu.this.channelInfo);
 		}
 	    });
 	    this.add(jmi);
@@ -162,6 +168,16 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler {
 
     private HashMap tickList = new HashMap();
 
+    public void clearChannelStats() {
+	this.tickList.clear();
+	Preferences node = this.myUserNode().node(TICK_NODE);
+	try {
+	    node.clear();
+	}
+	catch(BackingStoreException e) {
+	}
+    }
+
     private int rowForSID(int sid) {
 	Integer sids[] = this.getSortedSidList();
 	for(int i = 0; i < sids.length; i++)
@@ -230,6 +246,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler {
     public void quit() { 
 	if (RadioCommander.theRadio().isOn())
 	    MainWindow.this.turnPowerOff();
+	this.saveChannelTableLayout();
 	System.exit(0);
     }
     public void prefs() {
@@ -237,6 +254,16 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler {
     }
     public void about() {
 System.err.println("SHOW ABOUT WINDOW!");
+    }
+
+    private void saveChannelTableLayout() {
+	byte index[] = new byte[this.channelTableModel.getColumnCount()];
+
+	for(int i = 0; i < this.channelTableModel.getColumnCount(); i++) {
+	    TableColumn tc = this.channelTable.getColumnModel().getColumn(i);
+	    index[i] = (byte)tc.getModelIndex();
+	}
+	this.myUserNode().putByteArray(CHAN_TABLE_COLS, index);
     }
 
     public MainWindow() {
@@ -257,12 +284,11 @@ System.err.println("SHOW ABOUT WINDOW!");
 		MainWindow.this.quit();
 	    }
 	});
-	this.preferences = new PreferencesDialog(this.myFrame);
+	this.preferences = new PreferencesDialog(this.myFrame, this);
 
-	// -----
 	// If on a mac, don't do this - use the EAWT stuff instead
 	if (!PlatformFactory.ourPlatform().useMacMenus()) {
-	    JMenu jm = new JMenu("File");
+	    JMenu jm = new JMenu("JXM");
 	    JMenuItem jmi = new JMenuItem("Preferences...");
 	    jmi.addActionListener(new ActionListener() {
 	        public void actionPerformed(ActionEvent e) {
@@ -270,7 +296,7 @@ System.err.println("SHOW ABOUT WINDOW!");
 	        }
 	    });
 	    jm.add(jmi);
-	    jmi = new JMenuItem("Quit");
+	    jmi = new JMenuItem("Exit");
 	    jmi.addActionListener(new ActionListener() {
 	        public void actionPerformed(ActionEvent e) {
 		    MainWindow.this.quit();
@@ -280,8 +306,22 @@ System.err.println("SHOW ABOUT WINDOW!");
 	    this.myFrame.getJMenuBar().add(jm);
 	}
 	// -----
+	// PUT MENUS HERE
+	// -----
+	if (!PlatformFactory.ourPlatform().useMacMenus()) {
+	    JMenu jm = new JMenu("Help");
+	    JMenuItem jmi = new JMenuItem("About JXM...");
+	    jmi.addActionListener(new ActionListener() {
+	        public void actionPerformed(ActionEvent e) {
+		MainWindow.this.about();
+	        }
+	    });
+	    jm.add(jmi);
+	    this.myFrame.getJMenuBar().add(jm);
+	}
 
-	this.myFrame.getContentPane().setLayout(new BorderLayout());
+	this.myFrame.getContentPane().setLayout(new GridBagLayout());
+	GridBagConstraints frameGBC = new GridBagConstraints();
 
 	JPanel top = new JPanel();
 	top.setLayout(new BoxLayout(top, BoxLayout.PAGE_AXIS));
@@ -290,7 +330,7 @@ System.err.println("SHOW ABOUT WINDOW!");
 	toptop.add(Box.createHorizontalStrut(20));
 
 	JPanel pictureFrame = new JPanel();
-	pictureFrame.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+	pictureFrame.setBorder(BorderFactory.createLoweredBevelBorder());
 	this.channelLogo = new JLabel();
 	this.channelLogo.setPreferredSize(new Dimension(150, 100));
 	this.setChannelLogo(-1);
@@ -364,6 +404,7 @@ System.err.println("SHOW ABOUT WINDOW!");
 	gbc.gridy = 1;
 	jp.add(this.channelTitleLabel, gbc);
 	toptop.add(jp);
+	toptop.add(Box.createHorizontalStrut(5));
 	JPanel buttons = new JPanel();
 	buttons.setLayout(new BoxLayout(buttons, BoxLayout.PAGE_AXIS));
 	this.itmsButton = new JButton("iTunes Music Store");
@@ -464,6 +505,7 @@ System.err.println("SHOW ABOUT WINDOW!");
 	this.ratingSlider.setSnapToTicks(true);
 	this.ratingSlider.setPaintTicks(true);
 	this.ratingSlider.setEnabled(false);
+	this.ratingSlider.setPreferredSize(new Dimension(275, (int)this.favoriteMenu.getPreferredSize().getHeight()));
 	gbc1.weightx = 1;
 	gbc1.gridwidth = 3;
 	gbc1.fill = GridBagConstraints.HORIZONTAL;
@@ -489,29 +531,40 @@ System.err.println("SHOW ABOUT WINDOW!");
 
 	gbc.weightx = 1;
 	gbc.gridx = 1;
+	gbc.insets = new Insets(0, 20, 0, 20);
 	gbc.fill = GridBagConstraints.HORIZONTAL;
+	gbc.anchor = GridBagConstraints.CENTER;
 	stripe.add(rating, gbc);
 	
 	JPanel extra = new JPanel();
 	// XXX - what goes here?
 	gbc.gridx = 2;
 	gbc.weightx = 0;
+	gbc.anchor = GridBagConstraints.LINE_END;
+	gbc.insets = new Insets(0, 0, 0, 20);
 	gbc.fill = GridBagConstraints.NONE;
 	extra.setPreferredSize(favorites.getPreferredSize());
 	stripe.add(extra, gbc);
 
 	top.add(stripe);
 	
-	this.myFrame.getContentPane().add(top, BorderLayout.PAGE_START);
-	//this.myFrame.getContentPane().add(this.channelLogo, BorderLayout.PAGE_START);
+	frameGBC.gridx = 0;
+	frameGBC.gridy = 0;
+	frameGBC.weighty = 0;
+	frameGBC.weightx = 1;
+	frameGBC.insets = new Insets(10, 0, 0, 0);
+	frameGBC.fill = GridBagConstraints.HORIZONTAL;
+	frameGBC.anchor = GridBagConstraints.PAGE_START;
+	this.myFrame.getContentPane().add(top, frameGBC);
 
+/*
 	jp = new JPanel();
 	jp.setLayout(new GridBagLayout());
 	gbc = new GridBagConstraints();
 	gbc.weightx = gbc.weighty = 1;
 	gbc.insets = new Insets(20, 20, 20, 20);
 	gbc.fill = GridBagConstraints.BOTH;
-	
+*/
 	this.channelTable = new JTable();
 	this.channelTable.addMouseListener(new MouseAdapter() {
 	    public void mousePressed(MouseEvent e) { this.maybePopup(e); }
@@ -535,31 +588,91 @@ System.err.println("SHOW ABOUT WINDOW!");
 	this.channelTableModel = new ChannelTableModel();
 	channelTable.setModel(this.channelTableModel);
 
+	final TableCellRenderer orig = this.channelTable.getTableHeader().getDefaultRenderer(); //tc.getHeaderRenderer();
+
+	TableCellRenderer tcr = new DefaultTableCellRenderer() {
+	    public Component getTableCellRendererComponent(JTable table,  Object value,  boolean isSelected, boolean hasFocus,  int row,  int column) {
+		int modelColumn = MainWindow.this.channelTable.getColumnModel().getColumn(column).getModelIndex();
+		if (MainWindow.this.sortField == modelColumn) {
+		    StringBuffer sb = new StringBuffer();
+		    sb.append("<html>");
+		    sb.append((String)value);
+		    sb.append("&nbsp;<img src=\"");
+		    sb.append(this.getClass().getResource(MainWindow.this.sortDirection?"/images/arrow-down.png":"/images/arrow-up.png"));
+		    sb.append("\"></html>");
+		    value = sb.toString();
+		}
+		return orig.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+		/*Component c = orig.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+		if (MainWindow.this.sortField != modelColumn)
+		    return ;
+		c.setBackground(new Color(0.75f, 0.75f, 1f));
+		c.setForeground(Color.BLACK);
+		return c; */
+	    }
+	};
+
+	byte cols[];
+
+	cols = this.myUserNode().getByteArray(CHAN_TABLE_COLS, null);
+
+	if (cols == null || cols.length != 6)
+	    cols = new byte[] {0, 1, 2, 3, 4, 5};
+	else {
+	    for(int i = 0; i < cols.length; i++) {
+		if (cols[i] < 0 || cols[i] > 5) {
+		    cols = new byte[] {0, 1, 2, 3, 4, 5};
+		    break;
+		}
+	    }
+	}
+
 	TableColumnModel tcm = new DefaultTableColumnModel();
 	TableColumn tc;
-	tc = new TableColumn(0, 30, null, null);
 	DefaultTableCellRenderer centered = new DefaultTableCellRenderer();
 	centered.setHorizontalAlignment(SwingConstants.CENTER);
-	tc.setCellRenderer(centered);
-	tc.setHeaderValue("Number");
-	tcm.addColumn(tc);
-	tc = new TableColumn(1, 60, null, null);
-	tc.setHeaderValue("Genre");
-	tcm.addColumn(tc);
-	tc = new TableColumn(2, 80, null, null);
-	tc.setHeaderValue("Name");
-	tcm.addColumn(tc);
-	tc = new TableColumn(3, 120, null, null);
-	tc.setHeaderValue("Artist");
-	tcm.addColumn(tc);
-	tc = new TableColumn(4, 120, null, null);
-	tc.setHeaderValue("Title");
-	tcm.addColumn(tc);
-	tc = new TableColumn(5, 30, null, null);
-	tc.setCellRenderer(centered);
-	tc.setHeaderValue("% In Use");
-	tcm.addColumn(tc);
+	for(int i = 0; i < cols.length; i++) {
+	    switch(cols[i]) {
+		case 0:
+		    tc = new TableColumn(0, 80, null, null);
+		    tc.setMinWidth(80);
+		    tc.setCellRenderer(centered);
+		    tc.setHeaderValue("Num.");
+		    break;
+		case 1:
+		    tc = new TableColumn(1, 100, null, null);
+		    tc.setMinWidth(100);
+		    tc.setHeaderValue("Genre");
+		    break;
+		case 2:
+		    tc = new TableColumn(2, 100, null, null);
+		    tc.setMinWidth(100);
+		    tc.setHeaderValue("Name");
+		    break;
+		case 3:
+		    tc = new TableColumn(3, 160, null, null);
+		    tc.setMinWidth(160);
+		    tc.setHeaderValue("Artist");
+		    break;
+		case 4:
+		    tc = new TableColumn(4, 160, null, null);
+		    tc.setMinWidth(160);
+		    tc.setHeaderValue("Title");
+		    break;
+		case 5:
+		    tc = new TableColumn(5, 80, null, null);
+		    tc.setMinWidth(80);
+		    tc.setCellRenderer(centered);
+		    tc.setHeaderValue("% In Use");
+		    break;
+		default:
+		    throw new IllegalArgumentException("Which column?!");
+	    }
+	    tc.setHeaderRenderer(tcr);
+	    tcm.addColumn(tc);
+	}
 	channelTable.setColumnModel(tcm);
+	int tw = tcm.getTotalColumnWidth();
 
 	channelTable.setColumnSelectionAllowed(false);
 	channelTable.setRowSelectionAllowed(true);
@@ -604,11 +717,32 @@ System.err.println("SHOW ABOUT WINDOW!");
 		    MainWindow.this.sortField = column;
 		    MainWindow.this.sortDirection = true;
 		}
+		MainWindow.this.myUserNode().putInt(SORT_FIELD, MainWindow.this.sortField);
+		MainWindow.this.myUserNode().putBoolean(SORT_DIR, MainWindow.this.sortDirection);
 	    }
 	});
 
-	jp.add(new JScrollPane(channelTable), gbc);
-        this.myFrame.getContentPane().add(jp, BorderLayout.CENTER);
+	this.sortField = this.myUserNode().getInt(SORT_FIELD, 0);
+	if (this.sortField < 0 || this.sortField > 5)
+	    this.sortField = 0;
+	this.sortDirection = this.myUserNode().getBoolean(SORT_DIR, true);
+
+	//channelTable.setMinimumSize(new Dimension(tw + 5, 0));
+	//channelTable.setPreferredViewportSize(new Dimension((int)channelTable.getMinimumSize().getWidth(), (int)channelTable.getPreferredSize().getHeight()));
+	channelTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+	JScrollPane sp = new JScrollPane(channelTable);
+	//sp.setMinimumSize(new Dimension(tw + 5, 0));
+	sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+	sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+	//jp.add(sp, gbc);
+	frameGBC.insets = new Insets(20, 20, 20, 20);
+	frameGBC.gridx = 0;
+	frameGBC.gridy = 1;
+	frameGBC.weighty = 1;
+	frameGBC.weightx = 1;
+	frameGBC.fill = GridBagConstraints.BOTH;
+	frameGBC.anchor = GridBagConstraints.CENTER;
+        this.myFrame.getContentPane().add(sp, frameGBC);
 
 	JPanel bottom = new JPanel();
 	bottom.setLayout(new GridBagLayout());
@@ -622,7 +756,8 @@ System.err.println("SHOW ABOUT WINDOW!");
 	    }
 	});
 	gbc.gridx = gbc.gridy = 0;
-	gbc.weightx = 1;
+	gbc.weightx = 0;
+	gbc.weighty = 0;
 	gbc.anchor = GridBagConstraints.LINE_START;
 	gbc.fill = GridBagConstraints.HORIZONTAL;
 	gbc.insets = new Insets(0, 20, 0, 0);
@@ -649,7 +784,7 @@ System.err.println("SHOW ABOUT WINDOW!");
 	    }
 	});
 
-	gbc.insets = new Insets(0, 0, 20, 10);
+	gbc.insets = new Insets(0, 20, 20, 10);
 	gbc.gridx = 1;
 	gbc.gridy = 0;
 	gbc.gridheight = 2;
@@ -661,7 +796,7 @@ System.err.println("SHOW ABOUT WINDOW!");
 	jl.setHorizontalAlignment(SwingConstants.TRAILING);
 	gbc.gridx = 2;
 	gbc.gridy = 0;
-	gbc.weightx = 1;
+	gbc.weightx = .75;
 	gbc.gridheight = 1;
 	gbc.insets = new Insets(0, 0, 0, 0);
 	gbc.anchor = GridBagConstraints.LINE_END;
@@ -675,6 +810,7 @@ System.err.println("SHOW ABOUT WINDOW!");
 	this.satelliteMeter = new JProgressBar(0, 100);
 	gbc.gridx = 3;
 	gbc.gridy = 0;
+	gbc.weightx = .25;
 	gbc.insets = new Insets(0, 0, 0, 20);
 	gbc.anchor = GridBagConstraints.LINE_START;
 	bottom.add(this.satelliteMeter, gbc);
@@ -683,7 +819,14 @@ System.err.println("SHOW ABOUT WINDOW!");
 	gbc.insets = new Insets(0, 0, 20, 20);
 	bottom.add(this.terrestrialMeter, gbc);
 
-	this.myFrame.getContentPane().add(bottom, BorderLayout.PAGE_END);
+	frameGBC.insets = new Insets(0, 0, 0, 0);
+	frameGBC.gridx = 0;
+	frameGBC.gridy = 2;
+	frameGBC.weighty = 0;
+	frameGBC.weightx = 1;
+	frameGBC.fill = GridBagConstraints.HORIZONTAL;
+	frameGBC.anchor = GridBagConstraints.PAGE_END;
+	this.myFrame.getContentPane().add(bottom, frameGBC);
 	
         this.myFrame.pack();
         this.myFrame.setResizable(true);
@@ -708,11 +851,14 @@ System.err.println("SHOW ABOUT WINDOW!");
 		        MainWindow.this.handleError(e);
 		    return;
 		}
+		if (sid.intValue() < 0) // just skip it if we don't know the SID (yet)
+		  return;
 		Integer ticks = (Integer)MainWindow.this.tickList.get(sid);
 		if (ticks == null)
 		    ticks = new Integer(0);
 		ticks = new Integer(ticks.intValue() + 1);
 		MainWindow.this.tickList.put(sid, ticks);
+		MainWindow.this.firePercentChanges();
 	    }
 	}, 0, 1000);
 
@@ -740,8 +886,19 @@ System.err.println("SHOW ABOUT WINDOW!");
 	    this.turnPowerOn();
     }
 
+    private void firePercentChanges() {
+	Iterator i = this.tickList.keySet().iterator();
+	while(i.hasNext()) {
+	    Integer sid = (Integer)i.next();
+	    int row = this.rowForSID(sid.intValue());
+	    if (row < 0)
+		continue;
+	    this.channelTableModel.fireTableRowsUpdated(row, row);
+	}
+    }
+
     private void itmsButtonClicked() {
-	String u = "itms://phobos.apple.com/WebObjects/MZSearch.woa/wa/com.apple.jingle.search.DirectAction/advancedSearchResults?";
+	String u = "itms://phobos.apple.com/WebObjects/MZSearch.woa/wa/com.apple.jingle.search.DirectAction/advancedSearchResults?artistTerm={ARTIST}&songTerm={TITLE}";
 	ChannelInfo i;
 	try {
 	    i = RadioCommander.theRadio().getChannelInfo();
@@ -750,6 +907,8 @@ System.err.println("SHOW ABOUT WINDOW!");
 	    this.handleError(e);
 	    return;
 	}
+	this.genericSurf(u, i);
+/*
 	try {
 	    String artist = URLEncoder.encode(i.getChannelArtist(), "US-ASCII");
 	    String title = URLEncoder.encode(i.getChannelTitle(), "US-ASCII");
@@ -767,6 +926,7 @@ e.printStackTrace();
 	    return;
 	}
 	this.openURL(u.toString());
+*/
     }
 
     private void surfToChannel(int chan) {
@@ -774,27 +934,29 @@ e.printStackTrace();
 	this.openURL(u);
     }
 
-    private void googleSearch(String artist, String title) {
-	StringBuffer sb = new StringBuffer("http://www.google.com/search?q=");
-	if (artist != null) {
-	    try {
-		sb.append(URLEncoder.encode("\"" + artist + "\"", "US-ASCII"));
-	    }
-	    catch(UnsupportedEncodingException e) {
-		// Mhmm.
-	    }
+    private Pattern numPattern = Pattern.compile("\\{NUMBER\\}");
+    private Pattern genrePattern = Pattern.compile("\\{GENRE\\}");
+    private Pattern namePattern = Pattern.compile("\\{NAME\\}");
+    private Pattern artistPattern = Pattern.compile("\\{ARTIST\\}");
+    private Pattern titlePattern = Pattern.compile("\\{TITLE\\}");
+    private Pattern sidPattern = Pattern.compile("\\{SERVICE\\}");
+    private void genericSurf(String urlPattern, ChannelInfo info) {
+	String url = urlPattern;
+	try {
+	    url = this.numPattern.matcher(url).replaceAll(Integer.toString(info.getChannelNumber()));
+	    url = this.genrePattern.matcher(url).replaceAll(URLEncoder.encode(info.getChannelGenre(), "US-ASCII"));
+	    url = this.namePattern.matcher(url).replaceAll(URLEncoder.encode(info.getChannelName(), "US-ASCII"));
+	    url = this.artistPattern.matcher(url).replaceAll(URLEncoder.encode(info.getChannelArtist(), "US-ASCII"));
+	    url = this.titlePattern.matcher(url).replaceAll(URLEncoder.encode(info.getChannelTitle(), "US-ASCII"));
+	    url = this.sidPattern.matcher(url).replaceAll(Integer.toString(info.getServiceID()));
 	}
-	if (artist != null && title != null)
-	    sb.append('+');
-	if (title != null) {
-	    try {
-		sb.append(URLEncoder.encode("\"" + title + "\"", "US-ASCII"));
-	    }
-	    catch(UnsupportedEncodingException e) {
-		// Mhmm.
-	    }
+	catch(UnsupportedEncodingException e) {
+	    // Oh, whatever!
+System.err.println(e.getMessage());
+e.printStackTrace();
+	    return;
 	}
-	this.openURL(sb.toString());
+	this.openURL(url);
     }
 
     private void openURL(String u) {
@@ -942,6 +1104,11 @@ e.printStackTrace();
 	return Preferences.userNodeForPackage(this.getClass());
     }
 
+    private final static String CHAN_TABLE_COLS = "ChannelTableColumnOrder";
+    private final static String GRID_NODE = "ChannelGrid";
+    private final static String TICK_NODE = "ChannelUsage";
+    private final static String SORT_DIR = "SortDirection";
+    private final static String SORT_FIELD = "SortColumn";
     private final static String FAVORITE_LIST = "FavoriteChannels";
     private final static String XMTRACKER_URL = "TrackerURL";
     private final static String XMTRACKER_USER = "TrackerUser";
@@ -1113,8 +1280,6 @@ e.printStackTrace();
 	this.myUserNode().putByteArray(FAVORITE_LIST, list);
     }
 
-    private final static String GRID_NODE = "ChannelGrid";
-    private final static String TICK_NODE = "ChannelUsage";
     private void saveChannelList() {
 	Preferences node = this.myUserNode().node(GRID_NODE);
 	try {

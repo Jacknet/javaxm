@@ -191,7 +191,7 @@ public class MainWindow implements RadioEventHandler {
     private PreferencesDialog preferences;
     private JSlider ratingSlider;
     private JComboBox favoriteMenu;
-    private JCheckBox favoriteCheckbox;
+    private JToggleButton favoriteCheckbox;
    
     public void quit() { 
 	if (RadioCommander.theRadio().isOn())
@@ -385,7 +385,8 @@ public class MainWindow implements RadioEventHandler {
 	    }
 	});
 	favorites.add(this.favoriteMenu);
-	this.favoriteCheckbox = new JCheckBox();
+	this.favoriteCheckbox = new JToggleButton(new ImageIcon(this.getClass().getResource("/images/heart.png")));
+	//this.favoriteCheckbox.setText("<html><img src=\"" + this.getClass().getResource("/images/heart.png") + "\"></html>");
 	this.favoriteCheckbox.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
 		Integer sid;

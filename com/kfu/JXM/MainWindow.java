@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.109 2004/08/02 18:38:25 nsayer Exp $
+ $Id: MainWindow.java,v 1.110 2004/09/07 22:43:59 nsayer Exp $
  
  */
 
@@ -757,7 +757,7 @@ public class MainWindow
 		JXM.myUserNode().putByteArray(CHAN_TABLE_COLS, index);
 	}
 
-	public final static Color stripeColor = new Color(.85f, .85f, 1f);
+	public final static Color stripeColor = new Color(.85f, 1f, .85f);
 	public final static Color gridColor = new Color(.85f, .85f, .85f);
 
 	private class XIcon implements Icon {

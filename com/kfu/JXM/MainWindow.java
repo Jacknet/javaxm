@@ -177,7 +177,7 @@ public static void main(String[] args) { new MainWindow(); }
 	this.channelTitleLabel.setFont(new Font(null, Font.BOLD, 20));
 	gbc.gridy = 1;
 	jp.add(this.channelTitleLabel, gbc);
-	jp.setMinimumSize(new Dimension(0, 75));
+	jp.setMinimumSize(new Dimension(0, 100));
 	jp.setPreferredSize(jp.getMinimumSize());
 	this.myFrame.getContentPane().add(jp, BorderLayout.PAGE_START);
 
@@ -230,6 +230,12 @@ public static void main(String[] args) { new MainWindow(); }
 			return;
 		    ChannelInfo i = (ChannelInfo)MainWindow.this.channelList.get(new Integer(sidForRow(row)));
 		    try {
+			// The problem here is that we will get called even when we do the selecting
+			// ourselves (as in this.selectCurrentChannel(); ). This means we have to
+			// efficiently fall through if there's nothing to be done (as will be the case)
+			// when we select the currently selected row. Argh!
+			if (RadioCommander.theRadio().getChannel() == i.getChannelNumber())
+			    return;
 			RadioCommander.theRadio().setChannel(i.getChannelNumber());
 		    }
 		    catch(RadioException ex) {
@@ -518,9 +524,7 @@ public static void main(String[] args) { new MainWindow(); }
 	int row = this.rowForSID(sid);
 	if (row < 0)
 	    return;
-	if (this.channelTable.getSelectedRow() != row) {
-	    this.channelTable.setRowSelectionInterval(row, row);
-	}
+	this.channelTable.addRowSelectionInterval(row, row);
     }
 
     private void update(ChannelInfo i) {

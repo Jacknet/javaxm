@@ -164,6 +164,8 @@ public static void main(String[] args) { new MainWindow(); }
 	this.channelTitleLabel.setFont(new Font(null, Font.BOLD, 20));
 	gbc.gridy = 1;
 	jp.add(this.channelTitleLabel, gbc);
+	jp.setMinimumSize(new Dimension(0, 75));
+	jp.setPreferredSize(jp.getMinimumSize());
 	frame.getContentPane().add(jp, BorderLayout.PAGE_START);
 
         final JTable channelTable = new JTable();
@@ -174,25 +176,25 @@ public static void main(String[] args) { new MainWindow(); }
 
 	TableColumnModel tcm = new DefaultTableColumnModel();
 	TableColumn tc;
-	tc = new TableColumn(0, 20, null, null);
+	tc = new TableColumn(0, 30, null, null);
 	DefaultTableCellRenderer centered = new DefaultTableCellRenderer();
 	centered.setHorizontalAlignment(SwingConstants.CENTER);
 	tc.setCellRenderer(centered);
 	tc.setHeaderValue("Number");
 	tcm.addColumn(tc);
-	tc = new TableColumn(1, 40, null, null);
+	tc = new TableColumn(1, 60, null, null);
 	tc.setHeaderValue("Genre");
 	tcm.addColumn(tc);
-	tc = new TableColumn(2, 40, null, null);
+	tc = new TableColumn(2, 80, null, null);
 	tc.setHeaderValue("Name");
 	tcm.addColumn(tc);
-	tc = new TableColumn(3, 80, null, null);
+	tc = new TableColumn(3, 120, null, null);
 	tc.setHeaderValue("Artist");
 	tcm.addColumn(tc);
-	tc = new TableColumn(4, 80, null, null);
+	tc = new TableColumn(4, 120, null, null);
 	tc.setHeaderValue("Title");
 	tcm.addColumn(tc);
-	tc = new TableColumn(5, 20, null, null);
+	tc = new TableColumn(5, 30, null, null);
 	tc.setCellRenderer(centered);
 	tc.setHeaderValue("% In Use");
 	tcm.addColumn(tc);

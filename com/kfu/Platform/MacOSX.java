@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MacOSX.java,v 1.5 2004/03/10 05:55:49 nsayer Exp $
+ $Id: MacOSX.java,v 1.6 2004/03/10 11:41:05 nsayer Exp $
  
  */
 
@@ -86,6 +86,8 @@ public class MacOSX implements IPlatformHandler {
 	NSApplication.sharedApplication().setDelegate(this);
     }
 
+    ChannelInfo menuInfo;
+
     public NSMenu applicationDockMenu(NSApplication sender) {
 
 	if (!this.cb.radioIsOn())
@@ -94,13 +96,13 @@ public class MacOSX implements IPlatformHandler {
 	NSMenu out = new NSMenu();
 	NSMenuItem nmi;
 
-	ChannelInfo info = this.cb.getChannelInfo();
-	if (info != null) {
-	    nmi = new NSMenuItem(Integer.toString(info.getChannelNumber()) + " - " + info.getChannelName(), null, "");
+	this.menuInfo = this.cb.getChannelInfo();
+	if (this.menuInfo != null) {
+	    nmi = new NSMenuItem(Integer.toString(this.menuInfo.getChannelNumber()) + " - " + this.menuInfo.getChannelName(), null, "");
 	    out.addItem(nmi);
-	    nmi = new NSMenuItem(info.getChannelArtist(), null, "");
+	    nmi = new NSMenuItem(this.menuInfo.getChannelArtist(), null, "");
 	    out.addItem(nmi);
-	    nmi = new NSMenuItem(info.getChannelTitle(), null, "");
+	    nmi = new NSMenuItem(this.menuInfo.getChannelTitle(), null, "");
 	    out.addItem(nmi);
 	}
 
@@ -167,11 +169,11 @@ public class MacOSX implements IPlatformHandler {
     public void bookmarkMenuClicked(NSObject sender) {
 	NSMenuItem nmi = (NSMenuItem)sender;
 	Bookmark b = (Bookmark)nmi.representedObject();
-	ChannelInfo info = this.cb.getChannelInfo();
-	if (info == null)
+	this.menuInfo = this.cb.getChannelInfo();
+	if (this.menuInfo == null)
 	    return;
 	try {
-	    b.surf(info);
+	    b.surf(this.menuInfo);
 	}
 	catch(IOException ex) {
 	    // XXX what to do?

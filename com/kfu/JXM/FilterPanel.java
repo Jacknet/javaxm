@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: FilterPanel.java,v 1.2 2004/03/19 09:52:10 nsayer Exp $
+ $Id: FilterPanel.java,v 1.3 2004/03/19 22:28:54 nsayer Exp $
  
  */
 
@@ -44,8 +44,16 @@ public class FilterPanel extends JDialog {
     int currentFilterIndex = -1;
 
     private class Filter {
-	private HashSet filterList = new HashSet();
+	private HashSet filterList;
 	public boolean isFiltered(int sid) { return this.filterList.contains(new Integer(sid)); }
+	public Filter() {
+	    this.filterList = new HashSet();
+	    this.name = "Default";
+	}
+	public Filter(Filter cloneMe) {
+	    this.filterList = new HashSet(cloneMe.filterList);
+	    this.name = "copy of " + cloneMe.getName();
+	}
 	public void filterSid(int sid, boolean state) {
 	    Integer value = new Integer(sid);
 	    if (state) {
@@ -54,7 +62,7 @@ public class FilterPanel extends JDialog {
 		this.filterList.remove(value);
 	    }
 	}
-	private String name = "";
+	private String name;
 	public String getName() { return this.name; }
 	public void setName(String name) { this.name = name; }
 	public byte[] getFilterArray() {
@@ -194,7 +202,7 @@ public class FilterPanel extends JDialog {
 	JButton jb = new JButton("+");
 	jb.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
-		FilterPanel.this.filterSets.add(new Filter());
+		FilterPanel.this.filterSets.add(new Filter(FilterPanel.this.currentFilter()));
 		FilterPanel.this.theTabbedPane.addTab("", new JPanel());
 		FilterPanel.this.currentFilterIndex = FilterPanel.this.filterSets.size() - 1;
 		// After creating a brand new one, select it
@@ -375,7 +383,6 @@ public class FilterPanel extends JDialog {
 	}
 	if (this.filterSets.isEmpty()) {
 	    Filter set = new Filter();
-	    set.setName("Default");
 	    this.filterSets.add(set);
 	}
 	for(int i = 0; i < this.filterSets.size(); i++)

@@ -2,7 +2,7 @@
 ; Nullsoft Scriptable Install System
 ; Install script for JXM on Windows
 ;
-; $Id: jxm.nsi,v 1.2 2004/03/18 16:37:20 nsayer Exp $
+; $Id: jxm.nsi,v 1.3 2004/03/19 22:28:55 nsayer Exp $
 
 ;Based on a template by Joost Verburg
 
@@ -39,7 +39,8 @@
 ;--------------------------------
 ;Pages
 
-  Page custom CheckJRE
+#  Page custom CheckJRE
+  !define MUI_PAGE_CUSTOMFUNCTION_LEAVE CheckJRE
   !insertmacro MUI_PAGE_WELCOME
   !insertmacro MUI_PAGE_LICENSE "COPYING.txt"
   !insertmacro MUI_PAGE_DIRECTORY
@@ -48,6 +49,7 @@
   !define MUI_STARTMENUPAGE_REGISTRY_ROOT "HKCU" 
   !define MUI_STARTMENUPAGE_REGISTRY_KEY "Software\JXM" 
   !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "Start Menu Folder"
+  !define MUI_STARTMENUPAGE_NODISABLE "yes"
 
   !insertmacro MUI_PAGE_STARTMENU JXM $STARTMENU_FOLDER
   

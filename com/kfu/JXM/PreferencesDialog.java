@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: PreferencesDialog.java,v 1.21 2004/03/19 18:15:04 nsayer Exp $
+ $Id: PreferencesDialog.java,v 1.22 2004/03/19 22:28:54 nsayer Exp $
  
  */
 
@@ -204,7 +204,13 @@ public class PreferencesDialog extends JDialog {
 	JButton addButton = new JButton("+");
 	addButton.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
-		PreferencesDialog.this.bookmarks.add(PreferencesDialog.this.bookmarks.size(), new Bookmark("", ""));
+		int index = PreferencesDialog.this.bookmarkList.getSelectedIndex();
+		if (index < 0)
+		    PreferencesDialog.this.bookmarks.add(PreferencesDialog.this.bookmarks.size(), new Bookmark("", ""));
+		else {
+		    Bookmark b = (Bookmark)PreferencesDialog.this.bookmarks.get(index);
+		    PreferencesDialog.this.bookmarks.add(PreferencesDialog.this.bookmarks.size(), new Bookmark("copy of " + b.getName(), b.getURL()));
+		}
 		PreferencesDialog.this.bookmarkList.setSelectedIndex(PreferencesDialog.this.bookmarks.size() - 1);
 		PreferencesDialog.this.bookmarkList.ensureIndexIsVisible(PreferencesDialog.this.bookmarks.size() - 1);
 	    }

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.82 2004/04/07 02:37:09 nsayer Exp $
+ $Id: MainWindow.java,v 1.83 2004/04/07 07:05:39 nsayer Exp $
  
  */
 
@@ -1428,6 +1428,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		JXM.myUserNode().putBoolean(SORT_DIR, MainWindow.this.sortDirection);
 		MainWindow.this.rebuildSortedChannelList();
 		MainWindow.this.scrollToCurrentChannel();
+		MainWindow.this.selectCurrentChannel();
 	    }
 	});
 

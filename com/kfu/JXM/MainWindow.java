@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.96 2004/04/28 16:01:11 nsayer Exp $
+ $Id: MainWindow.java,v 1.97 2004/05/02 01:10:43 nsayer Exp $
  
  */
 
@@ -1694,10 +1694,10 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		// Must take the updates back to the UI thread
 		SwingUtilities.invokeLater(new Runnable() {
 		    public void run() {
-			if (doSleepTick)
-			    MainWindow.this.sleepTimerTick();
 			if (doSleepBlink)
 			    MainWindow.this.sleepButtonBlink(true);
+			if (doSleepTick)
+			    MainWindow.this.sleepTimerTick();
 			MainWindow.this.satelliteMeter.setValue((int)out[RadioCommander.SIGNAL_STRENGTH_SAT]);
 			MainWindow.this.terrestrialMeter.setValue((int)out[RadioCommander.SIGNAL_STRENGTH_TER]);
 		    }
@@ -1836,49 +1836,41 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    this.toggleCompactView();
     }
     private void muteClicked() {
-	this.smartMuteButton.setSelected(false);
-	boolean muteState;
-	try {
-	    muteState = RadioCommander.theRadio().isMuted();
+	boolean muteState = RadioCommander.theRadio().isMuted();
 	    if (muteState && this.smartMuteInfo != null) {
 		// This is a smart-to-normal mute transition.
 		// So don't invert the state
 	    } else
 		muteState = !muteState;
-	    RadioCommander.theRadio().setMute(muteState);
 	    this.smartMuteInfo = null;
+	try {
+	    RadioCommander.theRadio().setMute(muteState);
 	}
 	catch(RadioException e) {
 	    this.handleError(e);
 	    return;
 	}
-	this.muteButton.setSelected(muteState);
     }
 
     ChannelInfo smartMuteInfo = null;
     private void smartMuteClicked() {
-	this.muteButton.setSelected(false);
-	boolean muteState;
-	ChannelInfo i = null;
-	try {
-	    muteState = RadioCommander.theRadio().isMuted();
-	    RadioCommander.theRadio().setMute(muteState);
+	boolean muteState = RadioCommander.theRadio().isMuted();
 	    if (muteState && this.smartMuteInfo == null) {
 		// This is a normal-to-smart mute transition
 		// So don't invert the state
 	    } else
 		muteState = !muteState;
-	    RadioCommander.theRadio().setMute(muteState);
+	try {
 	    if (muteState)
 		this.smartMuteInfo = RadioCommander.theRadio().getChannelInfo();
 	    else
 		this.smartMuteInfo = null;
+	    RadioCommander.theRadio().setMute(muteState);
 	}
 	catch(RadioException e) {
 	    this.handleError(e);
 	    return;
 	}
-	this.smartMuteButton.setSelected(muteState);
     }
 
     // the IPlatformCallbackHandler interface
@@ -2254,13 +2246,36 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	if (this.sleepTime < 0)
 	    return;
 	this.sleepTime--;
-	if (this.sleepTime < 0)
-	    this.turnPowerOff();
+	if (this.sleepTime < 0) {
+	    switch(this.preferences.getSleepAction()) {
+		case PreferencesDialog.SLEEP_MUTE:
+		    this.smartMuteInfo = null;
+		    try {
+	    		RadioCommander.theRadio().setMute(true);
+		    }
+		    catch(RadioException e) {
+			this.handleError(e);
+		    }
+		    break;
+		case PreferencesDialog.SLEEP_OFF:
+	    	    this.turnPowerOff();
+		    break;
+		case PreferencesDialog.SLEEP_QUIT:
+		    this.quit();
+		    break;
+		default:
+		    throw new IllegalArgumentException("Sleep timer expired, but action unknown");
+	    }
+	    this.sleepButton.setText("Sleep");
+	    this.sleepButtonBlink(false);
+	}
 	else if (this.sleepTime == 0) {
 	    this.sleepButton.setText("< 1 min");
 	    this.sleepButtonBlink(true);
-	} else
+	} else {
 	    this.sleepButton.setText(Integer.toString(this.sleepTime) + " min");
+	    this.sleepButtonBlink(false);
+	}
     }
 
     private Color savedSleepButtonForeground = null;
@@ -2341,6 +2356,13 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     }
 
     private void muteChanged() {
+	if (RadioCommander.theRadio().isMuted()) {
+	    this.muteButton.setSelected(this.smartMuteInfo == null);
+	    this.smartMuteButton.setSelected(this.smartMuteInfo != null);
+	} else {
+	    this.muteButton.setSelected(false);
+	    this.smartMuteButton.setSelected(false);
+	}
     }
 
     private void channelSongTime(RadioCommander.SongTiming t) {

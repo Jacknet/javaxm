@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: PreferencesDialog.java,v 1.27 2004/04/04 22:18:40 nsayer Exp $
+ $Id: PreferencesDialog.java,v 1.28 2004/05/02 01:10:44 nsayer Exp $
  
  */
 
@@ -53,6 +53,13 @@ public class PreferencesDialog extends JDialog {
     JButton moveUpButton;
     JButton moveDownButton;
     JCheckBox startupCheckbox;
+    JComboBox sleepAction;
+
+    String[] sleepActions = {"Mute", "Turn Radio Off", "Quit" };
+    static final int SLEEP_MUTE = 0;
+    static final int SLEEP_OFF = 1;
+    static final int SLEEP_QUIT = 2;
+    static final int SLEEP_MAX = SLEEP_QUIT;
 
     public void setVisible(boolean b) {
 	if (b)
@@ -373,6 +380,17 @@ public class PreferencesDialog extends JDialog {
 	gbc.gridy++;
 	jp.add(this.startupCheckbox, gbc);
 
+	jl = new JLabel("When sleep timer expires: ");
+	jl.setHorizontalAlignment(SwingConstants.TRAILING);
+	gbc.gridx = 0;
+	gbc.gridwidth = 1;
+	gbc.gridy++;
+	jp.add(jl, gbc);
+
+	this.sleepAction = new JComboBox(sleepActions);
+	gbc.gridx = 1;
+	jp.add(this.sleepAction, gbc);
+
 	this.theTabs.insertTab("Misc", null, jp, null, TAB_MISC);
 
 	this.getContentPane().add(this.theTabs, BorderLayout.CENTER);
@@ -437,6 +455,7 @@ public class PreferencesDialog extends JDialog {
 
     // Used by about class
     final static String STARTUP_CHECK = "StartupVersionCheck";
+    private final static String SLEEP_ACTION = "SleepAction";
     private final static String XMTRACKER_URL = "TrackerURL";
     private final static String XMTRACKER_USER = "TrackerUser";
     private final static String XMTRACKER_PASS = "TrackerPassword";
@@ -459,6 +478,10 @@ public class PreferencesDialog extends JDialog {
     private void reloadFromDefaults() {
 	this.handler.reload();
 	this.startupCheckbox.setSelected(JXM.myUserNode().getBoolean(STARTUP_CHECK, true));
+	int val = JXM.myUserNode().getInt(SLEEP_ACTION, 0);
+	if (val < 0 || val > SLEEP_MAX)
+	    val = 0;
+	this.sleepAction.setSelectedIndex(val);
 
 	try {
 	if (!JXM.myUserNode().nodeExists(BOOKMARKS)) {
@@ -528,6 +551,7 @@ public class PreferencesDialog extends JDialog {
     private void saveToDefaults() {
 	this.handler.save();
 	JXM.myUserNode().putBoolean(STARTUP_CHECK, this.startupCheckbox.isSelected());
+	JXM.myUserNode().putInt(SLEEP_ACTION, this.sleepAction.getSelectedIndex());
 
 	Preferences node = JXM.myUserNode().node(BOOKMARKS);
 	try {
@@ -622,6 +646,7 @@ public class PreferencesDialog extends JDialog {
     public void saveDevice() {
 	JXM.myUserNode().put(DEVICE_NAME_KEY, (String)this.deviceMenu.getSelectedItem());
     }
+    public int getSleepAction() { return this.sleepAction.getSelectedIndex(); }
     public String getTrackerURL() { return this.trackerURL.getText(); }
     public String getTrackerUser() { return this.trackerUser.getText(); }
     public String getTrackerPassword() { return new String(this.trackerPassword.getPassword()); }

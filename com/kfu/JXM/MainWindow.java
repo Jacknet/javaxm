@@ -149,6 +149,10 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler {
 				break;
 				
 		}
+		// Stupid Java. If it's a tie, then sub-sort on channel number, always ascending.
+		if (out == 0) {
+		    return new Integer(ci1.getChannelNumber()).compareTo(new Integer(ci2.getChannelNumber()));
+		}
 		out *= MainWindow.this.sortDirection?1:-1;
 		return out;
 	    }

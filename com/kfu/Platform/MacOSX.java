@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MacOSX.java,v 1.6 2004/03/10 11:41:05 nsayer Exp $
+ $Id: MacOSX.java,v 1.7 2004/03/11 04:23:29 nsayer Exp $
  
  */
 
@@ -141,6 +141,12 @@ public class MacOSX implements IPlatformHandler {
 	nmi = new NSMenuItem().separatorItem();
 	out.addItem(nmi);
 
+	nmi = new NSMenuItem("Add current song to memory", new NSSelector("memoryMenuClicked", new Class[] {NSObject.class}), "");
+	nmi.setTarget(this);
+	out.addItem(nmi);
+	nmi = new NSMenuItem().separatorItem();
+	out.addItem(nmi);
+
 	int muteState = this.cb.getMuteState();
 	nmi = new NSMenuItem("Mute", new NSSelector("normMuteClicked", new Class[] {NSObject.class}), "");
 	nmi.setTarget(this);
@@ -169,7 +175,7 @@ public class MacOSX implements IPlatformHandler {
     public void bookmarkMenuClicked(NSObject sender) {
 	NSMenuItem nmi = (NSMenuItem)sender;
 	Bookmark b = (Bookmark)nmi.representedObject();
-	this.menuInfo = this.cb.getChannelInfo();
+	this.menuInfo = this.menuInfo;
 	if (this.menuInfo == null)
 	    return;
 	try {
@@ -183,5 +189,8 @@ public class MacOSX implements IPlatformHandler {
 	NSMenuItem nmi = (NSMenuItem)sender;
 	Integer i = (Integer)nmi.representedObject();
 	this.cb.platformNotify(PlatformFactory.PLAT_CB_CHANNEL, i);
+    }
+    public void memoryMenuClicked(NSObject sender) {
+	this.cb.platformNotify(PlatformFactory.PLAT_CB_MEMORY, this.menuInfo);
     }
 }

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: PlatformFactory.java,v 1.4 2004/03/10 03:40:19 nsayer Exp $
+ $Id: PlatformFactory.java,v 1.5 2004/03/11 04:23:28 nsayer Exp $
  
  */
 
@@ -33,6 +33,7 @@ public class PlatformFactory {
     public static final int PLAT_CB_SMART_MUTE = 3; // User requested "Smart Mute"
     public static final int PLAT_CB_NORM_MUTE = 4; // User requested "Normal Mute"
     public static final int PLAT_CB_CHANNEL = 5; // User requested channel change
+    public static final int PLAT_CB_MEMORY = 6; // User requested add channel info to memory
 
     public static final int SMART_MUTE_ON = 2;
     public static final int NORM_MUTE_ON = 1;

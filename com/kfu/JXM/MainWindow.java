@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.46 2004/03/11 04:18:13 nsayer Exp $
+ $Id: MainWindow.java,v 1.47 2004/03/11 04:23:28 nsayer Exp $
  
  */
 
@@ -1054,6 +1054,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    case PlatformFactory.PLAT_CB_SMART_MUTE:	this.smartMuteClicked(); break;
 	    case PlatformFactory.PLAT_CB_NORM_MUTE:	this.muteClicked(); break;
 	    case PlatformFactory.PLAT_CB_CHANNEL:	this.setChannel(((Integer)arg).intValue()); break;
+	    case PlatformFactory.PLAT_CB_MEMORY:	this.memorize((ChannelInfo)arg); break;
 	    default: throw new IllegalArgumentException("Which platform callback type??");
 	}
     }

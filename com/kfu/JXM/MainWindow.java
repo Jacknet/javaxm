@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.77 2004/03/23 21:06:16 nsayer Exp $
+ $Id: MainWindow.java,v 1.78 2004/03/23 21:30:00 nsayer Exp $
  
  */
 
@@ -54,7 +54,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	public void paint(Graphics g) {
 	    Rectangle bounds = this.getBounds();
 	    g.setColor(this.getBackground());
-	    g.fillRect(0, 0, (int)bounds.getWidth() - 1, (int)bounds.getHeight() - 1);
+	    g.fillRect(0, 0, (int)bounds.getWidth(), (int)bounds.getHeight());
 	    int valueWidth = this.getMaximum() - this.getMinimum();
 	    int valueSoFar = this.getValue() - this.getMinimum();
 	    // We want posSoFar, posSoFar/bounds.getWidth() = valueSoFar / valueWidth, or posSoFar = valueSoFar * bounds.getWidth() / valueWidth;
@@ -712,7 +712,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     public final static Color gridColor = new Color(.85f, .85f, .85f);
 
     private class XIcon implements Icon {
-        public int getIconHeight() { return 11; }
+        public int getIconHeight() { return 17; }
         public int getIconWidth() { return this.getIconHeight(); }
 	public void paintIcon(Component c, Graphics gg, int x, int y) {
 	    Graphics2D g = (Graphics2D)gg;
@@ -727,7 +727,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    int centerx = this.getIconWidth() / 2;
 	    int centery = this.getIconHeight() / 2;
 	    int xlen = (this.getIconHeight() * 2) / 10;
-	    g.setStroke(new BasicStroke(1.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+	    g.setStroke(new BasicStroke(1.3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
 	    g.drawLine(centerx - xlen, centery - xlen, centerx + xlen, centery + xlen);
 	    g.drawLine(centerx + xlen, centery - xlen, centerx - xlen, centery + xlen);
 
@@ -1008,12 +1008,18 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	buttons.add(this.memoryButton, gbc_but);
 
 	JPanel searchHolder = new JPanel();
+	searchHolder.setLayout(new GridBagLayout());
+	GridBagConstraints sh_gbc = new GridBagConstraints();
 	searchHolder.setOpaque(false);
 	searchHolder.setBorder(BorderFactory.createTitledBorder(/*BorderFactory.createEtchedBorder(EtchedBorder.LOWERED)*/BorderFactory.createLineBorder(new Color(0,0,0,0), 0) /* the null border */, "Quick Search", TitledBorder.CENTER, TitledBorder.BELOW_BOTTOM, new Font(null, Font.PLAIN, 10)));
 	this.searchField = new JTextField();
 	this.searchField.setPreferredSize(new Dimension(100, (int)this.searchField.getPreferredSize().getHeight()));
 	this.searchField.setEnabled(false);
-	searchHolder.add(this.searchField);
+	sh_gbc.weightx = 1;
+	sh_gbc.gridx = 0;
+	sh_gbc.gridy = 0;
+	sh_gbc.fill = GridBagConstraints.HORIZONTAL;
+	searchHolder.add(this.searchField, sh_gbc);
 	this.searchFieldClear = new JButton();
 	this.searchFieldClear.setIcon(new XIcon());
 	this.searchFieldClear.addActionListener(new ActionListener() {
@@ -1022,7 +1028,13 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    }
 	});
 	this.searchFieldClear.setEnabled(false);
-	searchHolder.add(this.searchFieldClear);
+	sh_gbc.weightx = 0;
+	sh_gbc.gridx = 1;
+	sh_gbc.gridy = 0;
+	// Yes. We want them to overlap.
+	sh_gbc.fill = GridBagConstraints.NONE;
+	sh_gbc.anchor = GridBagConstraints.LINE_END;
+	searchHolder.add(this.searchFieldClear, sh_gbc);
 	gbc_but.insets = new Insets(10, 0, 0, 0);
 	gbc_but.gridy = 1;
 	buttons.add(searchHolder, gbc_but);

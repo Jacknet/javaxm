@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: AboutDialog.java,v 1.2 2004/03/09 07:11:01 nsayer Exp $
+ $Id: AboutDialog.java,v 1.3 2004/03/13 18:00:00 nsayer Exp $
  
  */
 
@@ -35,7 +35,7 @@ import com.kfu.xm.*;
 
 public class AboutDialog extends JDialog {
 
-    private Bookmark homePage = new Bookmark("", "http://javaxm.sf.net/");
+    private Bookmark homePage = new Bookmark("", "http://www.javaxm.com/");
 
     public AboutDialog(JFrame frame) {
 	super(frame, "About JXM", true);
@@ -150,7 +150,7 @@ public class AboutDialog extends JDialog {
     }
 
     public String getLatestVersion() throws IOException {
-        StringBuffer sb = new StringBuffer("http://javaxm.sourceforge.net/version.php");
+        StringBuffer sb = new StringBuffer("http://www.javaxm.com/version.php");
         String id = this.userID;
         if (id != null) {
             sb.append("?user=");
@@ -222,7 +222,7 @@ public class AboutDialog extends JDialog {
     }
 
     private void downloadUpgrade(boolean startup) {
-        StringBuffer sb = new StringBuffer("http://javaxm.sourceforge.net/download_latest.php?platform=");
+        StringBuffer sb = new StringBuffer("http://www.javaxm.com/download_latest.php?platform=");
 	sb.append(PlatformFactory.ourPlatform().getClass().getName());
         try {
 	    PlatformFactory.ourPlatform().openURL(sb.toString());

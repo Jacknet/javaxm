@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.53 2004/03/12 08:16:44 nsayer Exp $
+ $Id: MainWindow.java,v 1.54 2004/03/13 18:00:01 nsayer Exp $
  
  */
 
@@ -172,7 +172,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		if (!oldList[j].equals(newList[j]))
 		    this.channelTableModel.fireTableRowsUpdated(j, j);
 	}
-	//this.channelTableModel.fireTableDataChanged();
     }
 
     private HashMap tickList = new HashMap();
@@ -211,9 +210,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     }
 
     private int sidForRow(int row) {
-	// This can happen at startup.
-	//if (this.sortedSidList.length != this.channelList.size())
-	//    this.rebuildSortedSidList();
 	return (this.sortedSidList[row]).intValue();
     }
 
@@ -291,6 +287,50 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     }
 
     private final static Color stripeColor = new Color(.925f, .925f, 1f);
+    private final static Color gridColor = new Color(.85f, .85f, .85f);
+
+    private class ArrowIcon implements Icon, SwingConstants {
+	private int dir;
+	public ArrowIcon(int which) {
+	    if (which != NORTH && which != SOUTH)
+		throw new IllegalArgumentException("Arrow must point NORTH or SOUTH");
+	    this.dir = which;
+	}
+	private int width = 9;
+	private int height = 12;
+	public int getIconHeight() { return this.height; }
+	public int getIconWidth() { return this.width; }
+	public void paintIcon(Component c, Graphics g, int x, int y) {
+	    if (c.isEnabled())
+		g.setColor(c.getForeground());
+	    else
+		g.setColor(Color.GRAY);
+
+	    g.translate(x,y);
+	    Polygon p = new Polygon();
+	    switch(this.dir) {
+		case NORTH:
+			p.addPoint(0, this.height/2);
+			p.addPoint(this.width - 1, this.height/2);
+			p.addPoint(this.width/2, 1);
+			p.addPoint(0, this.height/2);
+		    break;
+		case SOUTH:
+			p.addPoint(0, this.height/2);
+			p.addPoint(this.width - 1, this.height/2);
+			p.addPoint(this.width/2, this.height - 2);
+			p.addPoint(0, this.height/2);
+		    break;
+		default: throw new IllegalArgumentException("How did this happen?!");
+	    }
+	    g.fillPolygon(p);
+	    // restore
+	    g.translate(-x,-y);
+	}
+    }
+
+    private final Icon upArrow = new ArrowIcon(SwingConstants.NORTH);
+    private final Icon downArrow = new ArrowIcon(SwingConstants.SOUTH);
 
     public MainWindow() {
 
@@ -304,7 +344,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	}
 
         this.myFrame = new JFrame("JXM");
-	// ew! awt!
 	Image duke = Toolkit.getDefaultToolkit().getImage(this.getClass().getResource("/images/xm_duke.png"));
 	this.myFrame.setIconImage(duke);
 	this.myFrame.setJMenuBar(new JMenuBar());
@@ -522,7 +561,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		if (e.getActionCommand() != "comboBoxChanged")
 		     return;
 		if (MainWindow.this.favoriteMenu.getItemCount() == 0)
-		    return; // XXX - this looks like a bug in JComboBox. Why is clearing it a "Change"?
+		    return; // This looks like a bug in JComboBox. Why is clearing it a "Change"?
 		Object o = MainWindow.this.favoriteMenu.getSelectedItem();
 		if (!(o instanceof Integer))
 		    return; // They must have selected "Favorites"
@@ -550,7 +589,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	});
 	favorites.add(this.favoriteMenu);
 	this.favoriteCheckbox = new JToggleButton(new ImageIcon(this.getClass().getResource("/images/heart.png")));
-	//this.favoriteCheckbox.setText("<html><img src=\"" + this.getClass().getResource("/images/heart.png") + "\"></html>");
 	this.favoriteCheckbox.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
 		Integer sid = new Integer(MainWindow.this.currentChannelInfo.getServiceID());
@@ -580,7 +618,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.ratingSlider.setSnapToTicks(true);
 	this.ratingSlider.setPaintTicks(true);
 	this.ratingSlider.setEnabled(false);
-	//this.ratingSlider.setPreferredSize(new Dimension(275, (int)this.favoriteMenu.getPreferredSize().getHeight()));
 	gbc1.weightx = 1;
 	gbc1.gridwidth = 3;
 	gbc1.fill = GridBagConstraints.HORIZONTAL;
@@ -636,7 +673,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.channelTable.setAutoCreateColumnsFromModel(false);
 	this.channelTable.setShowHorizontalLines(false);
 	this.channelTable.setShowVerticalLines(true);
-	this.channelTable.setGridColor(new Color(.85f, .85f, .85f));
+	this.channelTable.setGridColor(gridColor);
 	this.channelTable.addMouseListener(new MouseAdapter() {
 	    public void mousePressed(MouseEvent e) { this.maybePopup(e); }
 	    public void mouseReleased(MouseEvent e) { this.maybePopup(e); }
@@ -659,32 +696,40 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.channelTableModel = new ChannelTableModel();
 	channelTable.setModel(this.channelTableModel);
 
-	//TableCellRenderer orig = this.channelTable.getTableHeader().getDefaultRenderer(); //tc.getHeaderRenderer();
-
-	class TableHeaderRenderer extends DefaultTableCellRenderer {
-	    private TableCellRenderer orig;
-	    public TableHeaderRenderer(TableCellRenderer orig) { this.orig = orig; }
-	    public Component getTableCellRendererComponent(JTable table,  Object value,  boolean isSelected, boolean hasFocus,  int row,  int column) {
-		int modelColumn = MainWindow.this.channelTable.getColumnModel().getColumn(column).getModelIndex();
-		if (MainWindow.this.sortField == modelColumn) {
-		    StringBuffer sb = new StringBuffer();
-		    sb.append("<html>");
-		    sb.append((String)value);
-		    sb.append("&nbsp;<img src=\"");
-		    sb.append(this.getClass().getResource(MainWindow.this.sortDirection?"/images/arrow-down.png":"/images/arrow-up.png"));
-		    sb.append("\"></html>");
-		    value = sb.toString();
-		}
-		return this.orig.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-		/*Component c = orig.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-		if (MainWindow.this.sortField != modelColumn)
-		    return ;
-		c.setBackground(new Color(0.75f, 0.75f, 1f));
-		c.setForeground(Color.BLACK);
-		return c; */
+	class HeaderRenderer extends DefaultTableCellRenderer {
+	    public HeaderRenderer() {
+		setHorizontalAlignment(SwingConstants.CENTER);
+		setOpaque(true);
+		setBorder(UIManager.getBorder("TableHeader.cellBorder"));
 	    }
-	};
-	TableCellRenderer tcr = new TableHeaderRenderer(this.channelTable.getTableHeader().getDefaultRenderer());
+
+	    public void updateUI() {
+		super.updateUI();
+		setBorder(UIManager.getBorder("TableHeader.cellBorder"));
+	    }
+
+	    public Component getTableCellRendererComponent(JTable table, Object value, boolean selected, boolean focused, int row, int column) {
+
+		int modelColumn = table.getColumnModel().getColumn(column).getModelIndex();
+
+		if (modelColumn == MainWindow.this.sortField) {
+		    this.setForeground(table.getSelectionForeground());
+		    this.setBackground(table.getSelectionBackground());
+		    this.setHorizontalTextPosition(SwingConstants.LEADING);
+		    this.setVerticalTextPosition(SwingConstants.CENTER);
+		    this.setIcon(MainWindow.this.sortDirection?MainWindow.this.downArrow:MainWindow.this.upArrow);
+		} else {
+		    this.setForeground(UIManager.getColor("TableHeader.foreground"));
+		    this.setBackground(UIManager.getColor("TableHeader.background"));
+		    this.setIcon(null);
+		}
+		this.setFont(UIManager.getFont("TableHeader.font"));
+		this.setValue(value);
+		return this;
+	    }
+	}
+
+	TableCellRenderer tcr = new HeaderRenderer();
 
 	byte cols[];
 
@@ -818,21 +863,12 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    this.sortField = 0;
 	this.sortDirection = JXM.myUserNode().getBoolean(SORT_DIR, true);
 
-	//channelTable.setMinimumSize(new Dimension(tw + 5, 0));
-	//channelTable.setPreferredViewportSize(new Dimension((int)channelTable.getMinimumSize().getWidth(), (int)channelTable.getPreferredSize().getHeight()));
 	Dimension size = this.channelTable.getPreferredScrollableViewportSize();
 	this.channelTable.setPreferredScrollableViewportSize(new Dimension(tw, size.height));
 
 	channelTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 	class StripedViewport extends JViewport {
 	    public StripedViewport() {
-/*
-		MainWindow.this.channelTableModel.addTableModelListener(new TableModelListener() {
-		    public void tableChanged(TableModelEvent e) {
-			StripedViewport.this.repaint();
-		    }
-		});
-*/
 		MainWindow.this.channelTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 		    public void valueChanged(ListSelectionEvent e) {
 			StripedViewport.this.repaint();
@@ -842,31 +878,35 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    public void paint(Graphics g) {
 		// Paint stripes into the table area not used, well, by the table
 		int stripeHeight = MainWindow.this.channelTable.getRowHeight();
-		int y = (int)this.getY() / stripeHeight;
+		int y = 0;
 
-		if (y % 2 == 0)
-		    y++;
-
-		y *= stripeHeight;
-
-		// Ah, but that may not be the origin relative to the table. Grr.
+		// We may not be at the origin relative to the table. Grr.
 		y -= this.getViewPosition().getY() % (stripeHeight * 2);
 
 		while(y < this.getHeight()) {
-		    g.setColor(MainWindow.stripeColor);
-		    g.fillRect((int)this.getX(), y, (int)this.getWidth(), stripeHeight - 1);
-		    y += stripeHeight;
 		    g.setColor(Color.WHITE);
-		    g.fillRect((int)this.getX(), y, (int)this.getWidth(), stripeHeight - 1);
+		    g.fillRect(0, y - 1, (int)this.getWidth(), stripeHeight + 1);
+		    y += stripeHeight;
+		    g.setColor(MainWindow.stripeColor);
+		    g.fillRect(0, y, (int)this.getWidth(), stripeHeight - 1);
 		    y += stripeHeight;
 		}
 		int selRow = MainWindow.this.channelTable.getSelectedRow();
 		int selectedStripePos = selRow * stripeHeight;
 		selectedStripePos -= this.getViewPosition().getY();
-		//if (selectedStripePos >= this.getY() && selectedStripePos <= this.getY() + this.getHeight()) {
+		if (selectedStripePos >= -(stripeHeight) && selectedStripePos <= this.getHeight()) {
 		    g.setColor(MainWindow.this.channelTable.getSelectionBackground());
-		    g.fillRect(this.getX(), selectedStripePos, (int)this.getWidth(), stripeHeight - 1);
-		//}
+		    g.fillRect(0, selectedStripePos, (int)this.getWidth(), stripeHeight - 1);
+		}
+
+		g.setColor(MainWindow.gridColor);
+		int so_far = -1; // XXX this is what looks best on a mac, at least.
+		Enumeration e = MainWindow.this.channelTable.getColumnModel().getColumns();
+		while(e.hasMoreElements()) {
+		    TableColumn tc = (TableColumn)e.nextElement();
+		    so_far += tc.getWidth();
+		    g.drawLine(so_far, 0, so_far, this.getHeight());
+		}
 		
 		super.paint(g);
 	    }
@@ -875,13 +915,10 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	JViewport jvp = new StripedViewport();
 	jvp.setOpaque(false);
 	jvp.setScrollMode(JViewport.SIMPLE_SCROLL_MODE);
-	//jvp.setView(this.channelTable);
 	sp.setViewport(jvp);
 	sp.setViewportView(this.channelTable);
-	//sp.setMinimumSize(new Dimension(tw + 5, 0));
 	sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 	sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-	//jp.add(sp, gbc);
 	frameGBC.insets = new Insets(20, 20, 20, 20);
 	frameGBC.gridx = 0;
 	frameGBC.gridy = 1;
@@ -991,10 +1028,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		    sid = new Integer(MainWindow.this.sidForChannel(RadioCommander.theRadio().getChannel()));
 		}
 		catch(RadioException ex) {
-		    // sigh. If we get an exception while powering down, then ignore it.
-		    // XXX this is probably a sign we should do more locking
-		    if (RadioCommander.theRadio().isOn())
-		        MainWindow.this.handleError(ex);
+		    MainWindow.this.handleError(ex);
 		    return;
 		}
 		if (sid.intValue() < 0) // just skip it if we don't know the SID (yet)
@@ -1182,7 +1216,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    this.poweredDown();
 	    return;
 	}
-	//try {
 	// First, get back on the main thread
 	    SwingUtilities.invokeLater(new Runnable() {
 		public void run() {
@@ -1214,11 +1247,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		    }
 		}
 	    });
-	//}
-	//catch(Exception e) {
-//System.err.println(e.getMessage());
-//e.printStackTrace();
-	//}
     }
 
     private void setChannel(int chan) {
@@ -1311,11 +1339,12 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	/*    }
 	}.start(); */
 	this.updateRatingSlider(null);
-	this.saveChannelList();
+	// If the list is empty right now, then don't do an update, just in case.
+	if (this.channelList.size() != 0)
+	    this.saveChannelList();
 	SwingUtilities.invokeLater(new Runnable() {
 	    public void run() {
 		MainWindow.this.channelList.clear();
-		//MainWindow.this.rebuildSortedSidList();
 		MainWindow.this.sortedSidList = new Integer[0];
 		MainWindow.this.channelTableModel.fireTableDataChanged();
 		MainWindow.this.channelNumberLabel.setText("");
@@ -1548,7 +1577,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		// ignore
 	    }
 	}
-	//this.channelTableModel.fireTableDataChanged();
     }
 
     private ChannelInfo ratingChannelInfo;
@@ -1677,14 +1705,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.channelList.put(new Integer(i.getServiceID()), i);
 	if (newFav)
 	    this.rebuildFavoritesMenu();
-/*
-	int row = this.rowForSID(i.getServiceID());
-	if (this.channelList.size() != oldSize) {
-	    this.channelTableModel.fireTableRowsInserted(row, row);
-	} else {
-	    this.channelTableModel.fireTableRowsUpdated(row, row);
-	}
-*/
 
 	// Alas, if we're sorting on artist or title, then any update could dirty the sort list
 	this.rebuildSortedSidList();
@@ -1692,7 +1712,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.channelTableModel.fireTableRowsUpdated(row, row);
 
 	this.selectCurrentChannel();
-
 
 	if (RadioCommander.theRadio().getChannel() == i.getChannelNumber()) {
 	    this.currentChannelInfo = i;

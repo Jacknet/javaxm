@@ -45,7 +45,7 @@ public class ChannelInfo {
     }
     
     public int hashCode() {
-        return this.getChannelNumber() ^ this.getChannelName().hashCode() ^
+        return this.getServiceID() ^ this.getChannelName().hashCode() ^
             this.getChannelGenre().hashCode() ^ this.getChannelArtist().hashCode() ^
             this.getChannelTitle().hashCode();
     }
@@ -54,7 +54,17 @@ public class ChannelInfo {
 	public ChannelInfo() {
 		this(-1, -1, "", "", "", "");
 	}
-	
+
+    // Cloning constructor
+    public ChannelInfo(ChannelInfo orig) {
+	this.chnum = orig.chnum;
+	this.chSid = orig.chSid;
+	this.chName = new String(orig.chName);
+	this.chGenre = new String(orig.chGenre);
+	this.chArtist = new String(orig.chArtist);
+	this.chTitle = new String(orig.chTitle);
+    }
+
     // This needs to be public only so it can be deserialized by the memory drawer
     public ChannelInfo(int number, int id, String genre, String name, String artist, String title) {
         this.chnum = number;

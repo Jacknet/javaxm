@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.66 2004/03/19 09:51:27 nsayer Exp $
+ $Id: MainWindow.java,v 1.67 2004/03/19 18:15:04 nsayer Exp $
  
  */
 
@@ -1603,7 +1603,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	if (deviceName == null) {
 	    this.powerCheckBox.setSelected(false);
 	    JOptionPane.showMessageDialog(this.myFrame, "Please pick a device before powering up.", "No device selected", JOptionPane.ERROR_MESSAGE);
-	    this.prefs();
+	    this.preferences.showTab(PreferencesDialog.TAB_DEVICE);
 	    return;
 	}
 	// Attempt to power up the radio

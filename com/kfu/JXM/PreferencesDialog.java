@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: PreferencesDialog.java,v 1.20 2004/03/19 17:53:40 nsayer Exp $
+ $Id: PreferencesDialog.java,v 1.21 2004/03/19 18:15:04 nsayer Exp $
  
  */
 
@@ -36,6 +36,7 @@ import java.util.prefs.*;
 import com.kfu.xm.*;
 
 public class PreferencesDialog extends JDialog {
+    JTabbedPane theTabs;
     JComboBox deviceMenu;
     JLabel radioID;
     JTextField trackerURL;
@@ -62,6 +63,14 @@ public class PreferencesDialog extends JDialog {
 	this.reloadFromDefaults();
 	super.show();
     }
+    public final static int TAB_DEVICE = 0;
+    public final static int TAB_TRACKER = 1;
+    public final static int TAB_BOOKMARKS = 2;
+    public final static int TAB_MISC = 3;
+    public void showTab(int tab) {
+	this.theTabs.setSelectedIndex(tab);
+	this.show();
+    }
 
     public PreferencesDialog(JFrame parent, IPreferenceCallbackHandler handler) {
 	super(parent, "JXM Preferences", true);
@@ -70,7 +79,7 @@ public class PreferencesDialog extends JDialog {
 
 	this.getContentPane().setLayout(new BorderLayout());
 
-	JTabbedPane jtp = new JTabbedPane();
+	this.theTabs = new JTabbedPane();
 
 	JPanel jp = new JPanel();
 	jp.setLayout(new GridBagLayout());
@@ -98,7 +107,7 @@ public class PreferencesDialog extends JDialog {
 	gbc.anchor = GridBagConstraints.PAGE_START;
 	jp.add(jp2, gbc);
 	
-	jtp.addTab("Device", jp);
+	this.theTabs.insertTab("Device", null, jp, null, TAB_DEVICE);
 
 	jp = new JPanel();
 	jp.setLayout(new GridBagLayout());
@@ -147,7 +156,7 @@ public class PreferencesDialog extends JDialog {
 	gbc.anchor = GridBagConstraints.CENTER;
 	jp.add(this.trackerEnabled, gbc);
 
-	jtp.addTab("XM Tracker", jp);
+	this.theTabs.insertTab("XM Tracker", null, jp, null, TAB_TRACKER);
 
 	jp = new JPanel();
 	jp.setLayout(new GridBagLayout());
@@ -316,7 +325,7 @@ public class PreferencesDialog extends JDialog {
 	gbc.gridy = 4;
 	jp.add(jl, gbc);
 
-	jtp.addTab("Web Bookmarks", jp);
+	this.theTabs.insertTab("Web Bookmarks", null, jp, null, TAB_BOOKMARKS);
 
 	jp = new JPanel();
 	jp.setLayout(new GridBagLayout());
@@ -349,9 +358,9 @@ public class PreferencesDialog extends JDialog {
 	gbc.gridy++;
 	jp.add(this.startupCheckbox, gbc);
 
-	jtp.addTab("Misc", jp);
+	this.theTabs.insertTab("Misc", null, jp, null, TAB_MISC);
 
-	this.getContentPane().add(jtp, BorderLayout.CENTER);
+	this.getContentPane().add(this.theTabs, BorderLayout.CENTER);
 	// -------
 
 	jp = new JPanel();

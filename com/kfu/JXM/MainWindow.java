@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.95 2004/04/26 08:43:53 ttennebkram Exp $
+ $Id: MainWindow.java,v 1.96 2004/04/28 16:01:11 nsayer Exp $
  
  */
 
@@ -1831,7 +1831,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	}
     }
 
-    private void forceNormalView() {
+    public void forceNormalView() {
 	if (this.compactView.isVisible())
 	    this.toggleCompactView();
     }

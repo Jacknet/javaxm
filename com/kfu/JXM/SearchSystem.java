@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: SearchSystem.java,v 1.3 2004/04/17 18:35:00 nsayer Exp $
+ $Id: SearchSystem.java,v 1.4 2004/04/28 16:01:11 nsayer Exp $
  
  */
 
@@ -578,8 +578,10 @@ public class SearchSystem {
 	    }
 	    this.matches.add(this.matches.size(), info);
 	    // Every time we add to the list, pop it open
-	    if(!this.searchMatches.isVisible())
+	    if(!this.searchMatches.isVisible()) {
+		this.parent.forceNormalView();
 		this.searchMatches.show();
+	    }
 	} else {
 	    int chan = info.getChannelNumber();
 	    for(int i = 0; i < this.matches.size(); i++) {

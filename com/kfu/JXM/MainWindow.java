@@ -44,11 +44,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	ChannelInfo channelInfo;
 
 	public ChannelPopupMenu(int sid) {
-/*
-	    int sid = MainWindow.this.sidForChannel(chan);
-	    if (sid < 0)
-		return;
-*/
 	    this.channelInfo = (ChannelInfo)MainWindow.this.channelList.get(new Integer(sid));
 
 	    JMenuItem jmi = new JMenuItem("Tune to channel");
@@ -63,39 +58,31 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		}
 	    });
 	    this.add(jmi);
-
-	    jmi = new JMenuItem("Google Search for Artist");
-	    jmi.addActionListener(new ActionListener() {
-		public void actionPerformed(ActionEvent e) {
-		    MainWindow.this.genericSurf("http://www.google.com/search?q=%22{ARTIST}%22", ChannelPopupMenu.this.channelInfo);
+	    class BookmarkMenu extends JMenu {
+		public BookmarkMenu() {
+		    super("Bookmarks");
+		    for(int i = 0; i < MainWindow.this.bookmarks.length; i++) {
+			final Bookmark b = MainWindow.this.bookmarks[i];
+			JMenuItem jmi = new JMenuItem(b.getName());
+			jmi.addActionListener(new ActionListener() {
+			    public void actionPerformed(ActionEvent e) {
+				MainWindow.this.bookmarkSurf(b, ChannelPopupMenu.this.channelInfo);
+			    }
+			});
+			this.add(jmi);
+		    }
 		}
-	    });
-	    this.add(jmi);
+	    };
+	    this.add(new BookmarkMenu());
+	}
+    }
 
-	    jmi = new JMenuItem("Google Search for Title");
-	    jmi.addActionListener(new ActionListener() {
-		public void actionPerformed(ActionEvent e) {
-		    MainWindow.this.genericSurf("http://www.google.com/search?q=%22{TITLE}%22", ChannelPopupMenu.this.channelInfo);
-		}
-	    });
-	    this.add(jmi);
-
-	    jmi = new JMenuItem("Google Search for Artist and Title");
-	    jmi.addActionListener(new ActionListener() {
-		public void actionPerformed(ActionEvent e) {
-		    MainWindow.this.genericSurf("http://www.google.com/search?q=%22{ARTIST}%22+%22{TITLE}%22", ChannelPopupMenu.this.channelInfo);
-		}
-	    });
-	    this.add(jmi);
-
-	    jmi = new JMenuItem("XMNation forum for channel");
-	    jmi.addActionListener(new ActionListener() {
-		public void actionPerformed(ActionEvent e) {
-		    MainWindow.this.genericSurf("http://www.xmnation.net/forum_for_channel.php?ch={NUMBER}", ChannelPopupMenu.this.channelInfo);
-		}
-	    });
-	    this.add(jmi);
-
+    private void bookmarkSurf(Bookmark b, ChannelInfo i) {
+	try {
+	    b.surf(i);
+	}
+	catch(IOException e) {
+	    JOptionPane.showMessageDialog(MainWindow.this.myFrame, e.getMessage(), "Error opening URL", JOptionPane.ERROR_MESSAGE);
 	}
     }
 
@@ -168,6 +155,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
     private HashMap tickList = new HashMap();
 
+    // the IPreferencesCallbackInterface
     public void clearChannelStats() {
 	this.tickList.clear();
 	Preferences node = this.myUserNode().node(TICK_NODE);
@@ -176,6 +164,10 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	}
 	catch(BackingStoreException e) {
 	}
+    }
+
+    public void rebuildBookmarksMenu(Bookmark[] list) {
+	this.bookmarks = list;
     }
 
     private int rowForSID(int sid) {
@@ -235,6 +227,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private JCheckBox muteButton;
     private JCheckBox smartMuteButton;
     private JFrame myFrame;
+    private Bookmark[] bookmarks;
     private JProgressBar satelliteMeter;
     private JProgressBar terrestrialMeter;
     private JButton itmsButton;
@@ -344,10 +337,32 @@ System.err.println("SHOW ABOUT WINDOW!");
 		    return;
 		if (e.isPopupTrigger()) {
 		    didPopup = true;
-		    int sid = MainWindow.this.sidForChannel(RadioCommander.theRadio().getChannel());
-		    if (sid < 0)
+		    ChannelInfo info;
+		    try {
+			info = RadioCommander.theRadio().getChannelInfo();
+		    }
+		    catch(RadioException ee) {
+			MainWindow.this.handleError(ee);
 			return;
-		    JPopupMenu popup = new ChannelPopupMenu(sid);
+		    }
+		    class BookmarkMenu extends JPopupMenu {
+			private ChannelInfo info;
+			public BookmarkMenu(ChannelInfo info) {
+			    super();
+			    this.info = info;
+			    for(int i = 0; i < MainWindow.this.bookmarks.length; i++) {
+				final Bookmark b = MainWindow.this.bookmarks[i];
+				JMenuItem jmi = new JMenuItem(b.getName());
+				jmi.addActionListener(new ActionListener() {
+				    public void actionPerformed(ActionEvent e) {
+					MainWindow.this.bookmarkSurf(b, BookmarkMenu.this.info);
+				    }
+				});
+				this.add(jmi);
+			    }
+			}
+		    };
+		    JPopupMenu popup = new BookmarkMenu(info);
 		    popup.show(e.getComponent(), e.getX(), e.getY());
 		}
 	    }
@@ -557,14 +572,6 @@ System.err.println("SHOW ABOUT WINDOW!");
 	frameGBC.anchor = GridBagConstraints.PAGE_START;
 	this.myFrame.getContentPane().add(top, frameGBC);
 
-/*
-	jp = new JPanel();
-	jp.setLayout(new GridBagLayout());
-	gbc = new GridBagConstraints();
-	gbc.weightx = gbc.weighty = 1;
-	gbc.insets = new Insets(20, 20, 20, 20);
-	gbc.fill = GridBagConstraints.BOTH;
-*/
 	this.channelTable = new JTable();
 	this.channelTable.addMouseListener(new MouseAdapter() {
 	    public void mousePressed(MouseEvent e) { this.maybePopup(e); }

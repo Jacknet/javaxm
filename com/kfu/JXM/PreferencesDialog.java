@@ -27,6 +27,8 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.lang.*;
+import java.net.*;
+import java.util.*;
 import java.util.prefs.*;
 
 import com.kfu.xm.*;
@@ -40,6 +42,13 @@ public class PreferencesDialog extends JDialog {
     JCheckBox trackerEnabled;
     JTextField browserPath = null;
     IPreferenceCallbackHandler handler;
+    DefaultListModel bookmarks = new DefaultListModel();
+    JList bookmarkList;
+    JButton bookmarkDelButton;
+    JTextField bmName;
+    JTextField bmURL;
+    JButton moveUpButton;
+    JButton moveDownButton;
 
     public PreferencesDialog(JFrame parent, IPreferenceCallbackHandler handler) {
 	super(parent, "JXM Preferences", true);
@@ -123,6 +132,167 @@ public class PreferencesDialog extends JDialog {
 	jp = new JPanel();
 	jp.setLayout(new GridBagLayout());
 	gbc = new GridBagConstraints();
+	JList jlist = new JList();
+	this.bookmarkList = jlist;
+	jlist.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+	jlist.setLayoutOrientation(JList.VERTICAL);
+	jlist.setVisibleRowCount(5);
+	jlist.setModel(this.bookmarks);
+	jlist.addListSelectionListener(new ListSelectionListener() {
+	    public void valueChanged(ListSelectionEvent e) {
+		if (e.getValueIsAdjusting())
+		    return;
+		int index = PreferencesDialog.this.bookmarkList.getSelectedIndex();
+		PreferencesDialog.this.bookmarkDelButton.setEnabled(index >= 0);
+		PreferencesDialog.this.moveUpButton.setEnabled(index >= 1);
+		PreferencesDialog.this.moveDownButton.setEnabled(index >= 0 && index < PreferencesDialog.this.bookmarks.size() - 1);
+		PreferencesDialog.this.bmName.setEnabled(index >= 0);
+		PreferencesDialog.this.bmURL.setEnabled(index >= 0);
+		if (index < 0) {
+		    PreferencesDialog.this.bmName.setText("");
+		    PreferencesDialog.this.bmURL.setText("");
+		    return;
+		}
+		Bookmark b = (Bookmark)PreferencesDialog.this.bookmarkList.getSelectedValue();
+		PreferencesDialog.this.bmName.setText(b.getName());
+		PreferencesDialog.this.bmURL.setText(b.getURL());
+	    }
+	});
+	jlist.setCellRenderer(new DefaultListCellRenderer() {
+	    public Component getListCellRendererComponent(JList list,  Object value,  int index,  boolean isSelected,  boolean cellHasFocus) {
+		String val = ((Bookmark)value).getName();
+		if (val == null || val == "")
+		    val = " "; // XXX - If you send back the null string, the renderer will be 0 height. Stupid Java.
+		return super.getListCellRendererComponent(list, val, index, isSelected, cellHasFocus);
+	    }
+	});
+	gbc.gridwidth = 2;
+	gbc.fill = GridBagConstraints.BOTH;
+	gbc.weightx = gbc.weighty = 1;
+	jp.add(new JScrollPane(jlist), gbc);
+	JPanel jp1 = new JPanel();
+
+	JButton addButton = new JButton("+");
+	addButton.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		PreferencesDialog.this.bookmarks.add(PreferencesDialog.this.bookmarks.size(), new Bookmark("", ""));
+		PreferencesDialog.this.bookmarkList.setSelectedIndex(PreferencesDialog.this.bookmarks.size() - 1);
+		PreferencesDialog.this.bookmarkList.ensureIndexIsVisible(PreferencesDialog.this.bookmarks.size() - 1);
+	    }
+	});
+	jp1.add(addButton);
+	this.bookmarkDelButton = new JButton("-");
+	this.bookmarkDelButton.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		int index = PreferencesDialog.this.bookmarkList.getSelectedIndex();
+		PreferencesDialog.this.bookmarks.remove(index);
+		PreferencesDialog.this.bookmarkList.setSelectedIndex(-1);
+	    }
+	});
+	this.bookmarkDelButton.setEnabled(false);
+	jp1.add(this.bookmarkDelButton);
+
+	this.moveUpButton = new JButton("move up");
+	this.moveUpButton.setEnabled(false);
+	this.moveUpButton.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) { 
+		int index = PreferencesDialog.this.bookmarkList.getSelectedIndex();
+		Bookmark b = (Bookmark)PreferencesDialog.this.bookmarks.remove(index);
+		PreferencesDialog.this.bookmarks.add(index - 1, b);
+		PreferencesDialog.this.bookmarkList.setSelectedIndex(index - 1);
+	    }
+	});
+	jp1.add(this.moveUpButton);
+
+	this.moveDownButton = new JButton("move down");
+	this.moveDownButton.setEnabled(false);
+	this.moveDownButton.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) { 
+		int index = PreferencesDialog.this.bookmarkList.getSelectedIndex();
+		Bookmark b = (Bookmark)PreferencesDialog.this.bookmarks.remove(index);
+		PreferencesDialog.this.bookmarks.add(index + 1, b);
+		PreferencesDialog.this.bookmarkList.setSelectedIndex(index + 1);
+	    }
+	});
+	jp1.add(this.moveDownButton);
+	gbc.gridy = 1;
+	gbc.fill = GridBagConstraints.NONE;
+	gbc.anchor = GridBagConstraints.CENTER;
+	gbc.weightx = gbc.weighty = 0;
+	jp.add(jp1, gbc);
+	
+	jl = new JLabel("Name: ");
+	gbc.gridy = 2;
+	gbc.gridx = 0;
+	gbc.gridwidth = 1;
+	gbc.anchor = GridBagConstraints.LINE_END;
+	jp.add(jl, gbc);
+	this.bmName = new JTextField();
+	this.bmName.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		int index = PreferencesDialog.this.bookmarkList.getSelectedIndex();
+		if (index < 0)
+		    return;
+		Bookmark b = (Bookmark)PreferencesDialog.this.bookmarks.get(index);
+		b.setName(PreferencesDialog.this.bmName.getText());
+		PreferencesDialog.this.bookmarks.set(index, b);
+	    }
+	});
+	gbc.gridx = 1;
+	gbc.gridwidth = 3;
+	gbc.weightx = 1;
+	gbc.fill = GridBagConstraints.HORIZONTAL;
+	jp.add(this.bmName, gbc);
+
+	jl = new JLabel("URL: ");
+	gbc.gridy = 3;
+	gbc.gridx = 0;
+	gbc.gridwidth = 1;
+	gbc.weightx = 1;
+	gbc.weightx = 0;
+	gbc.fill = GridBagConstraints.NONE;
+	gbc.anchor = GridBagConstraints.LINE_END;
+	jp.add(jl, gbc);
+	this.bmURL = new JTextField();
+	this.bmURL.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		int index = PreferencesDialog.this.bookmarkList.getSelectedIndex();
+		if (index < 0)
+		    return;
+		Bookmark b = (Bookmark)PreferencesDialog.this.bookmarks.get(index);
+		b.setURL(PreferencesDialog.this.bmURL.getText());
+		PreferencesDialog.this.bookmarks.set(index, b);
+	    }
+	});
+	gbc.weightx = 1;
+	gbc.fill = GridBagConstraints.HORIZONTAL;
+	gbc.gridx = 1;
+	gbc.gridwidth = 3;
+	jp.add(this.bmURL, gbc);
+
+	jl = new JLabel("<html><center><b>URL tokens:</b><table><tr><td>{NUMBER}</td><td>Channel number</td></tr>"+
+	    "<tr><td>{GENRE}</td><td>Channel Genre</td></tr>"+
+	    "<tr><td>{NAME}</td><td>Channel Name</td></tr>"+
+	    "<tr><td>{ARTIST}</td><td>Artist currently playing on Channel</td></tr>"+
+	    "<tr><td>{TITLE}</td><td>Song title currently playing on Channel</td></tr>"+
+	    "<tr><td>{SERVICE}</td><td>Channel Service ID</td></tr>"+
+	    "</table></center></html>");
+	jl.setFont(new Font(null, Font.PLAIN, 10));
+	jl.setMinimumSize(new Dimension(300, 150));
+	gbc.fill = GridBagConstraints.NONE;
+	gbc.anchor = GridBagConstraints.CENTER;
+	gbc.weightx = 1;
+	gbc.weighty = 0;
+	gbc.gridwidth = 2;
+	gbc.gridx = 0;
+	gbc.gridy = 4;
+	jp.add(jl, gbc);
+
+	jtp.addTab("Bookmarks", jp);
+
+	jp = new JPanel();
+	jp.setLayout(new GridBagLayout());
+	gbc = new GridBagConstraints();
 	if (PlatformFactory.ourPlatform().needsBrowserPath()) {
 	    jl = new JLabel("Path to Browser: ");
 	    gbc.gridx = 0;
@@ -173,6 +343,7 @@ public class PreferencesDialog extends JDialog {
 
 	this.pack();
 	this.reloadFromDefaults();
+	this.doBookmarkRebuild();
     }
 
     private void trackerCheckboxClicked() {
@@ -215,8 +386,62 @@ public class PreferencesDialog extends JDialog {
     private final static String XMTRACKER_PASS = "TrackerPassword";
     private final static String XMTRACKER_ENABLED = "TrackerEnabled";
     private final static String BROWSER_PATH = "BrowserPath";
+    private final static String BOOKMARKS = "Bookmarks";
+
+    private String[][] defaultBookMarks = {
+	{ "Channel Home Page",			"http://www.xmradio.com/programming/channel_page.jsp?ch={NUMBER}" },
+	{ "XMNation Forum for Channel",		"http://www.xmnation.net/forum_for_channel.php?ch={NUMBER}" },
+	{ "Google search for Artist",		"http://www.google.com/search?q=%22{ARTIST}%22" },
+	{ "Google search for Title",		"http://www.google.com/search?q=%22{TITLE}%22" },
+	{ "Google search for Artist and Title",	"http://www.google.com/search?q=%22{ARTIST}%22+%22{TITLE}%22" },
+	{ "iTunes search for Artist",		"itms://phobos.apple.com/WebObjects/MZSearch.woa/wa/com.apple.jingle.search.DirectAction/advancedSearchResults?artistTerm={ARTIST}" },
+	{ "iTunes search for Artist and Title",	"itms://phobos.apple.com/WebObjects/MZSearch.woa/wa/com.apple.jingle.search.DirectAction/advancedSearchResults?artistTerm={ARTIST}&songTerm={TITLE}" },
+    };
 
     private void reloadFromDefaults() {
+	try {
+	if (!this.myNode().nodeExists(BOOKMARKS)) {
+	    // Load up the default set
+	    Preferences marks = this.myNode().node(BOOKMARKS);
+	    for(int i = 0; i < defaultBookMarks.length; i++) {
+		String out;
+		try {
+		    out = URLEncoder.encode(defaultBookMarks[i][0], "US-ASCII") + ":" + URLEncoder.encode(defaultBookMarks[i][1], "US-ASCII");
+		}
+		catch(UnsupportedEncodingException e) {
+		    continue;
+		}
+		marks.put(Integer.toString(i), out);
+	    }
+	}
+	}
+	catch(BackingStoreException e) {}
+	Preferences marks = this.myNode().node(BOOKMARKS);
+	String[] keys;
+	try {
+	    keys = marks.keys();
+	}
+	catch(BackingStoreException e) {
+	    keys = new String[0];
+	}
+	Arrays.sort(keys);
+	this.bookmarks.clear();
+	for(int i = 0; i < keys.length; i++) {
+	    String parts[] = marks.get(keys[i], "").split(":");
+	    if (parts.length != 2)
+		continue;
+	    String name, url;
+	    try {
+		name = URLDecoder.decode(parts[0], "US-ASCII");
+		url = URLDecoder.decode(parts[1], "US-ASCII");
+	    }
+	    catch(UnsupportedEncodingException e) {
+		continue;
+	    }
+	    Bookmark b = new Bookmark(name, url);
+	    this.bookmarks.add(this.bookmarks.getSize(), b);
+	}
+
 	this.trackerURL.setText(this.myNode().get(XMTRACKER_URL, "http://www.xmnation.net/tracker/"));
 	this.trackerUser.setText(this.myNode().get(XMTRACKER_USER, ""));
 	this.trackerPassword.setText(this.myNode().get(XMTRACKER_PASS, ""));
@@ -229,6 +454,23 @@ public class PreferencesDialog extends JDialog {
     }
 
     private void saveToDefaults() {
+	Preferences node = this.myNode().node(BOOKMARKS);
+	try {
+	    node.clear();
+	for(int i = 0; i < this.bookmarks.getSize(); i++) {
+	    Bookmark bm = (Bookmark)this.bookmarks.getElementAt(i);
+	    String out;
+	    try {
+		out = URLEncoder.encode(bm.getName(), "US-ASCII") + ":" + URLEncoder.encode(bm.getURL(), "US-ASCII");
+	    }
+	    catch(UnsupportedEncodingException e) {
+		continue;
+	    }
+	    node.put(Integer.toString(i), out);
+	}
+	    this.doBookmarkRebuild();
+	}
+	catch(BackingStoreException e) { }
 	this.myNode().put(XMTRACKER_URL, this.trackerURL.getText());
 	this.myNode().put(XMTRACKER_USER, this.trackerUser.getText());
 	this.myNode().put(XMTRACKER_PASS, new String(this.trackerPassword.getPassword()));
@@ -237,6 +479,13 @@ public class PreferencesDialog extends JDialog {
 	    this.myNode().put(BROWSER_PATH, this.browserPath.getText());
 	    PlatformFactory.ourPlatform().setBrowserPath(this.browserPath.getText());
 	}
+    }
+
+    private void doBookmarkRebuild() {
+	Object[] bm = this.bookmarks.toArray();
+	Bookmark[] out = new Bookmark[bm.length];
+	System.arraycopy(bm, 0, out, 0, bm.length);
+	this.handler.rebuildBookmarksMenu(out);
     }
 
     // This is called when the radio is turned on

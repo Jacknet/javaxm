@@ -23,5 +23,6 @@ package com.kfu.JXM;
 
 public interface IPreferenceCallbackHandler {
     public void clearChannelStats();
+    public void rebuildBookmarksMenu(Bookmark[] list);
 }
 

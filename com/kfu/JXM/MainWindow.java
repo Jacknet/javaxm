@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.101 2004/05/03 02:34:19 ttennebkram Exp $
+ $Id: MainWindow.java,v 1.102 2004/05/04 15:50:40 nsayer Exp $
  
  */
 
@@ -834,6 +834,7 @@ public class MainWindow
 			w.show();
 	}
 
+	private static final int DEFAULT_TABLE_ROWS = 15;
 	public MainWindow() {
 
 		// This MUST happen before we init the platform, because it may
@@ -1519,8 +1520,9 @@ public class MainWindow
 			this.sortField = 0;
 		this.sortDirection = JXM.myUserNode().getBoolean(SORT_DIR, true);
 
-		Dimension size = this.channelTable.getPreferredScrollableViewportSize();
-		this.channelTable.setPreferredScrollableViewportSize(new Dimension(tw, size.height));
+		// The default width is the width of the columns. The
+		// default height is a certain number of rows.
+		this.channelTable.setPreferredScrollableViewportSize(new Dimension(tw, (this.channelTable.getRowHeight() + this.channelTable.getRowMargin()) * DEFAULT_TABLE_ROWS));
 
 		channelTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		class StripedViewport extends JViewport {

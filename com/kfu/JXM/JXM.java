@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: JXM.java,v 1.13 2004/04/08 04:39:13 nsayer Exp $
+ $Id: JXM.java,v 1.14 2004/04/10 18:35:14 nsayer Exp $
  
  */
 
@@ -52,7 +52,7 @@ public class JXM {
     }
 
     public static String version() {
-	return "0.9";
+	return "0.10";
     }
     public static String userAgentString() {
 	return "JXM v" + version();

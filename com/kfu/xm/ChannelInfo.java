@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: ChannelInfo.java,v 1.3 2004/03/09 07:13:35 nsayer Exp $
+ $Id: ChannelInfo.java,v 1.4 2004/03/11 06:51:04 nsayer Exp $
 
  */
 
@@ -95,17 +95,17 @@ public class ChannelInfo {
     public String getChannelTitle() {
         return this.chTitle;
     }
-	// These are used by the extended artist/title info system
-    void setChannelName(String name) {
+
+    public void setChannelName(String name) {
         this.chName = name;
     }
-	void setChannelGenre(String genre) {
+    public void setChannelGenre(String genre) {
         this.chGenre = genre;
     }
-	void setChannelArtist(String artist) {
+    public void setChannelArtist(String artist) {
         this.chArtist = artist;
     }
-    void setChannelTitle(String title) {
+    public void setChannelTitle(String title) {
         this.chTitle = title;
     }	
 }

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: RadioCommander.java,v 1.12 2004/03/11 04:17:58 nsayer Exp $
+ $Id: RadioCommander.java,v 1.13 2004/03/11 06:51:04 nsayer Exp $
  
  */
 
@@ -1074,6 +1074,8 @@ t.printStackTrace();
     }
 	
     public boolean isOn() {
+	if (this.poweringDown)
+	    return false;
         return this.myDeviceIn != null;
     }
 	
@@ -1149,9 +1151,12 @@ t.printStackTrace();
         this.myReplyWatcher = null;
 	this.disposing = false;
     }
-    
+   
+    private boolean poweringDown = false; 
     public void turnOff() throws RadioException {
         this.checkDisposed();
+	this.poweringDown = true;
+	try {
 
 	this.theSurfer.cancel();
 	this.theSurfer = null;
@@ -1163,6 +1168,10 @@ t.printStackTrace();
         this.Dispose();
 		
         this.notifyGUI(POWERED_OFF);
+	}
+	finally {
+	    this.poweringDown = false;
+	}
     }
 	
     private Date currentSongStarted, currentSongEnds;
@@ -1274,6 +1283,10 @@ t.printStackTrace();
 		this.handleException(e);
 	    return;
 	}
+
+	// It's possible to get here just as we're powering down
+	if (this.myDeviceIn == null)
+	    return;
 
 	if (info == null) {
 	    // We fell off the end. Delete any channels higher than the last one

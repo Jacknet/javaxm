@@ -2,5 +2,9 @@
 <classpath>
     <classpathentry kind="src" path=""/>
     <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+    <classpathentry kind="lib" path="secondstring-20030401.jar"/>
+    <classpathentry kind="lib" path="install-win32/registry.jar"/>
+    <classpathentry kind="lib" path="install-win32/trayicon.jar"/>
+    <classpathentry kind="lib" path="D:/apps/java14/lib/comm.jar"/>
     <classpathentry kind="output" path=""/>
 </classpath>

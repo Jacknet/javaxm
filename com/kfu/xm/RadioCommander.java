@@ -1202,10 +1202,10 @@ t.printStackTrace();
     private ChannelInfo currentChannelInfo = new ChannelInfo();
 	
     private void updateChannelInfo() {
-	this.updateChannelInfo(new ChannelInfo(this.currentChannelInfo));
+	this.updateChannelInfo(this.currentChannelInfo);
     }
     private void updateChannelInfo(ChannelInfo info) {
-	this.notifyGUI(CHANNEL_INFO_UPDATE, info);
+	this.notifyGUI(CHANNEL_INFO_UPDATE, new ChannelInfo(info));
     }
 
     public String getRadioID() throws RadioException {

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: PreferencesDialog.java,v 1.23 2004/03/19 23:47:16 nsayer Exp $
+ $Id: PreferencesDialog.java,v 1.24 2004/03/20 16:24:37 nsayer Exp $
  
  */
 
@@ -575,8 +575,18 @@ public class PreferencesDialog extends JDialog {
 		continue;
             this.deviceMenu.addItem(name);
         }
-        this.deviceMenu.setSelectedIndex(0);
-        this.deviceMenu.setSelectedItem(JXM.myUserNode().get(DEVICE_NAME_KEY, "Pick device"));
+	// This is good: If there is no DEVICE_NAME_KEY value, we won't change the selection
+	// will be garbage. If it's a nonexistent device, same thing. If there's only one device
+	// and the platform says we can trust it, then that will be it. Otherwise, the user
+	// will have to choose. If "" is a legal device name, well, that's just Unamerican.
+	this.deviceMenu.setSelectedItem(JXM.myUserNode().get(DEVICE_NAME_KEY, ""));
+	if (this.deviceMenu.getSelectedIndex() <= 0) {
+	    if (PlatformFactory.ourPlatform().devicesAreFiltered() && this.deviceMenu.getItemCount() == 2) { // device and "Pick Menu"
+		this.deviceMenu.setSelectedIndex(1);
+	    } else {
+		this.deviceMenu.setSelectedIndex(0);
+	    }
+	}
     }
 
     // -----------------------

@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.9 2004/03/10 03:40:18 nsayer Exp $
+# $Id: Makefile,v 1.10 2004/03/20 16:24:36 nsayer Exp $
 
 all:
 	rm -rf out
@@ -15,7 +15,7 @@ jar:
 	cd out && jar cfm ../jxm.jar ../Manifest COPYING com edu logos images
 
 run:
-	java -cp /System/Library/Java:out com.kfu.JXM.JXM
+	DYLD_LIBRARY_PATH=. && java -cp /System/Library/Java:out com.kfu.JXM.JXM
 
 runjar:
 	java -jar jxm.jar

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: IPlatformHandler.java,v 1.3 2004/03/09 07:11:04 nsayer Exp $
+ $Id: IPlatformHandler.java,v 1.4 2004/03/20 16:24:37 nsayer Exp $
  
  */
 
@@ -28,6 +28,10 @@ import java.io.*;
 public interface IPlatformHandler {
 
 	// The no-arg constructor throws if creation is attempted on the wrong platform
+
+	// Is this platform able to filter out non-FTDI devices? If so, then at startup
+	// if the list has only one member in it, it will be tried no matter what.
+	public boolean devicesAreFiltered();
 
 	// Is this device name actually a valid device?
 	public boolean isDeviceValid(String device);

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MacOSX.java,v 1.8 2004/03/11 06:51:33 nsayer Exp $
+ $Id: MacOSX.java,v 1.9 2004/03/20 16:24:37 nsayer Exp $
  
  */
 
@@ -37,6 +37,12 @@ import com.apple.cocoa.foundation.*;
 
 public class MacOSX implements IPlatformHandler {
 
+    static {
+	System.loadLibrary("MacOSX");
+    }
+
+    private static native String getBundleNameForDevice(String filename);
+
     private IPlatformCallbackHandler cb;
 
     public boolean useMacMenus() { return true; }
@@ -50,9 +56,21 @@ public class MacOSX implements IPlatformHandler {
 
     public void registerCallbackHandler(IPlatformCallbackHandler notifier) { this.cb = notifier; }
 
+    // return true if we know that the devices really are FTDI chips.
+    // If there is only one potential device, and this method returns true,
+    // then the radio will turn on at startup.
+    public boolean devicesAreFiltered() { return true; }
+
     public boolean isDeviceValid(String devname) {
 	// Eliminate the /dev/-less names and the CU devices
-	return devname.startsWith("/dev/tty.");
+	if (!devname.startsWith("/dev/tty."))
+	    return false;
+
+	String driverBundle = getBundleNameForDevice(devname);
+	if (driverBundle == null || !driverBundle.startsWith("com.FTDI."))
+	    return false;
+
+	return true;
     }
 
     public MacOSX() throws Exception {

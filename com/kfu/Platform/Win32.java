@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: Win32.java,v 1.2 2004/03/09 07:12:42 nsayer Exp $
+ $Id: Win32.java,v 1.3 2004/03/20 16:24:37 nsayer Exp $
  
  */
 
@@ -38,6 +38,11 @@ public class Win32 implements IPlatformHandler {
     public void openURL(String url) throws IOException {
 	BrowserLauncher.openURL(url);
     }
+
+    // return true if we know that the devices really are FTDI chips.
+    // If there is only one potential device, and this method returns true,
+    // then the radio will turn on at startup.
+    public boolean devicesAreFiltered() { return false; }
 
     public boolean isDeviceValid(String in) { return true; } // Windows javax.comm is ok
 

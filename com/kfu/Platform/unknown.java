@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: unknown.java,v 1.4 2004/03/09 07:12:42 nsayer Exp $
+ $Id: unknown.java,v 1.5 2004/03/20 16:24:37 nsayer Exp $
  
  */
 
@@ -39,6 +39,11 @@ public class unknown implements IPlatformHandler {
     public void openURL(String url) throws IOException {
 	Runtime.getRuntime().exec(new String[] {this.path, url});
     }
+
+    // return true if we know that the devices really are FTDI chips.
+    // If there is only one potential device, and this method returns true,
+    // then the radio will turn on at startup.
+    public boolean devicesAreFiltered() { return false; }
 
     public boolean isDeviceValid(String in) { return true; }
 

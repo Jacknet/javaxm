@@ -282,6 +282,14 @@ public static void main(String[] args) { new MainWindow(); }
 	    });
 	    this.deviceMenu.add(jmi);
 	}
+	this.deviceMenu.addSeparator();
+	JMenuItem jmi = new JMenuItem("Refresh device list");
+	jmi.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		MainWindow.this.refreshDeviceMenu();
+	    }
+	});
+	this.deviceMenu.add(jmi);
     }
 
     // the RadioEventHandler interface

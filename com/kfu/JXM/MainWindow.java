@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.75 2004/03/23 01:13:55 nsayer Exp $
+ $Id: MainWindow.java,v 1.76 2004/03/23 19:25:49 nsayer Exp $
  
  */
 
@@ -42,7 +42,34 @@ import com.kfu.xm.*;
 
 public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, IPreferenceCallbackHandler {
 
-    public class CompactViewPanel extends JWindow {
+    private class SignalProgressBar extends JProgressBar {
+	public SignalProgressBar(int a, int b) { super(a,b); }
+	// This makes the curve for creating the color arc from red to green
+	private float scale(float in) {
+	    if (in > .5)
+		return 1;
+	    in *= 2;
+	    return (float)Math.sin(in * Math.PI / 2f);
+	}
+	public void paint(Graphics g) {
+	    Rectangle bounds = this.getBounds();
+	    g.setColor(this.getBackground());
+	    g.fillRect(0, 0, (int)bounds.getWidth() - 1, (int)bounds.getHeight() - 1);
+	    int valueWidth = this.getMaximum() - this.getMinimum();
+	    int valueSoFar = this.getValue() - this.getMinimum();
+	    // We want posSoFar, posSoFar/bounds.getWidth() = valueSoFar / valueWidth, or posSoFar = valueSoFar * bounds.getWidth() / valueWidth;
+	    int posSoFar = (int)((((float)valueSoFar) * ((float)bounds.getWidth())) / ((float)valueWidth));
+
+	    for(int x = 0; x < posSoFar; x += 4) {
+		// x is posHere. x / bounds.getWidth() = ? / valueWidth
+		float fracHere = (float) ((float)valueWidth * ((float)x / (float)bounds.getWidth())) / (float)valueWidth;
+		g.setColor(new Color(scale(1 - fracHere), scale(fracHere), 0, 1));
+		g.fillRect(x, 0, 2, (int)bounds.getHeight() - 1);
+	    }
+	}
+    }
+
+    private class CompactViewPanel extends JWindow {
 	class WindowMover extends MouseInputAdapter {
 	    private Container window;
 	    public WindowMover(Container c) { this.window = c; }
@@ -1392,14 +1419,14 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	gbc.insets = new Insets(0, 0, 20, 0);
 	bottom.add(jl, gbc);
 
-	this.satelliteMeter = new JProgressBar(0, 100);
+	this.satelliteMeter = new SignalProgressBar(0, 100);
 	gbc.gridx = 3;
 	gbc.gridy = 0;
 	gbc.weightx = .25;
 	gbc.insets = new Insets(0, 0, 0, 20);
 	gbc.anchor = GridBagConstraints.LINE_START;
 	bottom.add(this.satelliteMeter, gbc);
-	this.terrestrialMeter = new JProgressBar(0, 100);
+	this.terrestrialMeter = new SignalProgressBar(0, 100);
 	gbc.gridy = 1;
 	gbc.insets = new Insets(0, 0, 20, 20);
 	bottom.add(this.terrestrialMeter, gbc);

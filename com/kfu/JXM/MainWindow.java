@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.88 2004/04/08 15:30:02 nsayer Exp $
+ $Id: MainWindow.java,v 1.89 2004/04/08 22:59:52 nsayer Exp $
  
  */
 
@@ -796,6 +796,13 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private final Icon upArrow = new ArrowIcon(SwingConstants.NORTH);
     private final Icon downArrow = new ArrowIcon(SwingConstants.SOUTH);
 
+    private static final int COL_NUM = 0;
+    private static final int COL_GENRE = 1;
+    private static final int COL_NAME = 2;
+    private static final int COL_ARTIST = 3;
+    private static final int COL_TITLE = 4;
+    private static final int COL_INUSE = 5;
+
     private static void frontOrShow(Window w) {
 	if (w.isVisible())
 	    w.toFront();
@@ -1344,37 +1351,37 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	DefaultTableCellRenderer plain = new MyTableCellRenderer();
 	for(int i = 0; i < cols.length; i++) {
 	    switch(cols[i]) {
-		case 0:
+		case COL_NUM:
 		    tc = new TableColumn(0, 80, null, null);
 		    tc.setMinWidth(80);
 		    tc.setCellRenderer(centered);
 		    tc.setHeaderValue("Num.");
 		    break;
-		case 1:
+		case COL_GENRE:
 		    tc = new TableColumn(1, 100, null, null);
 		    tc.setMinWidth(100);
 		    tc.setCellRenderer(plain);
 		    tc.setHeaderValue("Genre");
 		    break;
-		case 2:
+		case COL_NAME:
 		    tc = new TableColumn(2, 100, null, null);
 		    tc.setMinWidth(100);
 		    tc.setCellRenderer(plain);
 		    tc.setHeaderValue("Name");
 		    break;
-		case 3:
+		case COL_ARTIST:
 		    tc = new TableColumn(3, 160, null, null);
 		    tc.setMinWidth(160);
 		    tc.setCellRenderer(plain);
 		    tc.setHeaderValue("Artist");
 		    break;
-		case 4:
+		case COL_TITLE:
 		    tc = new TableColumn(4, 160, null, null);
 		    tc.setMinWidth(160);
 		    tc.setCellRenderer(plain);
 		    tc.setHeaderValue("Title");
 		    break;
-		case 5:
+		case COL_INUSE:
 		    tc = new TableColumn(5, 80, null, null);
 		    tc.setMinWidth(80);
 		    tc.setCellRenderer(centered);
@@ -1436,7 +1443,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		    MainWindow.this.sortDirection = !MainWindow.this.sortDirection;
 		} else {
 		    MainWindow.this.sortField = column;
-		    MainWindow.this.sortDirection = true;
+		    // The in use column defaults to sort DEscending
+		    MainWindow.this.sortDirection = (column != COL_INUSE);
 		}
 		JXM.myUserNode().putInt(SORT_FIELD, MainWindow.this.sortField);
 		JXM.myUserNode().putBoolean(SORT_DIR, MainWindow.this.sortDirection);
@@ -1633,7 +1641,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		    ticks = new Integer(0);
 		ticks = new Integer(ticks.intValue() + 1);
 		MainWindow.this.tickList.put(sid, ticks);
-		if (MainWindow.this.sortField == 5) {
+		if (MainWindow.this.sortField == COL_INUSE) {
 		    // If we're not sorting by percentage, then this could not have changed the order.
 		    // Otherwise, it just might.
 		    MainWindow.this.rebuildSortedChannelList();

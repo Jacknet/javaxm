@@ -1,3 +1,4 @@
+# $Id
 
 all:
 	rm -rf out

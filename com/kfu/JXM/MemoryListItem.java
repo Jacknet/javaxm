@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MemoryListItem.java,v 1.3 2004/03/31 19:49:17 nsayer Exp $
+ $Id: MemoryListItem.java,v 1.4 2004/04/06 05:52:08 nsayer Exp $
  
  */
 
@@ -67,7 +67,7 @@ public class MemoryListItem {
     public Date getDate() { return this.when; }
     public ChannelInfo getChannelInfo() { return this.info; }
 
-    public String getNotes() { return this.notes; }
+    public String getNotes() { return (this.notes == null)?"":this.notes; }
     public void setNotes(String val) { this.notes = val; }
 
     public String serialize() {

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: FilterPanel.java,v 1.1 2004/03/18 07:41:17 nsayer Exp $
+ $Id: FilterPanel.java,v 1.2 2004/03/19 09:52:10 nsayer Exp $
  
  */
 
@@ -126,6 +126,8 @@ public class FilterPanel extends JDialog {
     public FilterPanel(MainWindow parent) {
 	super(parent.getFrame(), "JXM - Filter configuration", false);
 	this.parent = parent;
+        this.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+
 	this.getContentPane().setLayout(new BorderLayout());
 
 	this.theTabbedPane = new JTabbedPane();

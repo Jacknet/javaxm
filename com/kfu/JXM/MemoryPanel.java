@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MemoryPanel.java,v 1.3 2004/03/15 07:20:52 nsayer Exp $
+ $Id: MemoryPanel.java,v 1.4 2004/03/19 09:52:10 nsayer Exp $
  
  */
 
@@ -53,6 +53,7 @@ public class MemoryPanel extends JDialog {
     public MemoryPanel(MainWindow parent) {
 	super(parent.getFrame(), "JXM - Memorized Info", false);
 	this.parent = parent;
+        this.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 
         this.getContentPane().setLayout(new GridBagLayout());
 	GridBagConstraints gbc = new GridBagConstraints();

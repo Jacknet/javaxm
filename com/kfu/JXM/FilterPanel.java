@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: FilterPanel.java,v 1.3 2004/03/19 22:28:54 nsayer Exp $
+ $Id: FilterPanel.java,v 1.4 2004/03/19 22:54:49 nsayer Exp $
  
  */
 
@@ -202,8 +202,9 @@ public class FilterPanel extends JDialog {
 	JButton jb = new JButton("+");
 	jb.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
-		FilterPanel.this.filterSets.add(new Filter(FilterPanel.this.currentFilter()));
-		FilterPanel.this.theTabbedPane.addTab("", new JPanel());
+		Filter f = new Filter(FilterPanel.this.currentFilter());
+		FilterPanel.this.filterSets.add(f);
+		FilterPanel.this.theTabbedPane.addTab(f.getName(), new JPanel());
 		FilterPanel.this.currentFilterIndex = FilterPanel.this.filterSets.size() - 1;
 		// After creating a brand new one, select it
 		FilterPanel.this.theTabbedPane.setSelectedIndex(FilterPanel.this.currentFilterIndex);

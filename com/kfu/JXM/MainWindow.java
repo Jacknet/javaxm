@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.67 2004/03/19 18:15:04 nsayer Exp $
+ $Id: MainWindow.java,v 1.68 2004/03/19 22:54:50 nsayer Exp $
  
  */
 
@@ -157,10 +157,17 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    this.pack();
 	}
 	public void setChannelInfo(ChannelInfo i) {
-	    this.compactSpinnerModel.setValue(new Integer(i.getChannelNumber()));
-	    this.compactViewName.setText(i.getChannelName());
-	    this.compactViewArtist.setText(i.getChannelArtist());
-	    this.compactViewTitle.setText(i.getChannelTitle());
+	    if (i == null) {
+		//this.compactSpinnerModel.setList();
+		this.compactViewName.setText("");
+		this.compactViewArtist.setText("");
+		this.compactViewTitle.setText("");
+	    } else {
+		this.compactSpinnerModel.setValue(new Integer(i.getChannelNumber()));
+		this.compactViewName.setText(i.getChannelName());
+		this.compactViewArtist.setText(i.getChannelArtist());
+		this.compactViewTitle.setText(i.getChannelTitle());
+	    }
 	}
     }
 
@@ -280,14 +287,17 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    else
 		val = (int)permill;
 	    this.songTimeBar.setValue(val);
-	    if (val == 1000)
+	    if (val == 1000) {
 		this.songTimeBar.setVisible(false);
+		this.songTimeTimer.stop();
+	    }
 	    this.songTimeBar.repaint();
 	}
 
 	public void setSongTime(Date start, Date end) {
 	    if (start == null || end == null) {
-		this.songStart = this.songEnd = null;
+		this.songStart = null;
+		this.songEnd = null;
 		this.songTimeTimer.stop();
 		this.songTimeBar.setVisible(false);
 	    } else {
@@ -558,6 +568,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private JCheckBox smartMuteButton;
     private JFrame myFrame;
     private JMenu bookmarkMenu;
+    private JMenuItem powerMenuItem;
     private JMenuItem filterMenuItem;
     private JMenuItem compactMenuItem;
     private Bookmark[] bookmarks;
@@ -696,7 +707,14 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	// -----
 	// PUT MENUS HERE
 	jm = new JMenu("Actions");
-	this.compactMenuItem = new JMenuItem("Toggle Normal / Compact view");
+	this.powerMenuItem = new JMenuItem("Turn Radio On");
+	this.powerMenuItem.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		MainWindow.this.powerToggle();
+	    }
+	});
+	jm.add(this.powerMenuItem);
+	this.compactMenuItem = new JMenuItem("Compact view");
 	this.compactMenuItem.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
 		MainWindow.this.toggleCompactView();
@@ -1278,10 +1296,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.powerCheckBox = new JCheckBox("Power");
 	this.powerCheckBox.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
-		if (MainWindow.this.powerCheckBox.isSelected())
-		    MainWindow.this.turnPowerOn();
-		else
-		    MainWindow.this.turnPowerOff();
+		MainWindow.this.powerToggle();
 	    }
 	});
 
@@ -1586,6 +1601,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	}
     }
 
+    public JFrame getFrame() { return this.myFrame; }
+
     private void turnPowerOff() {
 	try {
 	    RadioCommander.theRadio().turnOff();
@@ -1595,7 +1612,12 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	}
     }
 
-    public JFrame getFrame() { return this.myFrame; }
+    private void powerToggle() {
+	if (!RadioCommander.theRadio().isOn())
+	    MainWindow.this.turnPowerOn();
+	else
+	    MainWindow.this.turnPowerOff();
+    }
 
     private void turnPowerOn() {
 	// Figure out which device was selected
@@ -1644,6 +1666,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.compactMenuItem.setEnabled(true);
 	this.preferences.saveDevice();
 	this.bookmarkMenu.setEnabled(true);
+	this.powerCheckBox.setSelected(true);
+	this.powerMenuItem.setText("Turn Radio Off");
 	this.channelChanged(); // We need to fake the first one
 	try {
 	    String rid = RadioCommander.theRadio().getRadioID();
@@ -1685,6 +1709,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		MainWindow.this.filterMenuItem.setEnabled(false);
 		MainWindow.this.compactMenuItem.setEnabled(false);
 		MainWindow.this.forceNormalView();
+		MainWindow.this.powerCheckBox.setSelected(false);
+		MainWindow.this.powerMenuItem.setText("Turn Radio On");
 		//MainWindow.this.itmsButton.setEnabled(false);
 		MainWindow.this.memoryButton.setEnabled(false);
 		MainWindow.this.muteButton.setSelected(false);

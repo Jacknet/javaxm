@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.80 2004/03/25 06:24:41 nsayer Exp $
+ $Id: MainWindow.java,v 1.81 2004/04/04 22:18:40 nsayer Exp $
  
  */
 
@@ -115,6 +115,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		this.timerIgnore = false;
 	    }
 	    super.show();
+	    this.setChannelInfo(MainWindow.this.currentChannelInfo);
 	}
 
 	private boolean timerIgnore = false;
@@ -596,6 +597,20 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private HashMap tickList = new HashMap();
 
     // the IPreferencesCallbackInterface
+    public void reload() {
+	this.searchSystem.reload();
+	this.filterPanel.reload();
+    }
+    public void save() {
+	this.searchSystem.save();
+	this.filterPanel.save();
+    }
+    public JComponent getSearchPreferencePanel() {
+	return this.searchSystem.getPrefPanel();
+    }
+    public JComponent getFilterPreferencePanel() {
+	return this.filterPanel;
+    }
     public void clearChannelStats() {
 	this.tickList.clear();
 	Preferences node = JXM.myUserNode().node(TICK_NODE);
@@ -651,8 +666,9 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	return sb.toString();
     }
 
-    private CompactViewPanel compactView;
+    private SearchSystem searchSystem;
     private FilterPanel filterPanel;
+    private CompactViewPanel compactView;
     private MemoryPanel memoryPanel;
     private PreferencesDialog preferences;
     private AboutDialog aboutDialog;
@@ -668,7 +684,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private JFrame myFrame;
     private JMenu bookmarkMenu;
     private JMenuItem powerMenuItem;
-    private JMenuItem filterMenuItem;
+    //private JMenuItem filterMenuItem;
     private JComboBox filterMenu;
     private JMenuItem compactMenuItem;
     private Bookmark[] bookmarks;
@@ -796,6 +812,31 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    // Well, we tried
 	}
 
+	String[] logoPaths = {
+	    // The current working dir
+	    "file:" + System.getProperty("user.dir") + "/JXMlogos.jar",
+	    // The user's home dir
+	    "file:" + System.getProperty("user.home") + "/JXMlogos.jar",
+	    // The user's home dir, but with a "." path
+	    "file:" + System.getProperty("user.home") + "/.JXMlogos.jar",
+	};
+	for(int i = 0; i < logoPaths.length; this.logoJar = null, i++) {
+	    try {
+		this.logoJar = new URL(logoPaths[i]);
+		this.logoJar.openConnection().connect();
+	    }
+	    catch(MalformedURLException e) {
+		continue;
+	    }
+	    catch(IOException e) {
+		continue;
+	    }
+	    if (this.logoJar != null)
+		break;
+	}
+	// This is the ultimate fallback: Just use the logos dir built-in
+	// to the application.
+
         this.myFrame = new JFrame("JXM");
 	Image duke = Toolkit.getDefaultToolkit().getImage(this.getClass().getResource("/images/xm_duke.png"));
 	this.myFrame.setIconImage(duke);
@@ -805,6 +846,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		MainWindow.this.quit();
 	    }
 	});
+	this.searchSystem = new SearchSystem(this);
+	this.filterPanel = new FilterPanel(this);
 	this.preferences = new PreferencesDialog(this.myFrame, this);
 	this.aboutDialog = new AboutDialog(this.myFrame);
 
@@ -897,6 +940,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	});
 	jm.add(jmi);
 	this.myFrame.getJMenuBar().add(jm);
+/*
 	this.filterMenuItem = new JMenuItem("Filters");
 	this.filterMenuItem.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
@@ -905,6 +949,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	});
 	this.filterMenuItem.setEnabled(false);
 	jm.add(this.filterMenuItem);
+*/
 	// -----
 	if (!PlatformFactory.ourPlatform().useMacMenus()) {
 	    jm = new JMenu("Help");
@@ -1058,6 +1103,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	GridBagConstraints gbc = new GridBagConstraints();
 
 	JPanel favorites = new JPanel();
+	favorites.setLayout(new GridBagLayout());
+	GridBagConstraints gbc2 = new GridBagConstraints();
 	this.favoriteMenu = new JComboBox();
 	this.favoriteMenu.setPreferredSize(new Dimension(150, (int)this.favoriteMenu.getPreferredSize().getHeight()));
 	this.favoriteMenu.addItem("Favorites");
@@ -1105,7 +1152,10 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
         	return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 	    }
 	});
-	favorites.add(this.favoriteMenu);
+	gbc2.weightx = 1;
+	gbc2.anchor = GridBagConstraints.CENTER;
+	gbc2.fill = GridBagConstraints.HORIZONTAL;
+	favorites.add(this.favoriteMenu, gbc2);
 	this.favoriteCheckbox = new JToggleButton(new ImageIcon(this.getClass().getResource("/images/no_heart.png")));
 	this.favoriteCheckbox.setSelectedIcon(new ImageIcon(this.getClass().getResource("/images/heart.png")));
 	this.favoriteCheckbox.addActionListener(new ActionListener() {
@@ -1122,7 +1172,11 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    }
 	});
 	this.favoriteCheckbox.setEnabled(false);
-	favorites.add(this.favoriteCheckbox);
+	gbc2.weightx = 0;
+	gbc2.gridx = 1;
+	gbc2.anchor = GridBagConstraints.CENTER;
+	gbc2.fill = GridBagConstraints.NONE;
+	favorites.add(this.favoriteCheckbox, gbc2);
 	gbc.weightx = 0;
 	gbc.insets = new Insets(0, 20, 0, 0);
 	gbc.anchor = GridBagConstraints.LINE_START;
@@ -1150,9 +1204,10 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	gbc1.weightx = 0;
 	rating.add(jl, gbc1);
 	jl = new JLabel("Rate Song");
+	jl.setHorizontalAlignment(SwingConstants.CENTER);
+	gbc1.gridx = 1;
 	gbc1.weightx = 1;
 	gbc1.anchor = GridBagConstraints.CENTER;
-	gbc.gridx = 2;
 	rating.add(jl, gbc1);
 	jl = new JLabel("+");
 	gbc1.weightx = 0;
@@ -1167,12 +1222,12 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	gbc.anchor = GridBagConstraints.CENTER;
 	stripe.add(rating, gbc);
 	
-	this.filterPanel = new FilterPanel(this);
+	//this.filterPanel = new FilterPanel(this);
 	this.filterMenu = this.filterPanel.getFilterMenu();
 	gbc.gridx = 2;
-	gbc.weightx = 1;
+	gbc.weightx = 0;
 	gbc.fill = GridBagConstraints.HORIZONTAL;
-	gbc.anchor = GridBagConstraints.CENTER;
+	gbc.anchor = GridBagConstraints.LINE_END;
 	gbc.insets = new Insets(0, 0, 0, 20);
 	gbc.fill = GridBagConstraints.NONE;
 	this.filterMenu.setPreferredSize(new Dimension((int)favorites.getPreferredSize().getWidth(), (int)this.filterMenu.getPreferredSize().getHeight()));
@@ -1629,13 +1684,43 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.bookmarkSurf(this.channelMark, this.currentChannelInfo);
     }
 
+    private URL logoJar;
+    private Icon findLogo(String filename) {
+	// XXX At some point, we want to set up some infrastructure
+	// to allow this to be auto-updated separately from the
+	// application. For now, stuff it in the jar.
+
+	URL logoURL;
+	// we never got initialized. This means there is no logo jar
+	// out there, so let's just use the logos dir built-in to the
+	// app.
+	if (this.logoJar == null) {
+	    logoURL = this.getClass().getResource("/logos/" + filename);
+	} else {
+	    try {
+		logoURL = new URL("jar:" + this.logoJar.toString() + "!/" + filename);
+	    }
+	    catch(MalformedURLException e) {
+		return null;
+	    }
+	}
+	if (logoURL == null)
+	    return null;
+
+	// Now go get the image. Note that we must be synchronous.
+	// It is not an error for there to be no image for this filename.
+	// just return null.
+	ImageIcon img = new ImageIcon(logoURL);
+	if (img.getImageLoadStatus() != MediaTracker.COMPLETE)
+	    return null;
+	return img;
+    }
+    MediaTracker myMT = new MediaTracker(this.channelLogo);
     private void setChannelLogo(int chan) {
-	URL logoUrl = this.getClass().getResource("/logos/" + chan + ".gif");
-	if (logoUrl == null)
-	    logoUrl = this.getClass().getResource("/logos/default.gif");
-	if (logoUrl == null)
-	    return; // just give up rather than throw outwards
-	Icon logo = new ImageIcon(logoUrl);
+	Icon logo = this.findLogo(chan + ".gif");
+	if (logo == null) {
+	    logo = this.findLogo("default.gif");
+	}
 	this.channelLogo.setIcon(logo);
     }
 
@@ -1858,7 +1943,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.powerCheckBox.setSelected(true);
 	this.rebuildFavoritesMenu();
 	this.favoriteCheckbox.setEnabled(true);
-	this.filterMenuItem.setEnabled(true);
+	//this.filterMenuItem.setEnabled(true);
 	this.filterMenu.setEnabled(this.filterMenu.getItemCount() > 1);
 	this.searchField.setEnabled(true);
 	this.searchFieldClear.setEnabled(true);
@@ -1896,6 +1981,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    this.saveChannelList();
 	SwingUtilities.invokeLater(new Runnable() {
 	    public void run() {
+		MainWindow.this.searchSystem.update(null);
 		MainWindow.this.channelList.clear();
 		MainWindow.this.sortedChannelList = new ChannelInfo[0];
 		MainWindow.this.channelTableModel.fireTableDataChanged();
@@ -1906,9 +1992,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		MainWindow.this.searchFieldClear.setEnabled(false);
 		MainWindow.this.muteButton.setEnabled(false);
 		MainWindow.this.smartMuteButton.setEnabled(false);
-		MainWindow.this.filterMenuItem.setEnabled(false);
+		//MainWindow.this.filterMenuItem.setEnabled(false);
 		MainWindow.this.filterMenu.setEnabled(false);
-		MainWindow.this.filterPanel.hide();
 		MainWindow.this.compactMenuItem.setEnabled(false);
 		MainWindow.this.forceNormalView();
 		MainWindow.this.powerCheckBox.setSelected(false);
@@ -1978,9 +2063,15 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.nowPlayingPanel.setSongTime(null, null);
 	boolean isFavorite = this.favoriteList.contains(sid);
 	this.favoriteCheckbox.setSelected(isFavorite);
-	if (isFavorite) {
-	    MainWindow.this.ignoreFavoriteMenu = true;
-	    this.favoriteMenu.setSelectedItem(sid);
+	MainWindow.this.ignoreFavoriteMenu = true;
+	try {
+	    if (isFavorite) {
+		this.favoriteMenu.setSelectedItem(sid);
+	    } else {
+		this.favoriteMenu.setSelectedIndex(0);
+	    }
+	}
+	finally {
 	    MainWindow.this.ignoreFavoriteMenu = false;
 	}
 	this.scrollToCurrentChannel();
@@ -2135,7 +2226,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    String val = node.get(keys[i], null);
 	    if (val == null)
 		continue;
-	    String[] val_list =  val.split(":");
+	    String[] val_list =  val.split(":", -1);
 	    if (val_list.length != 4)
 		continue;
 	    ChannelInfo info;
@@ -2297,6 +2388,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	// just ignore it.
 	if (i.equals(this.channelList.get(new Integer(i.getServiceID()))))
 	    return;
+
+	this.searchSystem.update(i);
 
 	// We got an update. Is it a new favorite? If so, remember that for later.
 	boolean newFav =  (!this.channelList.containsKey(new Integer(i.getServiceID()))) && this.favoriteList.contains(new Integer(i.getServiceID()));

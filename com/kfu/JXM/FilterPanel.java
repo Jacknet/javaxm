@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: FilterPanel.java,v 1.6 2004/03/30 17:21:04 nsayer Exp $
+ $Id: FilterPanel.java,v 1.7 2004/04/04 22:18:40 nsayer Exp $
  
  */
 
@@ -38,7 +38,7 @@ import java.util.prefs.*;
 
 import com.kfu.xm.*;
 
-public class FilterPanel extends JDialog {
+public class FilterPanel extends JPanel {
 
     ArrayList filterSets = new ArrayList();
     int currentFilterIndex = -1;
@@ -135,11 +135,11 @@ public class FilterPanel extends JDialog {
     }
 
     public FilterPanel(MainWindow parent) {
-	super(parent.getFrame(), "JXM - Filter configuration", false);
+	//super(parent.getFrame(), "JXM - Filter configuration", false);
 	this.parent = parent;
-        this.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        //this.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 
-	this.getContentPane().setLayout(new BorderLayout());
+	this.setLayout(new BorderLayout());
 
 	this.theTabbedPane = new JTabbedPane();
 	this.theTabbedPane.addChangeListener(new ChangeListener() {
@@ -241,7 +241,7 @@ public class FilterPanel extends JDialog {
 	tabbot.add(this.deleteButton);
 	this.tabContents.add(tabbot, BorderLayout.SOUTH);
 
-	this.getContentPane().add(this.theTabbedPane, BorderLayout.CENTER);
+	this.add(this.theTabbedPane, BorderLayout.CENTER);
 	JPanel bot = new JPanel();
 	bot.setLayout(new GridBagLayout());
 	GridBagConstraints gbc = new GridBagConstraints();
@@ -255,6 +255,7 @@ public class FilterPanel extends JDialog {
 	gbc.fill = GridBagConstraints.HORIZONTAL;
 	bot.add(jl, gbc);
 
+/*
 	jb = new JButton("Cancel");
 	jb.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
@@ -283,6 +284,7 @@ public class FilterPanel extends JDialog {
 	gbc.anchor = GridBagConstraints.LINE_START;
 	bot.add(jb, gbc);
 	this.getContentPane().add(bot, BorderLayout.SOUTH);
+*/
 
 	this.filterMenu = new JComboBox();
 	this.filterMenu.setRenderer(new DefaultListCellRenderer() {
@@ -319,12 +321,14 @@ public class FilterPanel extends JDialog {
 
     private boolean ignoreFilterMenu = false;
 
+/*
     public void show() {
         this.reloadFilterSettings();
 	//this.theTabbedPane.setSelectedIndex(-1);
 	//this.theTabbedPane.setSelectedIndex(this.currentFilterIndex); // This will refresh everything via the change listener
 	super.show();
     }
+*/
 
     private void refreshChannelList() {
 	// Step 0 - make a new root and ditch the old tree
@@ -418,6 +422,17 @@ public class FilterPanel extends JDialog {
 
     public JComboBox getFilterMenu() {
 	return this.filterMenu;
+    }
+
+    public void reload() {
+	if (!RadioCommander.theRadio().isOn())
+	    return;
+	this.reloadFilterSettings();
+    }
+    public void save() {
+	if (!RadioCommander.theRadio().isOn())
+	    return;
+ 	this.saveFilterSettings();
     }
 
     private static final String FILTER_SET_KEY = "FilterSets"; // Contains named ByteArrays - each is a filter.

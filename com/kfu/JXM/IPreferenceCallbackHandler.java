@@ -17,14 +17,23 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: IPreferenceCallbackHandler.java,v 1.3 2004/03/09 07:11:04 nsayer Exp $
+ $Id: IPreferenceCallbackHandler.java,v 1.4 2004/04/04 22:18:40 nsayer Exp $
  
  */
 
 package com.kfu.JXM;
 
+import javax.swing.*;
+
 public interface IPreferenceCallbackHandler {
     public void clearChannelStats();
     public void rebuildBookmarksMenu(Bookmark[] list);
+
+    // Liason with filter and search system
+
+    public void reload(); // Preferences dialog was cancelled
+    public void save(); // Preferences dialog was OKed
+    public JComponent getFilterPreferencePanel(); // Get the tab contents for the filter tab
+    public JComponent getSearchPreferencePanel(); // Get the tab contents for the search tab
 }
 

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: PreferencesDialog.java,v 1.26 2004/03/31 19:49:17 nsayer Exp $
+ $Id: PreferencesDialog.java,v 1.27 2004/04/04 22:18:40 nsayer Exp $
  
  */
 
@@ -66,7 +66,9 @@ public class PreferencesDialog extends JDialog {
     public final static int TAB_DEVICE = 0;
     public final static int TAB_TRACKER = 1;
     public final static int TAB_BOOKMARKS = 2;
-    public final static int TAB_MISC = 3;
+    public final static int TAB_FILTERS = 3;
+    public final static int TAB_SEARCH = 4;
+    public final static int TAB_MISC = 5;
     public void showTab(int tab) {
 	this.theTabs.setSelectedIndex(tab);
 	this.show();
@@ -265,6 +267,7 @@ public class PreferencesDialog extends JDialog {
 	gbc.anchor = GridBagConstraints.LINE_END;
 	jp.add(jl, gbc);
 	this.bmName = new JTextField();
+	this.bmName.setEnabled(false);
 	this.bmName.getDocument().addDocumentListener(new DocumentListener() {
 	    public void changedUpdate(DocumentEvent e) { this.doIt(); }
 	    public void insertUpdate(DocumentEvent e) { this.doIt(); }
@@ -294,6 +297,7 @@ public class PreferencesDialog extends JDialog {
 	gbc.anchor = GridBagConstraints.LINE_END;
 	jp.add(jl, gbc);
 	this.bmURL = new JTextField();
+	this.bmURL.setEnabled(false);
 	this.bmURL.getDocument().addDocumentListener(new DocumentListener() {
 	    public void changedUpdate(DocumentEvent e) { this.doIt(); }
 	    public void insertUpdate(DocumentEvent e) { this.doIt(); }
@@ -332,6 +336,11 @@ public class PreferencesDialog extends JDialog {
 	jp.add(jl, gbc);
 
 	this.theTabs.insertTab("Web Bookmarks", null, jp, null, TAB_BOOKMARKS);
+
+	this.theTabs.insertTab("Filters", null, this.handler.getFilterPreferencePanel(), null, TAB_FILTERS);
+	this.theTabs.setEnabledAt(TAB_FILTERS, false);
+
+	this.theTabs.insertTab("Search", null, this.handler.getSearchPreferencePanel(), null, TAB_SEARCH);
 
 	jp = new JPanel();
 	jp.setLayout(new GridBagLayout());
@@ -448,6 +457,7 @@ public class PreferencesDialog extends JDialog {
     };
 
     private void reloadFromDefaults() {
+	this.handler.reload();
 	this.startupCheckbox.setSelected(JXM.myUserNode().getBoolean(STARTUP_CHECK, true));
 
 	try {
@@ -516,6 +526,7 @@ public class PreferencesDialog extends JDialog {
     }
 
     private void saveToDefaults() {
+	this.handler.save();
 	JXM.myUserNode().putBoolean(STARTUP_CHECK, this.startupCheckbox.isSelected());
 
 	Preferences node = JXM.myUserNode().node(BOOKMARKS);
@@ -556,12 +567,16 @@ public class PreferencesDialog extends JDialog {
     public void turnOn(String radioID) {
 	this.radioID.setText(radioID);
 	this.deviceMenu.setEnabled(false);
+	this.theTabs.setEnabledAt(TAB_FILTERS, true);
     }
 
     // This is called when the radio is turned off
     public void turnOff() {
 	this.radioID.setText("");
 	this.deviceMenu.setEnabled(true);
+	if (this.theTabs.getSelectedIndex() == TAB_FILTERS)
+	    this.theTabs.setSelectedIndex(TAB_DEVICE);
+	this.theTabs.setEnabledAt(TAB_FILTERS, false);
     }
 
     private void handleTrackerException(Exception e) {

@@ -49,11 +49,23 @@ public class PreferencesDialog extends JDialog {
     JTextField bmURL;
     JButton moveUpButton;
     JButton moveDownButton;
+    JCheckBox startupCheckbox;
+
+    public void setVisible(boolean b) {
+	if (b)
+	    this.reloadFromDefaults();
+	super.setVisible(b);
+    }
+    public void show() {
+	this.reloadFromDefaults();
+	super.show();
+    }
 
     public PreferencesDialog(JFrame parent, IPreferenceCallbackHandler handler) {
 	super(parent, "JXM Preferences", true);
 	this.handler = handler;
 	this.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+
 	this.getContentPane().setLayout(new BorderLayout());
 
 	JTabbedPane jtp = new JTabbedPane();
@@ -319,6 +331,10 @@ public class PreferencesDialog extends JDialog {
 	gbc.gridwidth = 2;
 	jp.add(jb, gbc);
 
+	this.startupCheckbox = new JCheckBox("Check for new version at startup");
+	gbc.gridy++;
+	jp.add(this.startupCheckbox, gbc);
+
 	jtp.addTab("Misc", jp);
 
 	this.getContentPane().add(jtp, BorderLayout.CENTER);
@@ -379,6 +395,8 @@ public class PreferencesDialog extends JDialog {
 	}
     }
 
+    // Used by about class
+    final static String STARTUP_CHECK = "StartupVersionCheck";
     private final static String XMTRACKER_URL = "TrackerURL";
     private final static String XMTRACKER_USER = "TrackerUser";
     private final static String XMTRACKER_PASS = "TrackerPassword";
@@ -397,6 +415,8 @@ public class PreferencesDialog extends JDialog {
     };
 
     private void reloadFromDefaults() {
+	this.startupCheckbox.setSelected(JXM.myUserNode().getBoolean(STARTUP_CHECK, true));
+
 	try {
 	if (!JXM.myUserNode().nodeExists(BOOKMARKS)) {
 	    // Load up the default set
@@ -452,6 +472,8 @@ public class PreferencesDialog extends JDialog {
     }
 
     private void saveToDefaults() {
+	JXM.myUserNode().putBoolean(STARTUP_CHECK, this.startupCheckbox.isSelected());
+
 	Preferences node = JXM.myUserNode().node(BOOKMARKS);
 	try {
 	    node.clear();

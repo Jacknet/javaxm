@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: SearchSystem.java,v 1.1 2004/04/04 22:18:40 nsayer Exp $
+ $Id: SearchSystem.java,v 1.2 2004/04/05 07:00:19 nsayer Exp $
  
  */
 
@@ -177,6 +177,9 @@ public class SearchSystem {
 	    return sb.toString();
 	}
 	public boolean isMatch(int channel, StringWrapper artist, StringWrapper title) {
+	    if (this.artistMatcher == null && this.titleMatcher == null) // You can't have it match *nothing*
+		return false;
+
 	    // Step 1... Do we have a list of acceptable channels? If so, is this one acceptable? If not, return false
 	    if (this.acceptableChannels.length > 0) {
 		if (Arrays.binarySearch(this.acceptableChannels, channel) < 0)
@@ -218,7 +221,7 @@ public class SearchSystem {
 	class SearchConfigRenderer extends JPanel implements ListCellRenderer {
 	    JLabel chanLabel, artLabel, titLabel;
 	    public SearchConfigRenderer() {
-		this.setOpaque(false);
+		this.setOpaque(true);
 		this.setLayout(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
 		JLabel jl = new JLabel("Channels:");
@@ -262,7 +265,7 @@ public class SearchSystem {
 	    }
 	}
 	this.configList.setCellRenderer(new SearchConfigRenderer());
-	this.configList.addSelectionListener(new SelectionListener() {
+	this.configList.addListSelectionListener(new ListSelectionListener() {
 	    public void valueChanged(ListSelectionEvent e) {
 	    }
 	});
@@ -317,7 +320,6 @@ public class SearchSystem {
 	this.searchMatches.getContentPane().add(new JScrollPane(this.matchList), gbc);
 	this.searchMatches.pack();
 
-
 	this.reloadFromPreferences();
     }
 
@@ -364,6 +366,14 @@ public class SearchSystem {
 	}
     }
     private void saveToPreferences() {
+	// Get rid of any that have a blank artist and title. They are Not Allowed.
+	for(int i = 0; i < this.searchList.size(); i++) {
+	    SearchMatcher sm = (SearchMatcher)this.searchList.get(i);
+	    if (sm.getArtist().length() == 0 && sm.getTitle().length() == 0) {
+		this.searchList.removeElement(sm);
+		i--;
+	    }
+	}
 	Preferences node = JXM.myUserNode().node(SEARCH_LIST_KEY);
 	try {
 	    node.clear();

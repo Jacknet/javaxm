@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MemoryPanel.java,v 1.2 2004/03/14 03:28:31 nsayer Exp $
+ $Id: MemoryPanel.java,v 1.3 2004/03/15 07:20:52 nsayer Exp $
  
  */
 
@@ -32,6 +32,7 @@ import java.awt.event.*;
 import java.io.*;
 import java.lang.*;
 import java.net.*;
+import java.text.*;
 import java.util.*;
 import java.util.prefs.*;
 
@@ -46,6 +47,8 @@ public class MemoryPanel extends JDialog {
 
     private static final int memoryCellHeight = 80;
     private static final int memoryCellWidth = 300;
+
+    private static DateFormat myFormatter = DateFormat.getDateTimeInstance();
 
     public MemoryPanel(MainWindow parent) {
 	super(parent.getFrame(), "JXM - Memorized Info", false);
@@ -113,7 +116,7 @@ public class MemoryPanel extends JDialog {
 		    this.setBackground(null);
 		}
 		this.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, MainWindow.gridColor));
-		this.dateField.setText(when.toString());
+		this.dateField.setText(MemoryPanel.myFormatter.format(when));
 		this.channelInfoPanel.setChannelInfo(info);
 		return this;
 	    }

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.70 2004/03/20 21:56:20 nsayer Exp $
+ $Id: MainWindow.java,v 1.71 2004/03/22 00:00:51 nsayer Exp $
  
  */
 
@@ -1206,8 +1206,12 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	channelTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 	channelTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 	    public void valueChanged(ListSelectionEvent e) {
-		MainWindow.this.selectionInProgress = e.getValueIsAdjusting();
-		if (MainWindow.this.selectionInProgress)
+		if (MainWindow.this.ignoreSelectionChange)
+		    return;
+		// While he's dragging through the list, bar 'selectCurrentChannel()' from ripping
+		// out from under him.
+		MainWindow.this.disallowSelectionChange = e.getValueIsAdjusting();
+		if (e.getValueIsAdjusting()) // not done yet
 		    return;
 		ListSelectionModel lsm = (ListSelectionModel)e.getSource();
 		if (lsm.isSelectionEmpty()) {
@@ -1217,13 +1221,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		    if (row >= MainWindow.this.sortedChannelList.length)
 			return;
 		    ChannelInfo i = (ChannelInfo)MainWindow.this.sortedChannelList[row];
-		    // The problem here is that we will get called even when we do the selecting
-		    // ourselves (as in this.selectCurrentChannel(); ). This means we have to
-		    // efficiently fall through if there's nothing to be done (as will be the case)
-		    // when we select the currently selected row. Argh!
-		    if (RadioCommander.theRadio().getChannel() == i.getChannelNumber())
-			return;
-		    else
+		    // Don't bother doing anything if we're already there.
+		    if (RadioCommander.theRadio().getChannel() != i.getChannelNumber())
 			MainWindow.this.setChannel(i.getChannelNumber());
 		}
 	    }
@@ -1838,15 +1837,21 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    this.rebuildFavoritesMenu();
     }
 
-    private boolean selectionInProgress = false;
+    private boolean disallowSelectionChange = false;
+    private boolean ignoreSelectionChange = false;
     private void selectCurrentChannel() {
-	if (this.selectionInProgress)
+	if (this.disallowSelectionChange)
 	    return;
-	int sid = RadioCommander.theRadio().getServiceID();
-	int row = this.rowForSID(sid);
+	this.ignoreSelectionChange = true;
+	try {
+	int row = this.rowForSID(this.currentChannelInfo.getServiceID());
 	if (row < 0)
 	    return;
 	this.channelTable.addRowSelectionInterval(row, row);
+	}
+	finally {
+	    this.ignoreSelectionChange = false;
+	}
     }
 
     private void rebuildFavoritesMenu() {

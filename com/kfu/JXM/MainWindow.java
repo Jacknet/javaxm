@@ -128,7 +128,8 @@ public static void main(String[] args) { new MainWindow(); }
         this.myFrame = new JFrame("JXM");
 	this.myFrame.addWindowListener(new WindowAdapter() {
 	    public void windowClosing(WindowEvent e) {
-		MainWindow.this.turnPowerOff();
+		if (RadioCommander.theRadio().isOn())
+		    MainWindow.this.turnPowerOff();
 		System.exit(0);
 	    }
 	});
@@ -222,6 +223,8 @@ public static void main(String[] args) { new MainWindow(); }
 		    // XXX can never happen
 		} else {
 		    int row = lsm.getMinSelectionIndex();
+		    if (row >= MainWindow.this.channelList.size())
+			return;
 		    ChannelInfo i = (ChannelInfo)MainWindow.this.channelList.get(new Integer(sidForRow(row)));
 		    try {
 			RadioCommander.theRadio().setChannel(i.getChannelNumber());
@@ -381,6 +384,8 @@ public static void main(String[] args) { new MainWindow(); }
     }
 
     private void handleError(final Exception e) {
+	System.err.println(e.getMessage());
+	e.printStackTrace();
 	RadioCommander.theRadio().Dispose();
 	SwingUtilities.invokeLater(new Runnable() {
 	    public void run() {

@@ -346,8 +346,8 @@ public static void main(String[] args) { new MainWindow(); }
     private void turnPowerOn() {
 	// Figure out which device was selected
 	if (this.deviceName == null) {
-	    // XXX - complain
 	    this.powerCheckBox.setSelected(false);
+	    JOptionPane.showMessageDialog(this.myFrame, "Please pick a device before powering up.", "No device selected", JOptionPane.ERROR_MESSAGE);
 	    return;
 	}
 	// Attempt to power up the radio

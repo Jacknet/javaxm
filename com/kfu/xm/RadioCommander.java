@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: RadioCommander.java,v 1.11 2004/03/09 07:13:35 nsayer Exp $
+ $Id: RadioCommander.java,v 1.12 2004/03/11 04:17:58 nsayer Exp $
  
  */
 
@@ -1270,7 +1270,8 @@ t.printStackTrace();
 	    info = this.getNextChannelInfo(this.lastChannel);
 	}
 	catch(RadioException e) {
-	    this.handleException(e);
+	    if (this.myDeviceIn != null)
+		this.handleException(e);
 	    return;
 	}
 

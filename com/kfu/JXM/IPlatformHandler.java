@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: IPlatformHandler.java,v 1.4 2004/03/20 16:24:37 nsayer Exp $
+ $Id: IPlatformHandler.java,v 1.5 2004/04/10 07:59:16 nsayer Exp $
  
  */
 
@@ -51,4 +51,6 @@ public interface IPlatformHandler {
 	// The platform handler can send back messages here
         public void registerCallbackHandler(IPlatformCallbackHandler handler);
 
+	// Called at exit
+	public void quit();
 }

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MacOSX.java,v 1.9 2004/03/20 16:24:37 nsayer Exp $
+ $Id: MacOSX.java,v 1.10 2004/04/10 07:59:16 nsayer Exp $
  
  */
 
@@ -211,4 +211,5 @@ public class MacOSX implements IPlatformHandler {
     public void memoryMenuClicked(NSObject sender) {
 	this.cb.platformNotify(PlatformFactory.PLAT_CB_MEMORY, this.menuInfo);
     }
+    public void quit() {}
 }

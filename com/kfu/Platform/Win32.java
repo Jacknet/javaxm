@@ -17,16 +17,22 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: Win32.java,v 1.4 2004/03/31 15:21:33 nsayer Exp $
+ $Id: Win32.java,v 1.5 2004/04/10 07:59:16 nsayer Exp $
  
  */
 
 package com.kfu.Platform;
 
+import java.awt.event.*;
 import java.io.*;
 import java.util.*;
+import javax.swing.*;
+
+import com.kfu.xm.*;
 
 import com.ice.jni.registry.*;
+
+import com.jeans.trayicon.*;
 
 import edu.stanford.ejalbert.BrowserLauncher;
 
@@ -55,11 +61,15 @@ public class Win32 implements IPlatformHandler {
 	return this.ftdiDevices.contains(in);
     }
 
-    public void registerCallbackHandler(IPlatformCallbackHandler ignore) { }
+    public void registerCallbackHandler(IPlatformCallbackHandler cb) { this.cb = cb; }
+
+    private IPlatformCallbackHandler cb;
 
     private ArrayList ftdiDevices;
 
     private boolean crappyWindowsVersion; // any DOS based Windows: win95, 98, 98SE, ME
+
+    private WindowsTrayIcon trayIcon;
 
     public Win32() throws Exception {
 	String osName = System.getProperty("os.name").toLowerCase();
@@ -67,6 +77,111 @@ public class Win32 implements IPlatformHandler {
 	    throw new Exception("We're not using Windows! Yay!");
 
 	this.crappyWindowsVersion = (osName.indexOf("9") >= 0 || osName.indexOf("me") >= 0);
+	WindowsTrayIcon.initTrayIcon("JXM");
+	ImageIcon ii = new ImageIcon("trayicon.png");
+	this.trayIcon = new WindowsTrayIcon(ii.getImage(), 16, 16);
+	this.trayIcon.setVisible(true);
+	new TrayIconMenu().setTrayIcon(this.trayIcon);
+    }
+
+    private class TrayIconMenu extends SwingTrayPopup {
+	public void showMenu(int x, int y) {
+	    this.rebuild();
+	    super.showMenu(x, y);
+	}
+
+	private JMenuItem chanItem, artistItem, titleItem, muteItem, smartMuteItem;
+	private JMenu bookmarkMenu, favoriteMenu;
+
+	private void rebuild() {
+	    final ChannelInfo info;
+	    if (!Win32.this.cb.radioIsOn() || (info = Win32.this.cb.getChannelInfo()) == null) {
+		this.chanItem.setText("");
+		this.artistItem.setText("");
+		this.titleItem.setText("");
+		this.setEnabled(false);
+		return;
+	    } else {
+		this.setEnabled(true);
+		this.chanItem.setText(Integer.toString(info.getChannelNumber()) + " - " + info.getChannelName());
+		this.artistItem.setText(info.getChannelArtist());
+		this.titleItem.setText(info.getChannelTitle());
+	    }
+	    int muteState = Win32.this.cb.getMuteState();
+	    // add little checkmarks to the mute / smart mute menus somehow
+
+	    // rebuild the bookmark menu
+	    Bookmark[] marks = Win32.this.cb.getBookmarks();
+	    this.bookmarkMenu.removeAll();
+	    for(int i = 0; i < marks.length; i++) {
+		final Bookmark mark = marks[i];
+		JMenuItem jmi = new JMenuItem(mark.getName());
+		jmi.addActionListener(new ActionListener() {
+		    public void actionPerformed(ActionEvent e) {
+			try {
+			    mark.surf(info);
+			}
+			catch(IOException ex) {
+			    // now what?
+			}
+		    }
+		});
+		this.bookmarkMenu.add(jmi);
+	    }
+
+	    // rebuild the favorites menu
+	    Favorite[] favs = Win32.this.cb.getFavorites();
+	    this.favoriteMenu.removeAll();
+	    for(int i = 0; i < favs.length; i++) {
+		final Favorite fav = favs[i];
+		JMenuItem jmi = new JMenuItem(fav.getMenuString());
+		jmi.addActionListener(new ActionListener() {
+		    public void actionPerformed(ActionEvent e) {
+			Win32.this.cb.platformNotify(PlatformFactory.PLAT_CB_CHANNEL, new Integer(fav.getChannelNumber()));
+		    }
+		});
+		this.favoriteMenu.add(jmi);
+	    }
+	}
+
+	public TrayIconMenu() {
+	    this.chanItem = new JMenuItem("");
+	    this.chanItem.setEnabled(false);
+	    this.add(this.chanItem);
+	    this.artistItem = new JMenuItem("");
+	    this.artistItem.setEnabled(false);
+	    this.add(this.artistItem);
+	    this.titleItem = new JMenuItem("");
+	    this.titleItem.setEnabled(false);
+	    this.add(this.titleItem);
+	    this.addSeparator();
+
+	    this.bookmarkMenu = new JMenu("Bookmarks");
+	    this.add(this.bookmarkMenu);
+	    this.addSeparator();
+
+	    this.favoriteMenu = new JMenu("Favorites");
+	    this.add(this.favoriteMenu);
+	    this.addSeparator();
+
+	    this.muteItem = new JMenuItem("Smart Mute");
+	    this.muteItem.addActionListener(new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+		    Win32.this.cb.platformNotify(PlatformFactory.PLAT_CB_SMART_MUTE, null);
+		}
+	    });
+	    this.add(this.muteItem);
+
+	    this.smartMuteItem = new JMenuItem("Mute");
+	    this.smartMuteItem.addActionListener(new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+		    Win32.this.cb.platformNotify(PlatformFactory.PLAT_CB_NORM_MUTE, null);
+		}
+	    });
+	    this.add(this.smartMuteItem);
+
+	    this.setEnabled(false);
+	}
     }
 
     private void getFTDIlist() {
@@ -105,4 +220,7 @@ public class Win32 implements IPlatformHandler {
 	}
     }
 
+    public void quit() {
+	WindowsTrayIcon.cleanUp();
+    }
 }

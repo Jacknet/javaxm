@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.89 2004/04/08 22:59:52 nsayer Exp $
+ $Id: MainWindow.java,v 1.90 2004/04/10 07:59:16 nsayer Exp $
  
  */
 
@@ -705,6 +705,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.saveChannelTableLayout();
 	this.saveTickList();
 	this.memoryPanel.quit();
+	PlatformFactory.ourPlatform().quit();
 	System.exit(0);
     }
     public void prefs() {
@@ -812,14 +813,16 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
     public MainWindow() {
 
-	PlatformFactory.ourPlatform().registerCallbackHandler(this);
-
+	// This MUST happen before we init the platform, because it may
+	// create swing objects (menus perhaps).
 	try {
 	    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 	}
 	catch(Exception e) {
 	    // Well, we tried
 	}
+
+	PlatformFactory.ourPlatform().registerCallbackHandler(this);
 
 	String[] logoPaths = {
 	    // The current working dir

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.49 2004/03/11 07:07:02 nsayer Exp $
+ $Id: MainWindow.java,v 1.50 2004/03/11 19:07:18 nsayer Exp $
  
  */
 
@@ -631,6 +631,9 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.myFrame.getContentPane().add(top, frameGBC);
 
 	this.channelTable = new JTable();
+	this.channelTable.setShowHorizontalLines(false);
+	this.channelTable.setShowVerticalLines(true);
+	this.channelTable.setGridColor(new Color(.85f, .85f, .85f));
 	this.channelTable.addMouseListener(new MouseAdapter() {
 	    public void mousePressed(MouseEvent e) { this.maybePopup(e); }
 	    public void mouseReleased(MouseEvent e) { this.maybePopup(e); }
@@ -668,7 +671,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		    sb.append(this.getClass().getResource(MainWindow.this.sortDirection?"/images/arrow-down.png":"/images/arrow-up.png"));
 		    sb.append("\"></html>");
 		    value = sb.toString();
-		    isSelected = true;
 		}
 		return this.orig.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 		/*Component c = orig.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
@@ -698,10 +700,18 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
 	TableColumnModel tcm = new DefaultTableColumnModel();
 	TableColumn tc;
-	// Damn it, don't show a focus ring!
+	// show stripes, and don't show a focus ring!
 	class MyTableCellRenderer extends DefaultTableCellRenderer {
 	    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-		return super.getTableCellRendererComponent(table, value, isSelected, false, row, column);
+		Component c = super.getTableCellRendererComponent(table, value, isSelected, false, row, column);
+		    if (!isSelected) {
+		        c.setForeground(Color.BLACK);
+		        c.setBackground((row % 2 == 0)?Color.WHITE:new Color(.925f, .925f, 1f));
+		    } else {
+			c.setForeground(MainWindow.this.channelTable.getSelectionForeground());
+			c.setBackground(MainWindow.this.channelTable.getSelectionBackground());
+		    }
+		return c;
 	    }
 	}
 	DefaultTableCellRenderer centered = new MyTableCellRenderer();

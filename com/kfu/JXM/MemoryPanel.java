@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MemoryPanel.java,v 1.6 2004/03/30 17:18:21 nsayer Exp $
+ $Id: MemoryPanel.java,v 1.7 2004/04/10 17:45:17 nsayer Exp $
  
  */
 
@@ -53,7 +53,7 @@ public class MemoryPanel extends JDialog {
     private static DateFormat myFormatter = DateFormat.getDateTimeInstance();
 
     public MemoryPanel(MainWindow parent) {
-	super(parent.getFrame(), "JXM - Memorized Info", false);
+	super(parent.getFrame(), "JXM - Notebook", false);
 	this.parent = parent;
 
         this.getContentPane().setLayout(new GridBagLayout());

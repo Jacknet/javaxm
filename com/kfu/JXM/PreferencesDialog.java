@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: PreferencesDialog.java,v 1.24 2004/03/20 16:24:37 nsayer Exp $
+ $Id: PreferencesDialog.java,v 1.25 2004/03/30 17:16:15 nsayer Exp $
  
  */
 
@@ -477,9 +477,14 @@ public class PreferencesDialog extends JDialog {
 	}
 	Arrays.sort(keys, new Comparator() {
 	    public int compare(Object o1, Object o2) {
+		try {
 		int i1 = Integer.parseInt(o1.toString());
 		int i2 = Integer.parseInt(o2.toString());
 		return new Integer(i1).compareTo(new Integer(i2));
+		}
+		catch(NumberFormatException e) {
+		    return 0;
+		}
 	    }
 	});
 	this.bookmarks.clear();

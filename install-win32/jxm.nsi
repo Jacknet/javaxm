@@ -2,7 +2,7 @@
 ; Nullsoft Scriptable Install System
 ; Install script for JXM on Windows
 ;
-; $Id: jxm.nsi,v 1.6 2004/03/31 15:15:55 nsayer Exp $
+; $Id: jxm.nsi,v 1.7 2004/04/04 22:15:03 nsayer Exp $
 
 ;Based on a template by Joost Verburg
 
@@ -42,7 +42,7 @@
 #  Page custom CheckJRE
   !define MUI_PAGE_CUSTOMFUNCTION_LEAVE CheckJRE
   !insertmacro MUI_PAGE_WELCOME
-  !insertmacro MUI_PAGE_LICENSE "COPYING.txt"
+  !insertmacro MUI_PAGE_LICENSE "COPYING.txt" # this is just ../COPYING with CRLF endings
   !insertmacro MUI_PAGE_DIRECTORY
   
   ;Start Menu Folder Page Configuration
@@ -98,17 +98,21 @@ Section "Working Section" SecWork
   SetOutPath "$INSTDIR"
   File jxm.jar
   File jxm.ico
-
-  SetOutPath "$JAVA_HOME\bin"
-  File win32com.dll
+  File registry.jar
   File ICE_JNIRegistry.dll
+  File comm.jar
+  File win32com.dll
 
+  // Stupid javax.comm!!! It *requires* this file be put in with the JRE.
+  // The jar merely needs to be in the classpath and the DLL merely needs
+  // to be in the windows %PATH%, but the stupid one-liner property file
+  // must be in $JAVA_HOME\lib. It's that sort of thing that causes unrest.
   SetOutPath "$JAVA_HOME\lib"
   File javax.comm.properties
 
-  SetOutPath "$JAVA_HOME\lib\ext"
-  File comm.jar
-  File registry.jar
+  // We used to put the DLL in with the JRE.
+  ;SetOutPath "$JAVA_HOME\bin"
+  ;SetOutPath "$JAVA_HOME\lib\ext"
 
   ;Store installation folder
 #  WriteRegStr HKCU "Software\Modern UI Test" "" $INSTDIR
@@ -125,9 +129,20 @@ Section "Working Section" SecWork
   !insertmacro MUI_STARTMENU_WRITE_BEGIN JXM
     
     ;Create shortcuts
+    SetOutPath "$INSTDIR"
     CreateDirectory "$SMPROGRAMS\$STARTMENU_FOLDER"
     CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
-    CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\JXM.lnk" '$JAVA_HOME\bin\javaw.exe' '-jar "$INSTDIR\jxm.jar"' "$INSTDIR\jxm.ico" 0
+    # This is a complex shortcut. We need to add all of our JARs to the
+    # classpath, and run the main class. We used to use -jar to run
+    # jxm.jar, but that conflicts with -cp. Oh, and the startup dir
+    # must be $INSTDIR so that GetProperty("user.dir") (not to mention %PATH%)
+    # is helpful.
+    #
+    # Don't forget to add any additional JARs *cough*systray*cough* to the
+    # list.
+    #
+    # Oh, and this crap is why the start menu shortcut is NOT optional. :-)
+    CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\JXM.lnk" '$JAVA_HOME\bin\javaw.exe' '-cp comm.jar;registry.jar;jxm.jar com.kfu.JXM.JXM' "$INSTDIR\jxm.ico" 0
   
   !insertmacro MUI_STARTMENU_WRITE_END
 
@@ -159,11 +174,11 @@ Section "Uninstall"
   Delete /REBOOTOK "$INSTDIR\Uninstall.exe"
   Delete /REBOOTOK "$INSTDIR\jxm.jar"
   Delete /REBOOTOK "$INSTDIR\jxm.ico"
-  Delete /REBOOTOK "$JAVA_HOME\bin\win32com.dll"
-  Delete /REBOOTOK "$JAVA_HOME\bin\ICE_JNIRegistry.dll"
+  Delete /REBOOTOK "$INSTDIR\comm.jar"
+  Delete /REBOOTOK "$INSTDIR\win32com.dll"
+  Delete /REBOOTOK "$INSTDIR\registry.jar"
+  Delete /REBOOTOK "$INSTDIR\ICE_JNIRegistry.dll"
   Delete /REBOOTOK "$JAVA_HOME\lib\javax.comm.properties"
-  Delete /REBOOTOK "$JAVA_HOME\lib\ext\comm.jar"
-  Delete /REBOOTOK "$JAVA_HOME\lib\ext\registry.jar"
 
   RMDir "$INSTDIR"
   

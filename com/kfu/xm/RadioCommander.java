@@ -755,7 +755,7 @@ public class RadioCommander implements IAsyncExceptionHandler {
     private SerialPort mySerialPort;
     
     public static String[] getPotentialDevices() {
-ArrayList l = new ArrayList();
+	ArrayList l = new ArrayList();
         Enumeration e = CommPortIdentifier.getPortIdentifiers();
         while(e.hasMoreElements()) {
             CommPortIdentifier cpi = (CommPortIdentifier)e.nextElement();
@@ -880,24 +880,25 @@ ArrayList l = new ArrayList();
     
     private Response waitForReply(Class expectedResponse) throws RadioException {
         synchronized(replyQueue) {
-			while(true) {
-				this.checkDisposed();
-				if(replyQueue.size() == 0) {
-					try {
-						replyQueue.wait(TIMEOUT);
-					}
-					catch(InterruptedException e) {
-						// ignore
-					}
-					if (replyQueue.size() == 0) {
-						throw new RadioTimeoutException("Timeout waiting for " + expectedResponse.getName());
-					}
+		while(true) {
+			if (this.myDeviceIn == null)
+				throw new RadioTimeoutException("Radio powered off while waiting for reply");
+			if(replyQueue.size() == 0) {
+				try {
+					replyQueue.wait(TIMEOUT);
 				}
-				Response r = (Response)replyQueue.remove(0);
-				if (expectedResponse.isInstance(r))
-					return r;
-				Log("Throwing away " + r.getClass().getName() + " while waiting for " + expectedResponse.getName());
+				catch(InterruptedException e) {
+					// ignore
+				}
+				if (replyQueue.size() == 0) {
+					throw new RadioTimeoutException("Timeout waiting for " + expectedResponse.getName());
+				}
 			}
+			Response r = (Response)replyQueue.remove(0);
+			if (expectedResponse.isInstance(r))
+				return r;
+			Log("Throwing away " + r.getClass().getName() + " while waiting for " + expectedResponse.getName());
+		}
         }
     }
     
@@ -1255,8 +1256,9 @@ ArrayList l = new ArrayList();
 	    info = this.getNextChannelInfo(this.lastChannel);
 	}
 	catch(RadioException e) {
-	    // uh oh.
-	    this.handleException(e);
+	    // If we get an exception while powering down, just ignore it.
+	    if (this.myDeviceIn != null)
+	        this.handleException(e);
 	    return;
 	}
 
@@ -1305,10 +1307,6 @@ ArrayList l = new ArrayList();
     }
 	
     private void tryToExtendChannelInfo(ChannelInfo info) throws RadioException {
-	// This must have happened while turning off
-	if (this.myDeviceIn == null)
-	    return;
-
         respExtendedChannelInfo result2 = (respExtendedChannelInfo)this.performCommand(new cmdExtendedChannelInfo(info.getChannelNumber()), respExtendedChannelInfo.class);
         String a = result2.getArtist();
         if (a != null)

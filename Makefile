@@ -2,7 +2,7 @@
 all:
 	rm -rf out
 	mkdir out
-	find . -name \*.java -exec javac -d out -sourcepath . {} \;
+	find . -name \*.java -exec javac -deprecation -d out -sourcepath . {} \;
 	mkdir out/logos
 	cp logos/*gif out/logos
 	cp COPYING out

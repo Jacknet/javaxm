@@ -30,6 +30,7 @@ import java.io.*;
 import java.lang.*;
 import java.lang.reflect.*;
 import java.net.*;
+import java.security.*;
 import java.util.*;
 import java.util.prefs.*;
 
@@ -321,8 +322,6 @@ public class MainWindow implements RadioEventHandler {
 	this.channelTitleLabel.setFont(new Font(null, Font.BOLD, 20));
 	gbc.gridy = 1;
 	jp.add(this.channelTitleLabel, gbc);
-	jp.setMinimumSize(new Dimension(0, 75));
-	jp.setPreferredSize(jp.getMinimumSize());
 	toptop.add(jp);
 	JPanel buttons = new JPanel();
 	buttons.setLayout(new BoxLayout(buttons, BoxLayout.PAGE_AXIS));
@@ -345,6 +344,7 @@ public class MainWindow implements RadioEventHandler {
 
 	JPanel favorites = new JPanel();
 	this.favoriteMenu = new JComboBox();
+	this.favoriteMenu.setPreferredSize(new Dimension(150, (int)this.favoriteMenu.getPreferredSize().getHeight()));
 	this.favoriteMenu.addItem("Favorites");
 	this.favoriteMenu.setSelectedIndex(0);
 	this.favoriteMenu.setEnabled(false);
@@ -409,6 +409,7 @@ public class MainWindow implements RadioEventHandler {
 	this.favoriteCheckbox.setEnabled(false);
 	favorites.add(this.favoriteCheckbox);
 	gbc.weightx = 0;
+	gbc.insets = new Insets(0, 20, 0, 0);
 	gbc.anchor = GridBagConstraints.LINE_START;
 	stripe.add(favorites, gbc);
 
@@ -888,6 +889,7 @@ e.printStackTrace();
 
     private void poweredUp() {
 	this.channelList = new HashMap();
+	this.loadChannelList();
 	this.muteButton.setEnabled(true);
 	this.smartMuteButton.setEnabled(true);
 	this.itmsButton.setEnabled(true);
@@ -902,6 +904,7 @@ e.printStackTrace();
 	try {
 	    String rid = RadioCommander.theRadio().getRadioID();
 	    this.preferences.turnOn(rid);
+	    this.updateUniqueUserID(rid);
 	}
 	catch(RadioException e) {
 	    this.handleError(e);
@@ -920,6 +923,8 @@ e.printStackTrace();
 		}
 	/*    }
 	}.start(); */
+	this.updateRatingSlider(null);
+	this.saveChannelList();
 	this.channelList = null;
 	this.channelTableModel.fireTableDataChanged();
 	SwingUtilities.invokeLater(new Runnable() {
@@ -988,6 +993,8 @@ e.printStackTrace();
 
     private void deleteChannel(int sid) {
 	this.channelList.remove(new Integer(sid));
+	if (this.channelList.containsKey(new Integer(sid)))
+	    this.rebuildFavoritesMenu();
     }
 
     private boolean selectionInProgress = false;
@@ -1002,18 +1009,31 @@ e.printStackTrace();
     }
 
     private void rebuildFavoritesMenu() {
+	ArrayList l = new ArrayList();
+	Iterator i = this.favoriteList.iterator();
+	while (i.hasNext()) {
+	    Integer sid = (Integer)i.next();
+	    ChannelInfo info = (ChannelInfo)this.channelList.get(sid);
+	    if (info == null)
+		continue;
+	    l.add(info);
+	}
+	Collections.sort(l, new Comparator() {
+	    public int compare(Object o1, Object o2) {
+		ChannelInfo i1 = (ChannelInfo)o1;
+		ChannelInfo i2 = (ChannelInfo)o2;
+		return new Integer(i1.getChannelNumber()).compareTo(new Integer(i2.getChannelNumber()));
+	    }
+	});
 	this.favoriteMenu.removeAllItems();
 	this.favoriteMenu.addItem("Favorites");
 	this.favoriteMenu.setSelectedIndex(0);
-	if (this.favoriteList.isEmpty()) {
+	if (l.isEmpty()) {
 	    this.favoriteMenu.setEnabled(false);
 	} else {
-	    this.favoriteMenu.setEnabled(true);
-	    Iterator i = this.favoriteList.iterator();
-	    while(i.hasNext()) {
-		Integer sid = (Integer)i.next();
-		this.favoriteMenu.addItem(sid);
-	    }
+	    this.favoriteMenu.setEnabled(true);	
+	    for(int j = 0; j < l.size(); j++)
+		this.favoriteMenu.addItem(new Integer(((ChannelInfo)(l.get(j))).getServiceID()));
 	}
     }
 
@@ -1034,14 +1054,180 @@ e.printStackTrace();
 	this.myUserNode().putByteArray(FAVORITE_LIST, list);
     }
 
+    private final static String GRID_NODE = "ChannelGrid";
+    private void saveChannelList() {
+	Preferences node = this.myUserNode().node(GRID_NODE);
+	try {
+	    node.clear();
+	}
+	catch(BackingStoreException e) {
+	    return;
+	}
+	if (this.channelList == null)
+	    return;
+	Iterator i = this.channelList.values().iterator();
+	while(i.hasNext()) {
+	    ChannelInfo info = (ChannelInfo)i.next();
+	    StringBuffer sb = new StringBuffer();
+	    sb.append(info.getChannelNumber());
+	    sb.append(':');
+	    sb.append(info.getServiceID());
+	    sb.append(':');
+	    try {
+		sb.append(URLEncoder.encode(info.getChannelGenre(), "US-ASCII"));
+		sb.append(':');
+		sb.append(URLEncoder.encode(info.getChannelName(), "US-ASCII"));
+	    }
+	    catch(UnsupportedEncodingException e) {
+		// cannot happen!
+		return;
+	    }
+	    node.put(Integer.toString(info.getServiceID()), sb.toString());
+	}
+    }
+
+    private void loadChannelList() {
+	Preferences node = this.myUserNode().node(GRID_NODE);
+	String[] keys;
+	try {
+	    keys = node.keys();
+	}
+	catch(BackingStoreException e) {
+	    // ignore
+	    return;
+	}
+	this.channelList.clear();
+	for(int i = 0; i < keys.length; i++) {
+	    String val = node.get(keys[i], null);
+	    if (val == null)
+		continue;
+	    String[] val_list =  val.split(":");
+	    if (val_list.length != 4)
+		continue;
+	    ChannelInfo info;
+	    try {
+		int num = Integer.parseInt(val_list[0]);
+		int sid = Integer.parseInt(val_list[1]);
+		String genre = URLDecoder.decode(val_list[2], "US-ASCII");
+		String name = URLDecoder.decode(val_list[3], "US-ASCII");
+		info = new ChannelInfo(num, sid, genre, name, "", "");
+	    }
+	    catch(Exception e) {
+		continue;
+	    }
+	    this.channelList.put(new Integer(info.getServiceID()), info);
+	}
+	this.channelTableModel.fireTableDataChanged();
+    }
+
+    private ChannelInfo ratingChannelInfo;
+
+    private void updateRatingSlider(final ChannelInfo newInfo) {
+	final ChannelInfo toRate = this.ratingChannelInfo;
+	boolean disable_it = false;
+
+	if (newInfo != null) {
+	    if (newInfo.equals(this.ratingChannelInfo))
+		return; // it hasn't yet changed
+
+	    disable_it = (newInfo.getChannelArtist().length() == 0 || newInfo.getChannelTitle().length() == 0);
+
+	    // We have new info - make a note for the next transition
+	    this.ratingChannelInfo = new ChannelInfo(newInfo); // Clone it.
+	} else {
+	    disable_it = true;
+	}
+
+	if (toRate != null) {
+	    final int rating = (this.ratingSlider.getValue());
+	    if (rating != 0) {
+	    new Thread() {
+		public void run() {
+		    try {
+			MainWindow.this.rateSong(toRate, rating);
+		    }
+		    catch(final Exception e) {
+			SwingUtilities.invokeLater(new Runnable() {
+			    public void run() {
+				JOptionPane.showMessageDialog(MainWindow.this.myFrame, e.getMessage(), "Error while rating song", JOptionPane.ERROR_MESSAGE);
+			    }
+			});
+		    }
+		}
+	    }.start();
+	    }
+	}
+
+	this.ratingSlider.setValue(0);
+	this.ratingSlider.setEnabled(!disable_it);
+    }
+
+    private String lastRecordedUserID;
+        private static MessageDigest myDigestMaker;
+        static {
+                try {
+                        myDigestMaker = MessageDigest.getInstance("MD5");
+                }
+                catch(NoSuchAlgorithmException e) {
+                        myDigestMaker = null; // This should never happen!
+                }
+        }
+
+    // For the census and the song rating, we want to be able to uniquely identify users. But transmitting their
+    // actual radio ID would be rude and potentially a security problem.
+    public void updateUniqueUserID(String radioID) {
+                byte[] digest;
+                synchronized(myDigestMaker) { // We only have the one.
+                        myDigestMaker.reset();
+                        myDigestMaker.update(radioID.getBytes());
+                        digest = myDigestMaker.digest();
+                }
+                StringBuffer sb = new StringBuffer();
+                for(int i = 0; i < digest.length; i++) {
+                        String b = Integer.toString(digest[i] & 0xff, 16);
+                        if (b.length() == 1)
+                                sb.append('0');
+                        sb.append(b);
+                }
+                this.lastRecordedUserID =  sb.toString();
+    }
+
+    private void rateSong(ChannelInfo info, int rating) throws Exception {
+	StringBuffer sb = new StringBuffer();
+                
+	sb.append("channel=");
+	sb.append(info.getChannelNumber());
+	sb.append("&title=");
+	sb.append(URLEncoder.encode(info.getChannelTitle(), "US-ASCII"));
+	sb.append("&artist=");
+	sb.append(URLEncoder.encode(info.getChannelArtist(), "US-ASCII"));
+	sb.append("&rating=");
+	sb.append(rating);
+	sb.append("&user=");
+	sb.append(this.lastRecordedUserID);
+                
+	URL u = new URL("http://xmpcr.kfu.com/rate");
+	URLConnection c = u.openConnection();
+	c.setDoOutput(true);
+	c.setRequestProperty("User-Agent", JXM.userAgentString());
+	OutputStreamWriter os = new OutputStreamWriter(c.getOutputStream());
+	os.write(sb.toString());
+	os.close();
+	c.getContent();
+    }
+
     private void update(final ChannelInfo i) {
 	// We got an update. First, we file it, firing table update events
 	// while we're at it.
+	if (this.channelList == null) // spurious update
+	    return;
 	int oldSize = this.channelList.size();
 	this.channelList.put(new Integer(i.getServiceID()), i);
 	int row = this.rowForSID(i.getServiceID());
 	if (this.channelList.size() != oldSize) {
 	    this.channelTableModel.fireTableRowsInserted(row, row);
+	    if (this.channelList.containsKey(new Integer(i.getServiceID())))
+		this.rebuildFavoritesMenu();
 	} else {
 	    this.channelTableModel.fireTableRowsUpdated(row, row);
 	}
@@ -1051,6 +1237,8 @@ e.printStackTrace();
 	if (RadioCommander.theRadio().getChannel() == i.getChannelNumber()) {
 	    // update the favorite checkbox
 	    this.favoriteCheckbox.setSelected(this.favoriteList.contains(new Integer(i.getServiceID())));
+	    // update the rating slider
+	    this.updateRatingSlider(i);
 	    // This is an update for the current channel - fix the labels.
 	    this.channelNumberLabel.setText(Integer.toString(i.getChannelNumber()));
 	    this.channelGenreLabel.setText(i.getChannelGenre());

@@ -404,10 +404,8 @@ public static void main(String[] args) { new MainWindow(); }
         this.myFrame.getContentPane().add(new JScrollPane(channelTable), BorderLayout.CENTER);
 
 	JPanel bottom = new JPanel();
-	bottom.setLayout(new FlowLayout());
-
-	JPanel mute = new JPanel();
-	mute.setLayout(new BorderLayout());
+	bottom.setLayout(new GridBagLayout());
+	gbc = new GridBagConstraints();
 
 	this.muteButton = new JCheckBox("Mute");
 	this.muteButton.setEnabled(false);
@@ -416,7 +414,12 @@ public static void main(String[] args) { new MainWindow(); }
 		MainWindow.this.muteClicked();
 	    }
 	});
-	mute.add(this.muteButton, BorderLayout.PAGE_START);
+	gbc.gridx = gbc.gridy = 0;
+	gbc.weightx = 1;
+	gbc.anchor = GridBagConstraints.LINE_START;
+	gbc.fill = GridBagConstraints.HORIZONTAL;
+	bottom.add(this.muteButton, gbc);
+
 	this.smartMuteButton = new JCheckBox("Smart Mute");
 	this.smartMuteButton.setEnabled(false);
 	this.smartMuteButton.addActionListener(new ActionListener() {
@@ -424,9 +427,8 @@ public static void main(String[] args) { new MainWindow(); }
 		MainWindow.this.smartMuteClicked();
 	    }
 	});
-	mute.add(this.smartMuteButton, BorderLayout.PAGE_END);
-
-	bottom.add(mute);
+	gbc.gridy = 1;
+	bottom.add(this.smartMuteButton, gbc);
 
 	this.powerCheckBox = new JCheckBox("Power");
 	this.powerCheckBox.addActionListener(new ActionListener() {
@@ -437,36 +439,46 @@ public static void main(String[] args) { new MainWindow(); }
 		    MainWindow.this.turnPowerOff();
 	    }
 	});
-	bottom.add(this.powerCheckBox);
+
+	gbc.gridx = 1;
+	gbc.gridy = 0;
+	gbc.gridheight = 2;
+	gbc.weightx = 0;
+	gbc.anchor = GridBagConstraints.LINE_END;
+	bottom.add(this.powerCheckBox, gbc);
 
 	JMenuBar jmb = new JMenuBar();
 	this.deviceMenu = new JMenu("Pick Device");
 	this.refreshDeviceMenu();
 	jmb.add(this.deviceMenu);
-	bottom.add(jmb);
+	gbc.gridx = 2;
+	gbc.anchor = GridBagConstraints.LINE_START;
+	bottom.add(jmb, gbc);
 
-	JPanel jp1 = new JPanel();
-	jp1.setLayout(new BorderLayout());
-	
-	JPanel jp2 = new JPanel();
-	jp2.setLayout(new BorderLayout());
 	JLabel jl = new JLabel("Satellite: ");
-	jl.setHorizontalAlignment(SwingConstants.LEADING);
-	jp2.add(jl, BorderLayout.LINE_START);
-	this.satelliteMeter = new JProgressBar(0, 100);
-	jp2.add(this.satelliteMeter, BorderLayout.LINE_END);
-	jp1.add(jp2, BorderLayout.PAGE_START);
-
-	jp2 = new JPanel();
-	jp2.setLayout(new BorderLayout());
+	jl.setHorizontalAlignment(SwingConstants.TRAILING);
+	gbc.gridx = 3;
+	gbc.gridy = 0;
+	gbc.weightx = 1;
+	gbc.gridheight = 1;
+	//gbc.gridwidth = 1;
+	//gbc.fill = GridBagConstraints.NONE;
+	gbc.anchor = GridBagConstraints.LINE_END;
+	bottom.add(jl, gbc);
 	jl = new JLabel("Terrestrial: ");
-	jl.setHorizontalAlignment(SwingConstants.LEADING);
-	jp2.add(jl, BorderLayout.LINE_START);
-	this.terrestrialMeter = new JProgressBar(0, 100);
-	jp2.add(this.terrestrialMeter, BorderLayout.LINE_END);
-	jp1.add(jp2, BorderLayout.PAGE_END);
+	jl.setHorizontalAlignment(SwingConstants.TRAILING);
+	gbc.gridy = 1;
+	bottom.add(jl, gbc);
 
-	bottom.add(jp1);
+	this.satelliteMeter = new JProgressBar(0, 100);
+	gbc.gridx = 4;
+	gbc.gridy = 0;
+	gbc.insets = new Insets(0, 0, 0, 20);
+	gbc.anchor = GridBagConstraints.LINE_START;
+	bottom.add(this.satelliteMeter, gbc);
+	this.terrestrialMeter = new JProgressBar(0, 100);
+	gbc.gridy = 1;
+	bottom.add(this.terrestrialMeter, gbc);
 
 	this.myFrame.getContentPane().add(bottom, BorderLayout.PAGE_END);
 	

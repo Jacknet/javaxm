@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: PreferencesDialog.java,v 1.19 2004/03/18 16:37:19 nsayer Exp $
+ $Id: PreferencesDialog.java,v 1.20 2004/03/19 17:53:40 nsayer Exp $
  
  */
 
@@ -73,12 +73,16 @@ public class PreferencesDialog extends JDialog {
 	JTabbedPane jtp = new JTabbedPane();
 
 	JPanel jp = new JPanel();
-	jp.setLayout(new BoxLayout(jp, BoxLayout.PAGE_AXIS));
+	jp.setLayout(new GridBagLayout());
+	GridBagConstraints gbc = new GridBagConstraints();
 	JPanel jp2 = new JPanel();
 	this.deviceMenu = new JComboBox();
 	this.refreshDeviceMenu();
 	jp2.add(this.deviceMenu);
-	jp.add(jp2);
+	gbc.gridx = 0;
+	gbc.gridy = 0;
+	gbc.anchor = GridBagConstraints.PAGE_END;
+	jp.add(jp2, gbc);
 
 	jp2 = new JPanel();
 	jp2.setLayout(new FlowLayout());
@@ -90,13 +94,15 @@ public class PreferencesDialog extends JDialog {
 	this.radioID.setFont(new Font("Monospaced", Font.PLAIN, 20));
 	this.radioID.setPreferredSize(new Dimension(150, (int)this.radioID.getPreferredSize().getHeight()));
 	jp2.add(this.radioID);
-	jp.add(jp2);
+	gbc.gridy = 1;
+	gbc.anchor = GridBagConstraints.PAGE_START;
+	jp.add(jp2, gbc);
 	
 	jtp.addTab("Device", jp);
 
 	jp = new JPanel();
 	jp.setLayout(new GridBagLayout());
-	GridBagConstraints gbc = new GridBagConstraints();
+	gbc = new GridBagConstraints();
 	gbc.insets = new Insets(5, 5, 0, 0);
 	gbc.gridx = gbc.gridy = 0;
 	gbc.weightx = 0.25;

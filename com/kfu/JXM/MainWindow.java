@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.52 2004/03/12 08:11:07 nsayer Exp $
+ $Id: MainWindow.java,v 1.53 2004/03/12 08:16:44 nsayer Exp $
  
  */
 
@@ -580,7 +580,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.ratingSlider.setSnapToTicks(true);
 	this.ratingSlider.setPaintTicks(true);
 	this.ratingSlider.setEnabled(false);
-	this.ratingSlider.setPreferredSize(new Dimension(275, (int)this.favoriteMenu.getPreferredSize().getHeight()));
+	//this.ratingSlider.setPreferredSize(new Dimension(275, (int)this.favoriteMenu.getPreferredSize().getHeight()));
 	gbc1.weightx = 1;
 	gbc1.gridwidth = 3;
 	gbc1.fill = GridBagConstraints.HORIZONTAL;
@@ -826,11 +826,13 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	channelTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 	class StripedViewport extends JViewport {
 	    public StripedViewport() {
+/*
 		MainWindow.this.channelTableModel.addTableModelListener(new TableModelListener() {
 		    public void tableChanged(TableModelEvent e) {
 			StripedViewport.this.repaint();
 		    }
 		});
+*/
 		MainWindow.this.channelTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 		    public void valueChanged(ListSelectionEvent e) {
 			StripedViewport.this.repaint();

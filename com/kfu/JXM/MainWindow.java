@@ -258,6 +258,9 @@ public static void main(String[] args) { new MainWindow(); }
 	JPanel bottom = new JPanel();
 	bottom.setLayout(new FlowLayout());
 
+	JPanel mute = new JPanel();
+	mute.setLayout(new BorderLayout());
+
 	this.muteButton = new JCheckBox("Mute");
 	this.muteButton.setEnabled(false);
 	this.muteButton.addActionListener(new ActionListener() {
@@ -265,7 +268,7 @@ public static void main(String[] args) { new MainWindow(); }
 		MainWindow.this.muteClicked();
 	    }
 	});
-	bottom.add(this.muteButton);
+	mute.add(this.muteButton, BorderLayout.PAGE_START);
 	this.smartMuteButton = new JCheckBox("Smart Mute");
 	this.smartMuteButton.setEnabled(false);
 	this.smartMuteButton.addActionListener(new ActionListener() {
@@ -273,7 +276,9 @@ public static void main(String[] args) { new MainWindow(); }
 		MainWindow.this.smartMuteClicked();
 	    }
 	});
-	bottom.add(this.smartMuteButton);
+	mute.add(this.smartMuteButton, BorderLayout.PAGE_END);
+
+	bottom.add(mute);
 
 	this.powerCheckBox = new JCheckBox("Power");
 	this.powerCheckBox.addActionListener(new ActionListener() {

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: RadioCommander.java,v 1.20 2004/04/08 04:37:10 nsayer Exp $
+ $Id: RadioCommander.java,v 1.21 2004/04/19 14:15:09 nsayer Exp $
  
  */
 
@@ -1221,8 +1221,10 @@ finally {
     
     public void setChannel(int channel) throws RadioException {
         this.checkDisposed();
-		
-        respLabelChangeMonitored reply2 = (respLabelChangeMonitored)this.performCommand(new cmdMonitorLabelChange(this.currentChannel, false, false, false, false), respLabelChangeMonitored.class);
+
+	respLabelChangeMonitored reply2;
+	if (this.currentChannel > 0)
+	    reply2 = (respLabelChangeMonitored)this.performCommand(new cmdMonitorLabelChange(this.currentChannel, false, false, false, false), respLabelChangeMonitored.class);
 		
         Log("Sending channel-set to " + Integer.toString(channel));
         respChannelChanged result = (respChannelChanged)this.performCommand(new cmdChangeChannel(channel), respChannelChanged.class);
@@ -1234,14 +1236,13 @@ finally {
         }
         currentSongStarted = currentSongEnds = null;
         
+	this.currentChannel = channel;
+	this.notifyGUI(CHANNEL_CHANGED);
+	this.currentChannelInfo = this.getChannelInfo();
+	this.updateChannelInfo();
+
         // Do this so we can get song timing monitor messages
         reply2 = (respLabelChangeMonitored)this.performCommand(new cmdMonitorLabelChange(channel, true, true, true, true), respLabelChangeMonitored.class);
-		
-        this.currentChannel = channel;
-		this.currentChannelInfo = this.getChannelInfo();
-		
-        this.notifyGUI(CHANNEL_CHANGED);
-		this.updateChannelInfo();
     }
 	
     private ChannelInfo currentChannelInfo = new ChannelInfo();

@@ -345,10 +345,29 @@ public static void main(String[] args) { new MainWindow(); }
 		    MainWindow.this.terrestrialMeter.setValue((int)out[RadioCommander.SIGNAL_STRENGTH_TER]);
 		}
 		catch(RadioException e) {
-		    MainWindow.this.handleError(e);
+		    // sigh. If we get an exception while powering down, then ignore it.
+		    // XXX this is probably a sign we should do more locking
+		    if (RadioCommander.theRadio().isOn())
+		        MainWindow.this.handleError(e);
 		}
 	    }
 	}, 0, 1000);
+
+	String url = this.myUserNode().get(XMTRACKER_URL, null);
+	String user = this.myUserNode().get(XMTRACKER_USER, null);
+	String pass = this.myUserNode().get(XMTRACKER_PASS, null);
+
+	if (url != null && user != null && pass != null) {
+	    try {
+		XMTracker.theTracker().setBaseURL(url);
+		XMTracker.theTracker().setCredentials(user, pass);
+	    }
+	    catch(TrackerException e) {
+		this.myUserNode().put(XMTRACKER_USER, null);
+		this.myUserNode().put(XMTRACKER_PASS, null);
+		this.handleTrackerError(e);
+	    }
+	}
 
 	// We have a device saved... Try and power up
 	if (this.deviceName != null)
@@ -499,6 +518,9 @@ public static void main(String[] args) { new MainWindow(); }
     }
 
     private final static String DEVICE_NAME_KEY = "DefaultDevice";
+    private final static String XMTRACKER_URL = "TrackerURL";
+    private final static String XMTRACKER_USER = "TrackerUser";
+    private final static String XMTRACKER_PASS = "TrackerPassword";
 
     private void poweredUp() {
 	this.channelList = new HashMap();
@@ -529,6 +551,26 @@ public static void main(String[] args) { new MainWindow(); }
 	this.smartMuteButton.setSelected(false);
 	this.satelliteMeter.setValue(0);
 	this.terrestrialMeter.setValue(0);
+	new Thread() {
+	    public void run() {
+		try {
+		    XMTracker.theTracker().turnOff();
+		}
+		catch(TrackerException e) {
+		    MainWindow.this.handleTrackerError(e);
+		}
+	    }
+	}.start();
+    }
+
+    private void handleTrackerError(final Exception e) {
+	XMTracker.theTracker().Disable();
+	SwingUtilities.invokeLater(new Runnable() {
+	    public void run() {
+		JOptionPane.showMessageDialog(MainWindow.this.myFrame, e.getMessage(),
+		    "XM Tracker error", JOptionPane.ERROR_MESSAGE);
+	    }
+	});
     }
 
     private void handleError(final Exception e) {
@@ -570,7 +612,7 @@ public static void main(String[] args) { new MainWindow(); }
 	this.channelTable.addRowSelectionInterval(row, row);
     }
 
-    private void update(ChannelInfo i) {
+    private void update(final ChannelInfo i) {
 	// We got an update. First, we file it, firing table update events
 	// while we're at it.
 	int oldSize = this.channelList.size();
@@ -594,9 +636,18 @@ public static void main(String[] args) { new MainWindow(); }
 	    if (this.smartMuteInfo != null && !i.equals(this.smartMuteInfo)) {
 		this.smartMuteClicked(); // Quickie hack! Since we're muted, this will unmute.
 	    }
+	    new Thread() {
+		public void run() {
+	    	    try {
+	    		XMTracker.theTracker().update(i);
+		    }
+		    catch(TrackerException e) {
+			MainWindow.this.handleTrackerError(e);
+		    }
+		}
+	    }.start();
 	}
 	// Next, we pass it around to the various things around here
 	// to see if anybody cares.
-
     }
 }

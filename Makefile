@@ -2,6 +2,7 @@
 all:
 	rm -rf out
 	mkdir out
+	( cd out ; unzip ../secondstring\*.jar )
 	find . -name \*.java -exec javac -deprecation -d out -sourcepath . {} \;
 	mkdir out/logos
 	cp logos/*gif out/logos

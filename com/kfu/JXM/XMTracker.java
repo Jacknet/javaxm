@@ -122,6 +122,7 @@ public class XMTracker {
             return;
 
         this.update("OFF", "", "");
+	this.lastChannel = -1;
     }
 
     private String baseURL = "http://www.xmnation.net/tracker/";

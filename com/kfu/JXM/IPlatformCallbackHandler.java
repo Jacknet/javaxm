@@ -17,14 +17,26 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: IPlatformCallbackHandler.java,v 1.2 2004/03/09 07:11:04 nsayer Exp $
+ $Id: IPlatformCallbackHandler.java,v 1.3 2004/03/10 03:40:18 nsayer Exp $
  
  */
 
 package com.kfu.JXM;
 
+import com.kfu.xm.*;
+
 public interface IPlatformCallbackHandler {
 
     public void platformNotify(int messageType, Object messageArg);
+
+    public boolean radioIsOn();
+
+    public Bookmark[] getBookmarks();
+
+    public Favorite[] getFavorites();
+
+    public ChannelInfo getChannelInfo();
+
+    public int getMuteState();
 
 }

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.43 2004/03/09 08:24:45 nsayer Exp $
+ $Id: MainWindow.java,v 1.44 2004/03/10 03:40:18 nsayer Exp $
  
  */
 
@@ -70,12 +70,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    JMenuItem jmi = new JMenuItem("Tune to channel");
 	    jmi.addActionListener(new ActionListener() {
 		public void actionPerformed(ActionEvent e) {
-		    try {
-			RadioCommander.theRadio().setChannel(ChannelPopupMenu.this.channelInfo.getChannelNumber());
-		    }
-		    catch(RadioException ee) {
-			MainWindow.this.handleError(ee);
-		    }
+		    MainWindow.this.setChannel(ChannelPopupMenu.this.channelInfo.getChannelNumber());
 		}
 	    });
 	    this.add(jmi);
@@ -517,12 +512,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		ChannelInfo i = (ChannelInfo)MainWindow.this.channelList.get(sid);
 		if (i == null)
 		    return;
-		try {
-		    RadioCommander.theRadio().setChannel(i.getChannelNumber());
-		}
-		catch(RadioException ee) {
-		    MainWindow.this.handleError(ee);
-		}
+		MainWindow.this.setChannel(i.getChannelNumber());
 	    }
 	});
 	this.favoriteMenu.setRenderer(new DefaultListCellRenderer() {
@@ -748,18 +738,14 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		    if (row >= MainWindow.this.channelList.size())
 			return;
 		    ChannelInfo i = (ChannelInfo)MainWindow.this.channelList.get(new Integer(sidForRow(row)));
-		    try {
-			// The problem here is that we will get called even when we do the selecting
-			// ourselves (as in this.selectCurrentChannel(); ). This means we have to
-			// efficiently fall through if there's nothing to be done (as will be the case)
-			// when we select the currently selected row. Argh!
-			if (RadioCommander.theRadio().getChannel() == i.getChannelNumber())
-			    return;
-			RadioCommander.theRadio().setChannel(i.getChannelNumber());
-		    }
-		    catch(RadioException ex) {
-			MainWindow.this.handleError(ex);
-		    }
+		    // The problem here is that we will get called even when we do the selecting
+		    // ourselves (as in this.selectCurrentChannel(); ). This means we have to
+		    // efficiently fall through if there's nothing to be done (as will be the case)
+		    // when we select the currently selected row. Argh!
+		    if (RadioCommander.theRadio().getChannel() == i.getChannelNumber())
+			return;
+		    else
+			MainWindow.this.setChannel(i.getChannelNumber());
 		}
 	    }
 	});
@@ -1033,9 +1019,42 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    case PlatformFactory.PLAT_CB_PREFS:	this.prefs(); break;
 	    case PlatformFactory.PLAT_CB_ABOUT:	this.about(); break;
 	    case PlatformFactory.PLAT_CB_QUIT:	this.quit(); break;
+	    case PlatformFactory.PLAT_CB_SMART_MUTE:	this.smartMuteClicked(); break;
+	    case PlatformFactory.PLAT_CB_NORM_MUTE:	this.muteClicked(); break;
+	    case PlatformFactory.PLAT_CB_CHANNEL:	this.setChannel(((Integer)arg).intValue()); break;
 	    default: throw new IllegalArgumentException("Which platform callback type??");
 	}
     }
+    public boolean radioIsOn() { return RadioCommander.theRadio().isOn(); }
+    public int getMuteState() {
+	if (!RadioCommander.theRadio().isMuted())
+	    return 0;
+	if (this.smartMuteInfo != null)
+	    return PlatformFactory.SMART_MUTE_ON;
+	else
+	    return PlatformFactory.NORM_MUTE_ON;
+    }
+    public ChannelInfo getChannelInfo() { return this.currentChannelInfo; }
+    public Favorite[] getFavorites() {
+	ArrayList l = new ArrayList();
+	Iterator i = this.favoriteList.iterator();
+	while (i.hasNext()) {
+	    Integer sid = (Integer)i.next();
+	    ChannelInfo info = (ChannelInfo)this.channelList.get(sid);
+	    if (info == null)
+		continue;
+	    l.add(new Favorite(info.getChannelNumber(), Integer.toString(info.getChannelNumber()) + " - " + info.getChannelName()));
+	}
+	Collections.sort(l, new Comparator() {
+	    public int compare(Object o1, Object o2) {
+		Favorite i1 = (Favorite)o1;
+		Favorite i2 = (Favorite)o2;
+		return new Integer(i1.getChannelNumber()).compareTo(new Integer(i2.getChannelNumber()));
+	    }
+	});
+	return (Favorite[])l.toArray(new Favorite[0]);
+    }
+    public Bookmark[] getBookmarks() { return this.bookmarks; }
 
     // the RadioEventHandler interface
     public void notify(RadioCommander theRadio, final int type, final Object item) {
@@ -1081,6 +1100,15 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 //System.err.println(e.getMessage());
 //e.printStackTrace();
 	//}
+    }
+
+    private void setChannel(int chan) {
+	try {
+	    RadioCommander.theRadio().setChannel(chan);
+	}
+	catch(RadioException e) {
+	    this.handleError(e);
+	}
     }
 
     private void turnPowerOff() {

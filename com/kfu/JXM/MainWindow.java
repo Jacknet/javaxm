@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.61 2004/03/15 06:31:53 nsayer Exp $
+ $Id: MainWindow.java,v 1.62 2004/03/18 07:41:17 nsayer Exp $
  
  */
 
@@ -147,7 +147,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		});
 	    }
 	    this.add(jmi);
-	    jmi = new JMenuItem("Add to memory");
+	    jmi = new JMenuItem("Add to notebook");
 	    if (flag == MainWindow.CHAN_POPUP_NO_MEM) {
 		jmi.setEnabled(false);
 	    } else {
@@ -199,16 +199,36 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
     private ChannelInfo[] sortedChannelList = new ChannelInfo[0];
 
-    // Wow. This operation is stunningly inefficient. The horror.
-    private void rebuildSortedChannelList() {
-	ChannelInfo[] newList = new ChannelInfo[this.channelList.size() - this.filterList.size()];
+    // Called by the filter panel
+    public ChannelInfo[] getChannelList() {
+	ChannelInfo[] out = new ChannelInfo[this.channelList.size()];
 	Iterator i = this.channelList.values().iterator();
 	int j = 0;
 	while(i.hasNext()) {
+	    out[j++] = (ChannelInfo)i.next();
+	}
+	return out;
+    }
+    public void setFilter(byte[] sids) {
+	this.filterList.clear();
+	for(int i = 0; i < sids.length; i++)
+	    this.filterList.add(new Integer(sids[i] & 0xff));
+	this.rebuildSortedChannelList();
+    }
+
+    // Wow. This operation is stunningly inefficient. The horror.
+    private void rebuildSortedChannelList() {
+	//ChannelInfo[] newList = new ChannelInfo[this.channelList.size() - this.filterList.size()];
+	// Argh! Because the filter list *may* be filtering channels we don't have in the list yet, we don't know
+	// in advance the size of the filtered channel set.
+	ArrayList temp = new ArrayList();
+	Iterator i = this.channelList.values().iterator();
+	while(i.hasNext()) {
 	    ChannelInfo info = (ChannelInfo)i.next();
 	    if (!this.filterList.contains(new Integer(info.getServiceID())))
-		newList[j++] = info;
+		temp.add(info);
 	}
+	ChannelInfo[] newList = (ChannelInfo[])temp.toArray(new ChannelInfo[0]);
 	Arrays.sort(newList, new Comparator() {
 	    public int compare(Object o1, Object o2) {
 		ChannelInfo ci1 = (ChannelInfo)o1;
@@ -249,7 +269,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	if (oldList.length != newList.length)
 	    this.channelTableModel.fireTableDataChanged();
 	else {
-	    for(j = 0; j < oldList.length; j++)
+	    for(int j = 0; j < oldList.length; j++)
 		if (!oldList[j].equals(newList[j]))
 		    this.channelTableModel.fireTableRowsUpdated(j, j);
 	}
@@ -313,6 +333,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	return sb.toString();
     }
 
+    private FilterPanel filterPanel;
     private MemoryPanel memoryPanel;
     private PreferencesDialog preferences;
     private AboutDialog aboutDialog;
@@ -325,6 +346,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private JCheckBox smartMuteButton;
     private JFrame myFrame;
     private JMenu bookmarkMenu;
+    private JMenuItem filterMenuItem;
     private Bookmark[] bookmarks;
     private JProgressBar satelliteMeter;
     private JProgressBar terrestrialMeter;
@@ -499,7 +521,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    });
 	    jm.add(jmi);
 	}
-	jmi = new JMenuItem("Memory");
+	jmi = new JMenuItem("Notebook");
 	jmi.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
 		MainWindow.frontOrShow(MainWindow.this.memoryPanel);
@@ -507,6 +529,14 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	});
 	jm.add(jmi);
 	this.myFrame.getJMenuBar().add(jm);
+	this.filterMenuItem = new JMenuItem("Filters");
+	this.filterMenuItem.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		MainWindow.frontOrShow(MainWindow.this.filterPanel);
+	    }
+	});
+	this.filterMenuItem.setEnabled(false);
+	jm.add(this.filterMenuItem);
 	// -----
 	if (!PlatformFactory.ourPlatform().useMacMenus()) {
 	    jm = new JMenu("Help");
@@ -596,7 +626,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	buttons.add(this.itmsButton);
 */
 
-	this.memoryButton = new JButton("Add to memory");
+	this.memoryButton = new JButton("Add to notebook");
 	this.memoryButton.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
 		MainWindow.this.memoryPanel.memorize(MainWindow.this.currentChannelInfo);
@@ -1121,6 +1151,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
 	this.loadTickList();
 	this.memoryPanel = new MemoryPanel(this);
+	this.filterPanel = new FilterPanel(this);
 
 	// We have a device saved... Try and power up
 	String deviceName = this.preferences.getDevice();
@@ -1365,6 +1396,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.powerCheckBox.setSelected(true);
 	this.rebuildFavoritesMenu();
 	this.favoriteCheckbox.setEnabled(true);
+	this.filterMenuItem.setEnabled(true);
 	this.preferences.saveDevice();
 	this.bookmarkMenu.setEnabled(true);
 	this.channelChanged(); // We need to fake the first one
@@ -1403,6 +1435,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		MainWindow.this.powerCheckBox.setSelected(false);
 		MainWindow.this.muteButton.setEnabled(false);
 		MainWindow.this.smartMuteButton.setEnabled(false);
+		MainWindow.this.filterMenuItem.setEnabled(false);
 		//MainWindow.this.itmsButton.setEnabled(false);
 		MainWindow.this.memoryButton.setEnabled(false);
 		MainWindow.this.muteButton.setSelected(false);

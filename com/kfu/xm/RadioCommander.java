@@ -812,10 +812,14 @@ public class RadioCommander implements IAsyncExceptionHandler {
     }
     
     private void sendCommand(byte[] command) throws RadioException {
-	this.checkDisposed();
+	OutputStream handle = this.myDeviceOut;
+	if (handle == null) {
+	    this.Dispose();
+	    throw new RadioException("Cannot talk to radio while it's off");
+	}
         try {
-            this.myDeviceOut.write(command);
-            this.myDeviceOut.flush();
+            handle.write(command);
+            handle.flush();
         }
         catch(IOException e) {
             this.Dispose();

@@ -36,7 +36,7 @@ public class PreferencesDialog extends JDialog {
     JLabel radioID;
     JTextField trackerURL;
     JTextField trackerUser;
-    JTextField trackerPassword;
+    JPasswordField trackerPassword;
     JCheckBox trackerEnabled;
 
     public PreferencesDialog(JFrame parent) {
@@ -98,6 +98,7 @@ public class PreferencesDialog extends JDialog {
 	jp.add(this.trackerUser, gbc);
 
 	this.trackerPassword = new JPasswordField();
+	this.trackerPassword.setEchoChar((char)0x2022); // Unicode 'Bullet'
 	this.trackerPassword.setPreferredSize(new Dimension(100, (int)this.trackerPassword.getPreferredSize().getHeight()));
 	gbc.gridy = 2;
 	jp.add(this.trackerPassword, gbc);
@@ -151,7 +152,7 @@ public class PreferencesDialog extends JDialog {
 	if (newState) {
 	    try {
 		XMTracker.theTracker().setBaseURL(this.trackerURL.getText());
-		XMTracker.theTracker().setCredentials(this.trackerUser.getText(), this.trackerPassword.getText());
+		XMTracker.theTracker().setCredentials(this.trackerUser.getText(), new String(this.trackerPassword.getPassword()));
 		this.trackerURL.setEnabled(false);
 		this.trackerUser.setEnabled(false);
 		this.trackerPassword.setEnabled(false);
@@ -197,7 +198,7 @@ public class PreferencesDialog extends JDialog {
     private void saveToDefaults() {
 	this.myNode().put(XMTRACKER_URL, this.trackerURL.getText());
 	this.myNode().put(XMTRACKER_USER, this.trackerUser.getText());
-	this.myNode().put(XMTRACKER_PASS, this.trackerPassword.getText());
+	this.myNode().put(XMTRACKER_PASS, new String(this.trackerPassword.getPassword()));
 	this.myNode().putBoolean(XMTRACKER_ENABLED, this.trackerEnabled.isSelected());
     }
 
@@ -245,6 +246,6 @@ public class PreferencesDialog extends JDialog {
     }
     public String getTrackerURL() { return this.trackerURL.getText(); }
     public String getTrackerUser() { return this.trackerUser.getText(); }
-    public String getTrackerPassword() { return this.trackerPassword.getText(); }
+    public String getTrackerPassword() { return new String(this.trackerPassword.getPassword()); }
     public boolean isTrackerEnabled() { return this.trackerEnabled.isSelected(); }
 }

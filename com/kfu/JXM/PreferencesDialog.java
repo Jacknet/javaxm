@@ -242,8 +242,11 @@ public class PreferencesDialog extends JDialog {
 	gbc.anchor = GridBagConstraints.LINE_END;
 	jp.add(jl, gbc);
 	this.bmName = new JTextField();
-	this.bmName.addActionListener(new ActionListener() {
-	    public void actionPerformed(ActionEvent e) {
+	this.bmName.getDocument().addDocumentListener(new DocumentListener() {
+	    public void changedUpdate(DocumentEvent e) { this.doIt(); }
+	    public void insertUpdate(DocumentEvent e) { this.doIt(); }
+	    public void removeUpdate(DocumentEvent e) { this.doIt(); }
+	    private void doIt() {
 		int index = PreferencesDialog.this.bookmarkList.getSelectedIndex();
 		if (index < 0)
 		    return;
@@ -268,8 +271,11 @@ public class PreferencesDialog extends JDialog {
 	gbc.anchor = GridBagConstraints.LINE_END;
 	jp.add(jl, gbc);
 	this.bmURL = new JTextField();
-	this.bmURL.addActionListener(new ActionListener() {
-	    public void actionPerformed(ActionEvent e) {
+	this.bmName.getDocument().addDocumentListener(new DocumentListener() {
+	    public void changedUpdate(DocumentEvent e) { this.doIt(); }
+	    public void insertUpdate(DocumentEvent e) { this.doIt(); }
+	    public void removeUpdate(DocumentEvent e) { this.doIt(); }
+	    private void doIt() {
 		int index = PreferencesDialog.this.bookmarkList.getSelectedIndex();
 		if (index < 0)
 		    return;

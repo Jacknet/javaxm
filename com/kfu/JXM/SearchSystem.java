@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: SearchSystem.java,v 1.4 2004/04/28 16:01:11 nsayer Exp $
+ $Id: SearchSystem.java,v 1.5 2004/05/02 01:14:06 nsayer Exp $
  
  */
 
@@ -577,8 +577,8 @@ public class SearchSystem {
 		}
 	    }
 	    this.matches.add(this.matches.size(), info);
-	    // Every time we add to the list, pop it open
-	    if(!this.searchMatches.isVisible()) {
+	    // Every time we add to the list, pop it open if it's not the current channel
+	    if(!this.searchMatches.isVisible() && chan != RadioCommander.theRadio().getChannel()) {
 		this.parent.forceNormalView();
 		this.searchMatches.show();
 	    }

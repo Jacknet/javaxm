@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.78 2004/03/23 21:30:00 nsayer Exp $
+ $Id: MainWindow.java,v 1.79 2004/03/25 06:00:49 nsayer Exp $
  
  */
 
@@ -1013,6 +1013,15 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	searchHolder.setOpaque(false);
 	searchHolder.setBorder(BorderFactory.createTitledBorder(/*BorderFactory.createEtchedBorder(EtchedBorder.LOWERED)*/BorderFactory.createLineBorder(new Color(0,0,0,0), 0) /* the null border */, "Quick Search", TitledBorder.CENTER, TitledBorder.BELOW_BOTTOM, new Font(null, Font.PLAIN, 10)));
 	this.searchField = new JTextField();
+	this.searchField.getDocument().addDocumentListener(new DocumentListener() {
+	    public void changedUpdate(DocumentEvent e) { this.doit(); }
+	    public void insertUpdate(DocumentEvent e) { this.doit(); }
+	    public void removeUpdate(DocumentEvent e) { this.doit(); }
+	    private void doit() {
+		MainWindow.this.rebuildSortedChannelList();
+		MainWindow.this.selectCurrentChannel();
+	    }
+	});
 	this.searchField.setPreferredSize(new Dimension(100, (int)this.searchField.getPreferredSize().getHeight()));
 	this.searchField.setEnabled(false);
 	sh_gbc.weightx = 1;
@@ -1558,6 +1567,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		    // If we're not sorting by percentage, then this could not have changed the order.
 		    // Otherwise, it just might.
 		    MainWindow.this.rebuildSortedChannelList();
+		    MainWindow.this.selectCurrentChannel();
 		} else
 		    MainWindow.this.firePercentChanges();
 	    }
@@ -2283,6 +2293,11 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		i.setChannelGenre(cache.getChannelGenre());
 	}
 
+	// If this update doesn't actually *change* anything, then
+	// just ignore it.
+	if (i.equals(this.channelList.get(new Integer(i.getServiceID()))))
+	    return;
+
 	// We got an update. Is it a new favorite? If so, remember that for later.
 	boolean newFav =  (!this.channelList.containsKey(new Integer(i.getServiceID()))) && this.favoriteList.contains(new Integer(i.getServiceID()));
 	// We got an update. First, we file it, firing table update events
@@ -2293,12 +2308,13 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
 	// Alas, if we're sorting on artist or title, then any update could dirty the sort list
 	this.rebuildSortedChannelList();
-	int row = this.rowForSID(i.getServiceID());
-	this.channelTableModel.fireTableRowsUpdated(row, row);
+	//int row = this.rowForSID(i.getServiceID());
+	//this.channelTableModel.fireTableRowsUpdated(row, row);
 
 	this.selectCurrentChannel();
 
 	if (RadioCommander.theRadio().getChannel() == i.getChannelNumber()) {
+	    // This update is for the current channel
 	    this.currentChannelInfo = i;
 	    // update the favorite checkbox
 	    Integer sid = new Integer(i.getServiceID());
@@ -2306,11 +2322,11 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    this.favoriteCheckbox.setSelected(isFavorite);
 	    this.ignoreFavoriteMenu = true;
 	    try{
-	    if (isFavorite) {
-		this.favoriteMenu.setSelectedItem(sid);
-	    } else {
-		this.favoriteMenu.setSelectedIndex(0);
-	    }
+		if (isFavorite) {
+		    this.favoriteMenu.setSelectedItem(sid);
+		} else {
+		    this.favoriteMenu.setSelectedIndex(0);
+		}
 	    }
 	    finally {
 		this.ignoreFavoriteMenu = false;

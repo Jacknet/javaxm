@@ -241,6 +241,7 @@ public class MainWindow implements RadioEventHandler {
 
 	JPanel top = new JPanel();
 	top.setLayout(new BoxLayout(top, BoxLayout.LINE_AXIS));
+	top.add(Box.createHorizontalStrut(20));
 
 	JPanel pictureFrame = new JPanel();
 	pictureFrame.setBorder(BorderFactory.createLineBorder(Color.BLACK));
@@ -330,10 +331,18 @@ public class MainWindow implements RadioEventHandler {
 	buttons.add(this.itmsButton);
 
 	top.add(buttons);
+	top.add(Box.createHorizontalStrut(20));
 	
 	this.myFrame.getContentPane().add(top, BorderLayout.PAGE_START);
 	//this.myFrame.getContentPane().add(this.channelLogo, BorderLayout.PAGE_START);
 
+	jp = new JPanel();
+	jp.setLayout(new GridBagLayout());
+	gbc = new GridBagConstraints();
+	gbc.weightx = gbc.weighty = 1;
+	gbc.insets = new Insets(20, 20, 20, 20);
+	gbc.fill = GridBagConstraints.BOTH;
+	
 	this.channelTable = new JTable();
 	this.channelTable.addMouseListener(new MouseAdapter() {
 	    public void mousePressed(MouseEvent e) { this.maybePopup(e); }
@@ -429,7 +438,8 @@ public class MainWindow implements RadioEventHandler {
 	    }
 	});
 
-        this.myFrame.getContentPane().add(new JScrollPane(channelTable), BorderLayout.CENTER);
+	jp.add(new JScrollPane(channelTable), gbc);
+        this.myFrame.getContentPane().add(jp, BorderLayout.CENTER);
 
 	JPanel bottom = new JPanel();
 	bottom.setLayout(new GridBagLayout());
@@ -446,6 +456,7 @@ public class MainWindow implements RadioEventHandler {
 	gbc.weightx = 1;
 	gbc.anchor = GridBagConstraints.LINE_START;
 	gbc.fill = GridBagConstraints.HORIZONTAL;
+	gbc.insets = new Insets(0, 20, 0, 0);
 	bottom.add(this.muteButton, gbc);
 
 	this.smartMuteButton = new JCheckBox("Smart Mute");
@@ -456,6 +467,7 @@ public class MainWindow implements RadioEventHandler {
 	    }
 	});
 	gbc.gridy = 1;
+	gbc.insets = new Insets(0, 20, 20, 0);
 	bottom.add(this.smartMuteButton, gbc);
 
 	this.powerCheckBox = new JCheckBox("Power");
@@ -468,6 +480,7 @@ public class MainWindow implements RadioEventHandler {
 	    }
 	});
 
+	gbc.insets = new Insets(0, 0, 20, 0);
 	gbc.gridx = 1;
 	gbc.gridy = 0;
 	gbc.gridheight = 2;
@@ -489,13 +502,13 @@ public class MainWindow implements RadioEventHandler {
 	gbc.gridy = 0;
 	gbc.weightx = 1;
 	gbc.gridheight = 1;
-	//gbc.gridwidth = 1;
-	//gbc.fill = GridBagConstraints.NONE;
+	gbc.insets = new Insets(0, 0, 0, 0);
 	gbc.anchor = GridBagConstraints.LINE_END;
 	bottom.add(jl, gbc);
 	jl = new JLabel("Terrestrial: ");
 	jl.setHorizontalAlignment(SwingConstants.TRAILING);
 	gbc.gridy = 1;
+	gbc.insets = new Insets(0, 0, 20, 0);
 	bottom.add(jl, gbc);
 
 	this.satelliteMeter = new JProgressBar(0, 100);
@@ -506,6 +519,7 @@ public class MainWindow implements RadioEventHandler {
 	bottom.add(this.satelliteMeter, gbc);
 	this.terrestrialMeter = new JProgressBar(0, 100);
 	gbc.gridy = 1;
+	gbc.insets = new Insets(0, 0, 20, 20);
 	bottom.add(this.terrestrialMeter, gbc);
 
 	this.myFrame.getContentPane().add(bottom, BorderLayout.PAGE_END);

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: PreferencesDialog.java,v 1.31 2004/05/11 00:09:51 nsayer Exp $
+ $Id: PreferencesDialog.java,v 1.32 2004/09/07 22:44:21 nsayer Exp $
  
  */
 
@@ -538,7 +538,7 @@ public class PreferencesDialog extends JDialog {
 		{ "Channel Home Page",			"http://www.xmradio.com/programming/channel_page.jsp?ch={NUMBER}" },
 		{ "Channel Guide Page",			"http://www.xmradio.com/programming/channel_guide.jsp?ch={NUMBER}" },
 		{ "View song ratings for channel",	"http://xmpcr.kfu.com/ratings.php?channel={NUMBER}" },
-		{ "XMNation Forum for Channel",		"http://www.xmnation.net/forum_for_channel.php?ch={NUMBER}" },
+		{ "Forum for Channel",		"http://xmpcr.kfu.com/forums/forum_for_channel.php?ch={NUMBER}" },
 		{ "Google search for Artist",		"http://www.google.com/search?q=%22{ARTIST}%22" },
 		{ "Google search for Title",		"http://www.google.com/search?q=%22{TITLE}%22" },
 		{ "Google search for Artist and Title",	"http://www.google.com/search?q=%22{ARTIST}%22+%22{TITLE}%22" },
@@ -613,7 +613,7 @@ public class PreferencesDialog extends JDialog {
 		    this.bookmarks.add(this.bookmarks.getSize(), b);
 		}
 
-		this.trackerURL.setText(JXM.myUserNode().get(XMTRACKER_URL, "http://www.xmnation.net/tracker/"));
+		this.trackerURL.setText(JXM.myUserNode().get(XMTRACKER_URL, "http://xmpcr.kfu.com/forums/tracker/"));
 		this.trackerUser.setText(JXM.myUserNode().get(XMTRACKER_USER, ""));
 		this.trackerPassword.setText(JXM.myUserNode().get(XMTRACKER_PASS, ""));
 		this.trackerEnabled.setSelected(JXM.myUserNode().getBoolean(XMTRACKER_ENABLED, false));

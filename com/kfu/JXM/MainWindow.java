@@ -114,6 +114,8 @@ public static void main(String[] args) { new MainWindow(); }
     private JTable channelTable;
     private JMenu deviceMenu;
     private JCheckBox powerCheckBox;
+    private JCheckBox muteButton;
+    private JCheckBox smartMuteButton;
     private JFrame myFrame;
     
     public MainWindow() {
@@ -254,6 +256,24 @@ public static void main(String[] args) { new MainWindow(); }
 
 	JPanel bottom = new JPanel();
 	bottom.setLayout(new FlowLayout());
+
+	this.muteButton = new JCheckBox("Mute");
+	this.muteButton.setEnabled(false);
+	this.muteButton.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		MainWindow.this.muteClicked();
+	    }
+	});
+	bottom.add(this.muteButton);
+	this.smartMuteButton = new JCheckBox("Smart Mute");
+	this.smartMuteButton.setEnabled(false);
+	this.smartMuteButton.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		MainWindow.this.smartMuteClicked();
+	    }
+	});
+	bottom.add(this.smartMuteButton);
+
 	this.powerCheckBox = new JCheckBox("Power");
 	this.powerCheckBox.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
@@ -264,6 +284,7 @@ public static void main(String[] args) { new MainWindow(); }
 	    }
 	});
 	bottom.add(this.powerCheckBox);
+
 	JMenuBar jmb = new JMenuBar();
 	this.deviceMenu = new JMenu("Pick Device");
 	this.refreshDeviceMenu();
@@ -275,6 +296,41 @@ public static void main(String[] args) { new MainWindow(); }
         this.myFrame.pack();
         this.myFrame.setResizable(true);
         this.myFrame.setVisible(true);
+    }
+
+    private void muteClicked() {
+	this.smartMuteButton.setSelected(false);
+	boolean muteState;
+	try {
+	    muteState = !RadioCommander.theRadio().isMuted();
+	    RadioCommander.theRadio().setMute(muteState);
+	}
+	catch(RadioException e) {
+	    this.handleError(e);
+	    return;
+	}
+	this.smartMuteInfo = null;
+	this.muteButton.setSelected(muteState);
+    }
+
+    ChannelInfo smartMuteInfo = null;
+    private void smartMuteClicked() {
+	this.muteButton.setSelected(false);
+	boolean muteState;
+	ChannelInfo i = null;
+	try {
+	    muteState = !RadioCommander.theRadio().isMuted();
+	    RadioCommander.theRadio().setMute(muteState);
+	    if (muteState)
+		this.smartMuteInfo = RadioCommander.theRadio().getChannelInfo();
+	    else
+		this.smartMuteInfo = null;
+	}
+	catch(RadioException e) {
+	    this.handleError(e);
+	    return;
+	}
+	this.smartMuteButton.setSelected(muteState);
     }
 
     private String deviceName = null;
@@ -369,6 +425,11 @@ public static void main(String[] args) { new MainWindow(); }
     private void poweredUp() {
 	this.channelList = new HashMap();
 	this.deviceMenu.setEnabled(false);
+	this.muteButton.setEnabled(true);
+	this.smartMuteButton.setEnabled(true);
+	this.muteButton.setSelected(false);
+	this.smartMuteButton.setSelected(false);
+	this.smartMuteInfo = null;
     }
 
     private void poweredDown() {
@@ -382,6 +443,10 @@ public static void main(String[] args) { new MainWindow(); }
 	this.channelTitleLabel.setText("");
 	this.deviceMenu.setEnabled(true);
 	this.powerCheckBox.setSelected(false);
+	this.muteButton.setEnabled(false);
+	this.smartMuteButton.setEnabled(false);
+	this.muteButton.setSelected(false);
+	this.smartMuteButton.setSelected(false);
     }
 
     private void handleError(final Exception e) {
@@ -446,6 +511,9 @@ public static void main(String[] args) { new MainWindow(); }
 	    this.channelNameLabel.setText(i.getChannelName());
 	    this.channelArtistLabel.setText(i.getChannelArtist());
 	    this.channelTitleLabel.setText(i.getChannelTitle());
+	    if (this.smartMuteInfo != null && !i.equals(this.smartMuteInfo)) {
+		this.smartMuteClicked(); // Quickie hack! Since we're muted, this will unmute.
+	    }
 	}
 	// Next, we pass it around to the various things around here
 	// to see if anybody cares.

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MacOSX.java,v 1.4 2004/03/10 03:40:19 nsayer Exp $
+ $Id: MacOSX.java,v 1.5 2004/03/10 05:55:49 nsayer Exp $
  
  */
 
@@ -43,6 +43,7 @@ public class MacOSX implements IPlatformHandler {
 
     public boolean needsBrowserPath() { return false; }
     public void setBrowserPath(String ignore) { throw new IllegalArgumentException("We don't care"); }
+
     public void openURL(String url) throws IOException {
 	FileManager.openURL(url);
     }
@@ -89,6 +90,7 @@ public class MacOSX implements IPlatformHandler {
 
 	if (!this.cb.radioIsOn())
 	    return null;
+
 	NSMenu out = new NSMenu();
 	NSMenuItem nmi;
 
@@ -150,9 +152,12 @@ public class MacOSX implements IPlatformHandler {
 	return out;
     }
 
+    // Stupid Apple. If we add a NSApplication delegate, the registration of the
+    // quit handler stops working.
     public void applicationShouldTerminate(NSObject sender) {
 	this.cb.platformNotify(PlatformFactory.PLAT_CB_QUIT, null);
     }
+
     public void normMuteClicked(NSObject sender) {
 	this.cb.platformNotify(PlatformFactory.PLAT_CB_NORM_MUTE, null);
     }
@@ -169,7 +174,7 @@ public class MacOSX implements IPlatformHandler {
 	    b.surf(info);
 	}
 	catch(IOException ex) {
-	    // what?
+	    // XXX what to do?
 	}
     }
     public void favoriteMenuClicked(NSObject sender) {

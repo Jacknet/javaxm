@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: SearchSystem.java,v 1.6 2004/05/02 17:47:55 nsayer Exp $
+ $Id: SearchSystem.java,v 1.7 2004/05/03 23:51:57 nsayer Exp $
  
  */
 
@@ -327,6 +327,7 @@ public class SearchSystem {
 	gbc1.gridy = 2;
 	jp.add(jl, gbc1);
 	this.channelEditor = new JTextField();
+	this.channelEditor.setEnabled(false);
 	this.channelEditor.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
 		try {
@@ -363,6 +364,7 @@ public class SearchSystem {
 	gbc1.fill = GridBagConstraints.HORIZONTAL;
 	jp.add(this.channelEditor, gbc1);
 	this.artistEditor = new JTextField();
+	this.artistEditor.setEnabled(false);
 	this.artistEditor.getDocument().addDocumentListener(new DocumentListener() {
 	    public void changedUpdate(DocumentEvent e) { this.doit(); }
 	    public void insertUpdate(DocumentEvent e) { this.doit(); }
@@ -377,6 +379,7 @@ public class SearchSystem {
 	gbc1.gridy = 1;
 	jp.add(this.artistEditor, gbc1);
 	this.titleEditor = new JTextField();
+	this.titleEditor.setEnabled(false);
 	this.titleEditor.getDocument().addDocumentListener(new DocumentListener() {
 	    public void changedUpdate(DocumentEvent e) { this.doit(); }
 	    public void insertUpdate(DocumentEvent e) { this.doit(); }

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.90 2004/04/10 07:59:16 nsayer Exp $
+ $Id: MainWindow.java,v 1.91 2004/04/10 18:58:32 nsayer Exp $
  
  */
 
@@ -1743,7 +1743,12 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     }
     MediaTracker myMT = new MediaTracker(this.channelLogo);
     private void setChannelLogo(int chan) {
-	Icon logo = this.findLogo(chan + ".gif");
+	Icon logo;
+	if (chan >= 210 && chan <= 230) { // traffic & weather "neighborhood"
+	    logo = this.findLogo("traffic.gif");
+	} else {
+	    logo = this.findLogo(chan + ".gif");
+	}
 	if (logo == null) {
 	    logo = this.findLogo("default.gif");
 	}

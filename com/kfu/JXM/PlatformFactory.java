@@ -32,7 +32,6 @@ public class PlatformFactory {
     private static String platformClassList[] = {
 	"com.kfu.Platform.Win32",
 	"com.kfu.Platform.MacOSX",
-	"com.kfu.Platform.Unix",
 	"com.kfu.Platform.unknown",
     };
 

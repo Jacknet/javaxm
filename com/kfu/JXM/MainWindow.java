@@ -480,7 +480,7 @@ public class MainWindow implements RadioEventHandler {
 	    }
 	});
 
-	gbc.insets = new Insets(0, 0, 20, 0);
+	gbc.insets = new Insets(0, 0, 20, 10);
 	gbc.gridx = 1;
 	gbc.gridy = 0;
 	gbc.gridheight = 2;
@@ -493,6 +493,7 @@ public class MainWindow implements RadioEventHandler {
 	this.refreshDeviceMenu();
 	jmb.add(this.deviceMenu);
 	gbc.gridx = 2;
+	gbc.insets = new Insets(0, 0, 20, 0);
 	gbc.anchor = GridBagConstraints.LINE_START;
 	bottom.add(jmb, gbc);
 

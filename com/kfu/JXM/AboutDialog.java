@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: AboutDialog.java,v 1.3 2004/03/13 18:00:00 nsayer Exp $
+ $Id: AboutDialog.java,v 1.4 2004/03/31 19:50:34 nsayer Exp $
  
  */
 
@@ -98,6 +98,7 @@ public class AboutDialog extends JDialog {
 	    { "Operating system version", System.getProperty("os.version") },
 	    { "Java vendor", System.getProperty("java.vendor") },
 	    { "Java version", System.getProperty("java.version") },
+	    { "Platform Handler", PlatformFactory.ourPlatform().getClass().getName() },
 	};
 
 	JTable jt = new JTable(data, columns);

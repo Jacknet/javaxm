@@ -39,6 +39,24 @@ import com.kfu.xm.*;
 
 public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, IPreferenceCallbackHandler {
 
+    private class BookmarkMenu extends JMenu {
+	private ChannelInfo info;
+	public BookmarkMenu(ChannelInfo info) {
+	    super("Bookmarks");
+	    this.info = info;
+	    for(int i = 0; i < MainWindow.this.bookmarks.length; i++) {
+		final Bookmark b = MainWindow.this.bookmarks[i];
+		JMenuItem jmi = new JMenuItem(b.getName());
+		jmi.addActionListener(new ActionListener() {
+		    public void actionPerformed(ActionEvent e) {
+			MainWindow.this.bookmarkSurf(b, BookmarkMenu.this.info);
+		    }
+		});
+		this.add(jmi);
+	    }
+	}
+    };
+
     // A popup menu for a given channel
     private class ChannelPopupMenu extends JPopupMenu {
 	ChannelInfo channelInfo;
@@ -58,22 +76,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		}
 	    });
 	    this.add(jmi);
-	    class BookmarkMenu extends JMenu {
-		public BookmarkMenu() {
-		    super("Bookmarks");
-		    for(int i = 0; i < MainWindow.this.bookmarks.length; i++) {
-			final Bookmark b = MainWindow.this.bookmarks[i];
-			JMenuItem jmi = new JMenuItem(b.getName());
-			jmi.addActionListener(new ActionListener() {
-			    public void actionPerformed(ActionEvent e) {
-				MainWindow.this.bookmarkSurf(b, ChannelPopupMenu.this.channelInfo);
-			    }
-			});
-			this.add(jmi);
-		    }
-		}
-	    };
-	    this.add(new BookmarkMenu());
+	    this.add(new MainWindow.BookmarkMenu(this.channelInfo));
 	}
     }
 
@@ -229,6 +232,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private JCheckBox muteButton;
     private JCheckBox smartMuteButton;
     private JFrame myFrame;
+    private JMenu bookmarkMenu;
     private Bookmark[] bookmarks;
     private JProgressBar satelliteMeter;
     private JProgressBar terrestrialMeter;
@@ -237,6 +241,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private JSlider ratingSlider;
     private JComboBox favoriteMenu;
     private JToggleButton favoriteCheckbox;
+    private ChannelInfo currentChannelInfo;
    
     public void quit() { 
 	if (RadioCommander.theRadio().isOn())
@@ -302,6 +307,34 @@ System.err.println("SHOW ABOUT WINDOW!");
 	}
 	// -----
 	// PUT MENUS HERE
+	class DynamicBookmarkMenu extends JMenu {
+	    // Stupid java! How many times do we have to reimplement this same thing!?
+	    private ChannelInfo info;
+	    public DynamicBookmarkMenu(String name) {
+		super(name);
+		super.addMenuListener(new MenuListener() {
+		    public void menuDeselected(MenuEvent e) {}
+		    public void menuCanceled(MenuEvent e) {}
+		    public void menuSelected(MenuEvent e) {
+			DynamicBookmarkMenu.this.info = new ChannelInfo(MainWindow.this.currentChannelInfo);
+			DynamicBookmarkMenu.this.removeAll();
+			for(int i = 0; i < MainWindow.this.bookmarks.length; i++) {
+			    final Bookmark b = MainWindow.this.bookmarks[i];
+			    JMenuItem jmi = new JMenuItem(b.getName());
+			    jmi.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+				    MainWindow.this.bookmarkSurf(b, DynamicBookmarkMenu.this.info);
+				}
+			    });
+			    DynamicBookmarkMenu.this.add(jmi);
+			}
+		    }
+		});
+	    }
+	}
+ 	this.bookmarkMenu = new DynamicBookmarkMenu("Bookmarks");
+	this.bookmarkMenu.setEnabled(false);
+	this.myFrame.getJMenuBar().add(this.bookmarkMenu);
 	// -----
 	if (!PlatformFactory.ourPlatform().useMacMenus()) {
 	    JMenu jm = new JMenu("Help");
@@ -339,17 +372,12 @@ System.err.println("SHOW ABOUT WINDOW!");
 		    return;
 		if (e.isPopupTrigger()) {
 		    didPopup = true;
-		    ChannelInfo info;
-		    try {
-			info = RadioCommander.theRadio().getChannelInfo();
-		    }
-		    catch(RadioException ee) {
-			MainWindow.this.handleError(ee);
-			return;
-		    }
-		    class BookmarkMenu extends JPopupMenu {
+		    ChannelInfo info = new ChannelInfo(MainWindow.this.currentChannelInfo);
+		    // Stupid java! We have to do this separately because although JMenu and JPopupMenu both have add(JMenuItem),
+		    // there is no common subclass!
+		    class BookmarkPopupMenu extends JPopupMenu {
 			private ChannelInfo info;
-			public BookmarkMenu(ChannelInfo info) {
+			public BookmarkPopupMenu(ChannelInfo info) {
 			    super();
 			    this.info = info;
 			    for(int i = 0; i < MainWindow.this.bookmarks.length; i++) {
@@ -357,14 +385,14 @@ System.err.println("SHOW ABOUT WINDOW!");
 				JMenuItem jmi = new JMenuItem(b.getName());
 				jmi.addActionListener(new ActionListener() {
 				    public void actionPerformed(ActionEvent e) {
-					MainWindow.this.bookmarkSurf(b, BookmarkMenu.this.info);
+					MainWindow.this.bookmarkSurf(b, BookmarkPopupMenu.this.info);
 				    }
 				});
 				this.add(jmi);
 			    }
 			}
 		    };
-		    JPopupMenu popup = new BookmarkMenu(info);
+		    JPopupMenu popup = new BookmarkPopupMenu(info);
 		    popup.show(e.getComponent(), e.getX(), e.getY());
 		}
 	    }
@@ -488,14 +516,7 @@ System.err.println("SHOW ABOUT WINDOW!");
 	//this.favoriteCheckbox.setText("<html><img src=\"" + this.getClass().getResource("/images/heart.png") + "\"></html>");
 	this.favoriteCheckbox.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
-		Integer sid;
-		try {
-		    sid = new Integer(RadioCommander.theRadio().getChannelInfo().getServiceID());
-		}
-		catch(RadioException ee) {
-		    MainWindow.this.handleError(ee);
-		    return;
-		}
+		Integer sid = new Integer(MainWindow.this.currentChannelInfo.getServiceID());
 		boolean becoming = MainWindow.this.favoriteCheckbox.isSelected();
 		if (becoming) {
 		    MainWindow.this.favoriteList.add(sid);
@@ -907,75 +928,14 @@ System.err.println("SHOW ABOUT WINDOW!");
 	}
     }
 
+    private Bookmark itmsButtonMark = new Bookmark("", "itms://phobos.apple.com/WebObjects/MZSearch.woa/wa/com.apple.jingle.search.DirectAction/advancedSearchResults?artistTerm={ARTIST}&songTerm={TITLE}");
     private void itmsButtonClicked() {
-	String u = "itms://phobos.apple.com/WebObjects/MZSearch.woa/wa/com.apple.jingle.search.DirectAction/advancedSearchResults?artistTerm={ARTIST}&songTerm={TITLE}";
-	ChannelInfo i;
-	try {
-	    i = RadioCommander.theRadio().getChannelInfo();
-	}
-	catch(RadioException e) {
-	    this.handleError(e);
-	    return;
-	}
-	this.genericSurf(u, i);
-/*
-	try {
-	    String artist = URLEncoder.encode(i.getChannelArtist(), "US-ASCII");
-	    String title = URLEncoder.encode(i.getChannelTitle(), "US-ASCII");
-	    if (artist != "")
-		u += "artistTerm=" + artist;
-	    if (artist != "" && title != "");
-		u += "&";
-	    if (title != "")
-		u += "songTerm=" + title;
-	}
-	catch(UnsupportedEncodingException e) {
-	    // Oh, whatever!
-System.err.println(e.getMessage());
-e.printStackTrace();
-	    return;
-	}
-	this.openURL(u.toString());
-*/
+	this.bookmarkSurf(this.itmsButtonMark, this.currentChannelInfo);
     }
 
+    private Bookmark channelMark = new Bookmark("", "http://www.xmradio.com/programming/channel_page.jsp?ch={NUMBER}");
     private void surfToChannel(int chan) {
-	String u = "http://www.xmradio.com/programming/channel_page.jsp?ch=" + chan;
-	this.openURL(u);
-    }
-
-    private Pattern numPattern = Pattern.compile("\\{NUMBER\\}");
-    private Pattern genrePattern = Pattern.compile("\\{GENRE\\}");
-    private Pattern namePattern = Pattern.compile("\\{NAME\\}");
-    private Pattern artistPattern = Pattern.compile("\\{ARTIST\\}");
-    private Pattern titlePattern = Pattern.compile("\\{TITLE\\}");
-    private Pattern sidPattern = Pattern.compile("\\{SERVICE\\}");
-    private void genericSurf(String urlPattern, ChannelInfo info) {
-	String url = urlPattern;
-	try {
-	    url = this.numPattern.matcher(url).replaceAll(Integer.toString(info.getChannelNumber()));
-	    url = this.genrePattern.matcher(url).replaceAll(URLEncoder.encode(info.getChannelGenre(), "US-ASCII"));
-	    url = this.namePattern.matcher(url).replaceAll(URLEncoder.encode(info.getChannelName(), "US-ASCII"));
-	    url = this.artistPattern.matcher(url).replaceAll(URLEncoder.encode(info.getChannelArtist(), "US-ASCII"));
-	    url = this.titlePattern.matcher(url).replaceAll(URLEncoder.encode(info.getChannelTitle(), "US-ASCII"));
-	    url = this.sidPattern.matcher(url).replaceAll(Integer.toString(info.getServiceID()));
-	}
-	catch(UnsupportedEncodingException e) {
-	    // Oh, whatever!
-System.err.println(e.getMessage());
-e.printStackTrace();
-	    return;
-	}
-	this.openURL(url);
-    }
-
-    private void openURL(String u) {
-	try {
-	    PlatformFactory.ourPlatform().openURL(u);
-	}
-	catch(IOException e) {
-	    JOptionPane.showMessageDialog(this.myFrame, e.getMessage(), "Error opening URL", JOptionPane.ERROR_MESSAGE);
-	}
+	this.bookmarkSurf(this.channelMark, this.currentChannelInfo);
     }
 
     private void setChannelLogo(int chan) {
@@ -1136,6 +1096,7 @@ e.printStackTrace();
 	this.rebuildFavoritesMenu();
 	this.favoriteCheckbox.setEnabled(true);
 	this.preferences.saveDevice();
+	this.bookmarkMenu.setEnabled(true);
 	this.channelChanged(); // We need to fake the first one
 	try {
 	    String rid = RadioCommander.theRadio().getRadioID();
@@ -1181,6 +1142,7 @@ e.printStackTrace();
 		MainWindow.this.setChannelLogo(-1);
 		MainWindow.this.favoriteMenu.setEnabled(false);
 		MainWindow.this.favoriteCheckbox.setEnabled(false);
+		MainWindow.this.bookmarkMenu.setEnabled(true);
 	        MainWindow.this.preferences.turnOff();
 	    }
 	});
@@ -1508,6 +1470,7 @@ e.printStackTrace();
 	this.selectCurrentChannel();
 
 	if (RadioCommander.theRadio().getChannel() == i.getChannelNumber()) {
+	    this.currentChannelInfo = i;
 	    // update the favorite checkbox
 	    this.favoriteCheckbox.setSelected(this.favoriteList.contains(new Integer(i.getServiceID())));
 	    // update the rating slider

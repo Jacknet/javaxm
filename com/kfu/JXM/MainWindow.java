@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.64 2004/03/19 05:15:44 nsayer Exp $
+ $Id: MainWindow.java,v 1.65 2004/03/19 05:23:21 nsayer Exp $
  
  */
 
@@ -160,6 +160,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    this.songTimeBar.setValue(val);
 	    if (val == 1000)
 		this.songTimeBar.setVisible(false);
+	    this.songTimeBar.repaint();
 	}
 
 	public void setSongTime(Date start, Date end) {

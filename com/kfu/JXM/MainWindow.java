@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.72 2004/03/22 00:30:14 nsayer Exp $
+ $Id: MainWindow.java,v 1.73 2004/03/22 04:31:56 nsayer Exp $
  
  */
 
@@ -625,6 +625,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private JMenu bookmarkMenu;
     private JMenuItem powerMenuItem;
     private JMenuItem filterMenuItem;
+    private JComboBox filterMenu;
     private JMenuItem compactMenuItem;
     private Bookmark[] bookmarks;
     private JProgressBar satelliteMeter;
@@ -1041,15 +1042,15 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	gbc.anchor = GridBagConstraints.CENTER;
 	stripe.add(rating, gbc);
 	
-	JPanel extra = new JPanel();
-	// XXX - what goes here?
+	this.filterPanel = new FilterPanel(this);
+	this.filterMenu = this.filterPanel.getFilterMenu();
 	gbc.gridx = 2;
 	gbc.weightx = 0;
 	gbc.anchor = GridBagConstraints.LINE_END;
 	gbc.insets = new Insets(0, 0, 0, 20);
 	gbc.fill = GridBagConstraints.NONE;
-	extra.setPreferredSize(favorites.getPreferredSize());
-	stripe.add(extra, gbc);
+	this.filterMenu.setPreferredSize(favorites.getPreferredSize());
+	stripe.add(this.filterMenu, gbc);
 
 	top.add(stripe);
 	
@@ -1449,7 +1450,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
 	this.loadTickList();
 	this.memoryPanel = new MemoryPanel(this);
-	this.filterPanel = new FilterPanel(this);
 
 	// We have a device saved... Try and power up
 	String deviceName = this.preferences.getDevice();
@@ -1719,6 +1719,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.rebuildFavoritesMenu();
 	this.favoriteCheckbox.setEnabled(true);
 	this.filterMenuItem.setEnabled(true);
+	this.filterMenu.setEnabled(this.filterMenu.getItemCount() > 1);
 	this.compactMenuItem.setEnabled(true);
 	this.preferences.saveDevice();
 	this.bookmarkMenu.setEnabled(true);
@@ -1763,6 +1764,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		MainWindow.this.muteButton.setEnabled(false);
 		MainWindow.this.smartMuteButton.setEnabled(false);
 		MainWindow.this.filterMenuItem.setEnabled(false);
+		MainWindow.this.filterMenu.setEnabled(false);
+		MainWindow.this.filterPanel.hide();
 		MainWindow.this.compactMenuItem.setEnabled(false);
 		MainWindow.this.forceNormalView();
 		MainWindow.this.powerCheckBox.setSelected(false);
@@ -1775,6 +1778,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		MainWindow.this.terrestrialMeter.setValue(0);
 		MainWindow.this.setChannelLogo(-1);
 		MainWindow.this.favoriteMenu.setEnabled(false);
+		MainWindow.this.favoriteMenu.setSelectedIndex(0);
 		MainWindow.this.favoriteCheckbox.setEnabled(false);
 		MainWindow.this.bookmarkMenu.setEnabled(false);
 	        MainWindow.this.preferences.turnOff();

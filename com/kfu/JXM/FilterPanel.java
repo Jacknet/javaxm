@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: FilterPanel.java,v 1.4 2004/03/19 22:54:49 nsayer Exp $
+ $Id: FilterPanel.java,v 1.5 2004/03/22 04:31:56 nsayer Exp $
  
  */
 
@@ -82,6 +82,9 @@ public class FilterPanel extends JDialog {
     private JTree theTree;
     private JTextField filterNameField;
     private JButton deleteButton;
+
+    // This is actually shown on the main window. But we maintain it.
+    private JComboBox filterMenu;
 
 /*
     class MyTreeCellEditor extends DefaultTreeCellEditor {
@@ -153,6 +156,7 @@ public class FilterPanel extends JDialog {
 		FilterPanel.this.theTabbedPane.setComponentAt(index, FilterPanel.this.tabContents);
 		FilterPanel.this.currentFilterIndex = index;
 		FilterPanel.this.filterNameField.setText(FilterPanel.this.theTabbedPane.getTitleAt(index));
+		FilterPanel.this.filterMenu.setSelectedItem(FilterPanel.this.currentFilter());
 		FilterPanel.this.refreshChannelList();
 	    }
 	});
@@ -179,6 +183,7 @@ public class FilterPanel extends JDialog {
 		ChannelInfo info = (ChannelInfo)o;
 		boolean currentState = FilterPanel.this.currentFilter().isFiltered(info.getServiceID());
 		FilterPanel.this.currentFilter().filterSid(info.getServiceID(), !currentState);
+		FilterPanel.this.parent.setFilter(FilterPanel.this.currentFilter().getFilterArray());
 		FilterPanel.this.theTree.getModel().valueForPathChanged(tp, info); // Use this to notify the renderer, indirectly.
 	    }
 	});
@@ -205,11 +210,13 @@ public class FilterPanel extends JDialog {
 		Filter f = new Filter(FilterPanel.this.currentFilter());
 		FilterPanel.this.filterSets.add(f);
 		FilterPanel.this.theTabbedPane.addTab(f.getName(), new JPanel());
+		FilterPanel.this.filterMenu.addItem(f);
 		FilterPanel.this.currentFilterIndex = FilterPanel.this.filterSets.size() - 1;
 		// After creating a brand new one, select it
 		FilterPanel.this.theTabbedPane.setSelectedIndex(FilterPanel.this.currentFilterIndex);
 		// We don't get to delete the last one.
 		FilterPanel.this.deleteButton.setEnabled(FilterPanel.this.filterSets.size() > 1);
+		FilterPanel.this.filterMenu.setEnabled(FilterPanel.this.filterSets.size() > 1);
 	    }
 	});
 	tabbot.add(jb);
@@ -217,13 +224,18 @@ public class FilterPanel extends JDialog {
 	this.deleteButton.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
 		// Remove the old stuff.
+		FilterPanel.this.ignoreFilterMenu = true;
+		FilterPanel.this.filterMenu.removeItem(FilterPanel.this.currentFilter());
 		FilterPanel.this.filterSets.remove(FilterPanel.this.currentFilterIndex);
 		// This little dance shuffles the tab contents panel over to the new selected tab
 		FilterPanel.this.theTabbedPane.remove(FilterPanel.this.currentFilterIndex);
 		FilterPanel.this.currentFilterIndex = FilterPanel.this.theTabbedPane.getSelectedIndex();
+		FilterPanel.this.filterMenu.setSelectedItem(FilterPanel.this.currentFilter());
+		FilterPanel.this.ignoreFilterMenu = false;
 		FilterPanel.this.theTabbedPane.setComponentAt(FilterPanel.this.currentFilterIndex, FilterPanel.this.tabContents);
 		// We don't get to delete the last one.
 		FilterPanel.this.deleteButton.setEnabled(FilterPanel.this.filterSets.size() > 1);
+		FilterPanel.this.filterMenu.setEnabled(FilterPanel.this.filterSets.size() > 1);
 	    }
 	});
 	tabbot.add(this.deleteButton);
@@ -231,6 +243,18 @@ public class FilterPanel extends JDialog {
 
 	this.getContentPane().add(this.theTabbedPane, BorderLayout.CENTER);
 	JPanel bot = new JPanel();
+	bot.setLayout(new GridBagLayout());
+	GridBagConstraints gbc = new GridBagConstraints();
+
+	jl = new JLabel("Selected tab will be default startup filter.");
+	jl.setHorizontalAlignment(SwingConstants.CENTER);
+	gbc.gridwidth = 2;
+	gbc.gridx = 0;
+	gbc.gridy = 0;
+	gbc.weightx = 1;
+	gbc.fill = GridBagConstraints.HORIZONTAL;
+	bot.add(jl, gbc);
+
 	jb = new JButton("Cancel");
 	jb.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
@@ -238,7 +262,14 @@ public class FilterPanel extends JDialog {
 		FilterPanel.this.hide();
 	    }
 	});
-	bot.add(jb);
+	gbc.gridwidth = 1;
+	gbc.gridx = 0;
+	gbc.gridy = 1;
+	gbc.weightx = .5f;
+	gbc.fill = GridBagConstraints.NONE;
+	gbc.anchor = GridBagConstraints.LINE_END;
+	gbc.insets = new Insets(0, 0, 5, 0);
+	bot.add(jb, gbc);
 	jb = new JButton("OK");
 	jb.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
@@ -246,12 +277,47 @@ public class FilterPanel extends JDialog {
 		FilterPanel.this.hide();
 	    }
 	});
-	bot.add(jb);
+	gbc.gridwidth = 1;
+	gbc.gridx = 1;
+	gbc.gridy = 1;
+	gbc.anchor = GridBagConstraints.LINE_START;
+	bot.add(jb, gbc);
 	this.getContentPane().add(bot, BorderLayout.SOUTH);
+
+	this.filterMenu = new JComboBox();
+	this.filterMenu.setRenderer(new DefaultListCellRenderer() {
+	    public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+		if (value instanceof Filter)
+		    value = ((Filter)value).getName();
+		return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+	    }
+	});
+	this.filterMenu.setEnabled(false);
+	this.filterMenu.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		if (FilterPanel.this.ignoreFilterMenu == true)
+		    return;
+		Filter f = (Filter)FilterPanel.this.filterMenu.getSelectedItem();
+		FilterPanel.this.parent.setFilter(f.getFilterArray());
+		for(int i = 0; i < FilterPanel.this.filterSets.size(); i++) {
+		    if (f == FilterPanel.this.filterSets.get(i)) {
+			FilterPanel.this.currentFilterIndex = i;
+			break;
+		    }
+		}
+		FilterPanel.this.ignoreFilterMenu = true;
+		if (FilterPanel.this.isVisible()) {
+		    FilterPanel.this.theTabbedPane.setSelectedIndex(FilterPanel.this.currentFilterIndex);
+		}
+		FilterPanel.this.ignoreFilterMenu = false;
+	    }
+	});
 
         this.reloadFilterSettings();
 	this.setSize(new Dimension(450, 550));
     }
+
+    private boolean ignoreFilterMenu = false;
 
     public void show() {
         this.reloadFilterSettings();
@@ -350,10 +416,16 @@ public class FilterPanel extends JDialog {
 	return low;
     }
 
+    public JComboBox getFilterMenu() {
+	return this.filterMenu;
+    }
+
     private static final String FILTER_SET_KEY = "FilterSets"; // Contains named ByteArrays - each is a filter.
     private static final String FILTER_SET_ORDER = "FilterSetOrder"; // Contains the list of Filtersets, keyed to an integer order
     private static final String DEFAULT_FILTER_KEY = "DefaultFilter"; // A string, which must match the name of one of the filters
     private void reloadFilterSettings() {
+	this.ignoreFilterMenu = true;
+	try {
 	Preferences orderNode = JXM.myUserNode().node(FILTER_SET_ORDER);
 	try {
 	    String[] keys = orderNode.keys();
@@ -366,6 +438,7 @@ public class FilterPanel extends JDialog {
 	    });
 	    Preferences node = JXM.myUserNode().node(FILTER_SET_KEY);
 	    this.theTabbedPane.removeAll();
+	    this.filterMenu.removeAllItems();
 	    this.filterSets.clear();
 	    for(int i = 0; i < keys.length; i++) {
 		String name = orderNode.get(keys[i], null);
@@ -386,8 +459,10 @@ public class FilterPanel extends JDialog {
 	    Filter set = new Filter();
 	    this.filterSets.add(set);
 	}
-	for(int i = 0; i < this.filterSets.size(); i++)
+	for(int i = 0; i < this.filterSets.size(); i++) {
 	    this.theTabbedPane.add(((Filter)this.filterSets.get(i)).getName(), new JPanel());
+	    this.filterMenu.addItem(this.filterSets.get(i));
+	}
 
 	String defaultName = JXM.myUserNode().get(DEFAULT_FILTER_KEY, "");
 	this.currentFilterIndex = 0; // default to the first one
@@ -397,10 +472,16 @@ public class FilterPanel extends JDialog {
 		break;
 	    }
 	this.theTabbedPane.setSelectedIndex(this.currentFilterIndex);
+	this.filterMenu.setSelectedItem(this.currentFilter());
 
 	this.deleteButton.setEnabled(this.filterSets.size() > 1);
+	this.filterMenu.setEnabled(RadioCommander.theRadio().isOn() && this.filterSets.size() > 1);
 
 	this.parent.setFilter(this.currentFilter().getFilterArray());
+	}
+	finally {
+	    this.ignoreFilterMenu = false;
+	}
     }
 
     private void saveFilterSettings() {

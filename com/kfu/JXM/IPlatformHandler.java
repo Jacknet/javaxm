@@ -27,6 +27,9 @@ public interface IPlatformHandler {
 
 	// The no-arg constructor throws if creation is attempted on the wrong platform
 
+	// Is this device name actually a valid device?
+	public boolean isDeviceValid(String device);
+
 	// Do we need to suppress the About, Prefs and Quit menu items and provide them ourselves instead?
 	public boolean useMacMenus();
 

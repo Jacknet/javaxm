@@ -42,11 +42,15 @@ public class MacOSX implements IPlatformHandler {
 
     public void registerCallbackHandler(IPlatformCallbackHandler notifier) { this.cb = notifier; }
 
+    public boolean isDeviceValid(String devname) {
+	// Eliminate the /dev/-less names and the CU devices
+	return devname.startsWith("/dev/tty.");
+    }
+
     public MacOSX() throws Exception {
 	if (System.getProperty("mrj.version") == null)
 	    throw new Exception("This isn't a macintosh");
 
-	System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JXM");
 
 	Application app = new Application();
 
@@ -69,6 +73,7 @@ public class MacOSX implements IPlatformHandler {
 	    }
 	});
 
+	System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JXM");
     }
 
 }

@@ -33,6 +33,8 @@ public class unknown implements IPlatformHandler {
     public void setBrowserPath(String ignore) { throw new IllegalArgumentException("We don't care"); }
     public void openURL(String url) throws IOException { throw new IOException("Don't know how to surf on unknown platforms."); }
 
+    public boolean isDeviceValid(String in) { return true; }
+
     public void registerCallbackHandler(IPlatformCallbackHandler ignore) { }
 
 }

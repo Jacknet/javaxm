@@ -225,6 +225,8 @@ public class PreferencesDialog extends JDialog {
         String[] devices = RadioCommander.getPotentialDevices();
         for(int i = 0; i < devices.length; i++) {
             final String name = devices[i];
+	    if (!PlatformFactory.ourPlatform().isDeviceValid(name))
+		continue;
             this.deviceMenu.addItem(name);
         }
         this.deviceMenu.setSelectedIndex(0);

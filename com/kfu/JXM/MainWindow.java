@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.106 2004/05/11 00:09:51 nsayer Exp $
+ $Id: MainWindow.java,v 1.107 2004/05/11 16:07:58 nsayer Exp $
  
  */
 
@@ -1259,7 +1259,7 @@ public class MainWindow
 		rating.setLayout(new GridBagLayout());
 		GridBagConstraints gbc1 = new GridBagConstraints();
 		this.ratingSlider = new JSlider(-5, 5);
-		this.ratingSlider.setToolTipText( "Tabulates your opinion with other JXM listeners" );
+		this.ratingSlider.setToolTipText( "Drag left if you dislike the current song, right if you like it" );
 		this.ratingSlider.setMajorTickSpacing(5);
 		this.ratingSlider.setMinorTickSpacing(1);
 		this.ratingSlider.setSnapToTicks(true);

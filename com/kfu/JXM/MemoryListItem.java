@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MemoryListItem.java,v 1.2 2004/03/30 17:18:21 nsayer Exp $
+ $Id: MemoryListItem.java,v 1.3 2004/03/31 19:49:17 nsayer Exp $
  
  */
 
@@ -43,7 +43,7 @@ public class MemoryListItem {
 	this.info = i;
     }
     public MemoryListItem(String serialization) {
-	String[] split = serialization.split(":");
+	String[] split = serialization.split(":", -1);
 	if (split.length != 7 && split.length != 8)
 	    throw new IllegalArgumentException("Wrong number of serialized fields.");
 	try {

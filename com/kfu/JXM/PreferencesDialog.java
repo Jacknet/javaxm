@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: PreferencesDialog.java,v 1.25 2004/03/30 17:16:15 nsayer Exp $
+ $Id: PreferencesDialog.java,v 1.26 2004/03/31 19:49:17 nsayer Exp $
  
  */
 
@@ -489,7 +489,7 @@ public class PreferencesDialog extends JDialog {
 	});
 	this.bookmarks.clear();
 	for(int i = 0; i < keys.length; i++) {
-	    String parts[] = marks.get(keys[i], "").split(":");
+	    String parts[] = marks.get(keys[i], "").split(":", -1);
 	    if (parts.length != 2)
 		continue;
 	    String name, url;

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: PlatformFactory.java,v 1.6 2004/03/14 05:23:13 nsayer Exp $
+ $Id: PlatformFactory.java,v 1.7 2004/03/31 19:49:17 nsayer Exp $
  
  */
 
@@ -39,8 +39,8 @@ public class PlatformFactory {
     public static final int NORM_MUTE_ON = 1;
 
     private static String platformClassList[] = {
-	"com.kfu.Platform.Win32",
 	"com.kfu.Platform.MacOSX",
+	"com.kfu.Platform.Win32",
 	"com.kfu.Platform.unknown",
     };
 

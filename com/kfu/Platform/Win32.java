@@ -17,13 +17,14 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: Win32.java,v 1.5 2004/04/10 07:59:16 nsayer Exp $
+ $Id: Win32.java,v 1.6 2004/04/10 08:38:55 nsayer Exp $
  
  */
 
 package com.kfu.Platform;
 
 import java.awt.event.*;
+import java.awt.*;
 import java.io.*;
 import java.util.*;
 import javax.swing.*;
@@ -78,7 +79,7 @@ public class Win32 implements IPlatformHandler {
 
 	this.crappyWindowsVersion = (osName.indexOf("9") >= 0 || osName.indexOf("me") >= 0);
 	WindowsTrayIcon.initTrayIcon("JXM");
-	ImageIcon ii = new ImageIcon("trayicon.png");
+	ImageIcon ii = new ImageIcon(this.getClass().getResource("/images/trayicon.png"));
 	this.trayIcon = new WindowsTrayIcon(ii.getImage(), 16, 16);
 	this.trayIcon.setVisible(true);
 	new TrayIconMenu().setTrayIcon(this.trayIcon);
@@ -90,7 +91,8 @@ public class Win32 implements IPlatformHandler {
 	    super.showMenu(x, y);
 	}
 
-	private JMenuItem chanItem, artistItem, titleItem, muteItem, smartMuteItem;
+	private JMenuItem chanItem, artistItem, titleItem;
+	private JCheckBoxMenuItem muteItem, smartMuteItem;
 	private JMenu bookmarkMenu, favoriteMenu;
 
 	private void rebuild() {
@@ -99,16 +101,25 @@ public class Win32 implements IPlatformHandler {
 		this.chanItem.setText("");
 		this.artistItem.setText("");
 		this.titleItem.setText("");
-		this.setEnabled(false);
+		this.setEnabled(false); // why isn't this sufficient?
+		this.muteItem.setEnabled(false);
+		this.muteItem.setState(false);
+		this.smartMuteItem.setEnabled(false);
+		this.smartMuteItem.setState(false);
+		this.bookmarkMenu.removeAll();
+		this.favoriteMenu.removeAll();
 		return;
-	    } else {
-		this.setEnabled(true);
-		this.chanItem.setText(Integer.toString(info.getChannelNumber()) + " - " + info.getChannelName());
-		this.artistItem.setText(info.getChannelArtist());
-		this.titleItem.setText(info.getChannelTitle());
 	    }
+	    this.chanItem.setText(Integer.toString(info.getChannelNumber()) + " - " + info.getChannelName());
+	    this.artistItem.setText(info.getChannelArtist());
+	    this.titleItem.setText(info.getChannelTitle());
+	    this.setEnabled(true);
+
 	    int muteState = Win32.this.cb.getMuteState();
-	    // add little checkmarks to the mute / smart mute menus somehow
+	    this.muteItem.setState(muteState == PlatformFactory.NORM_MUTE_ON);
+	    this.smartMuteItem.setState(muteState == PlatformFactory.SMART_MUTE_ON);
+	    this.muteItem.setEnabled(true);
+	    this.smartMuteItem.setEnabled(true);
 
 	    // rebuild the bookmark menu
 	    Bookmark[] marks = Win32.this.cb.getBookmarks();
@@ -164,18 +175,18 @@ public class Win32 implements IPlatformHandler {
 	    this.add(this.favoriteMenu);
 	    this.addSeparator();
 
-	    this.muteItem = new JMenuItem("Smart Mute");
+	    this.muteItem = new JCheckBoxMenuItem("Mute");
 	    this.muteItem.addActionListener(new ActionListener() {
 		public void actionPerformed(ActionEvent e) {
-		    Win32.this.cb.platformNotify(PlatformFactory.PLAT_CB_SMART_MUTE, null);
+		    Win32.this.cb.platformNotify(PlatformFactory.PLAT_CB_NORM_MUTE, null);
 		}
 	    });
 	    this.add(this.muteItem);
 
-	    this.smartMuteItem = new JMenuItem("Mute");
+	    this.smartMuteItem = new JCheckBoxMenuItem("Smart Mute");
 	    this.smartMuteItem.addActionListener(new ActionListener() {
 		public void actionPerformed(ActionEvent e) {
-		    Win32.this.cb.platformNotify(PlatformFactory.PLAT_CB_NORM_MUTE, null);
+		    Win32.this.cb.platformNotify(PlatformFactory.PLAT_CB_SMART_MUTE, null);
 		}
 	    });
 	    this.add(this.smartMuteItem);

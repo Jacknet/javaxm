@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.92 2004/04/16 06:37:45 nsayer Exp $
+ $Id: MainWindow.java,v 1.93 2004/04/17 18:43:08 nsayer Exp $
  
  */
 
@@ -2351,6 +2351,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    MainWindow.this.ignoreFavoriteMenu = false;
 	}
 	this.scrollToCurrentChannel();
+	this.scheduleTrackerUpdate();
     }
 
     private Map channelList = Collections.synchronizedMap(new HashMap());
@@ -2729,19 +2730,24 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    if (this.smartMuteInfo != null && !i.equals(this.smartMuteInfo)) {
 		this.smartMuteClicked(); // Quickie hack! Since we're muted, this will unmute.
 	    }
-	    new Thread() {
-		public void run() {
-	    	    try {
-	    		XMTracker.theTracker().update(i);
-		    }
-		    catch(TrackerException e) {
-			MainWindow.this.handleTrackerError(e);
-		    }
-		}
-	    }.start();
+	    this.scheduleTrackerUpdate();
 	}
 	// Next, we pass it around to the various things around here
 	// to see if anybody cares.
+    }
+
+    private void scheduleTrackerUpdate() {
+	final ChannelInfo i = this.currentChannelInfo;
+	new Thread() {
+	    public void run() {
+	    	try {
+	    	    XMTracker.theTracker().update(i);
+		}
+		catch(TrackerException e) {
+		    MainWindow.this.handleTrackerError(e);
+		}
+	    }
+	}.start();
     }
 
     private void scrollToCurrentChannel() {

@@ -26,9 +26,14 @@ import javax.swing.event.*;
 import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.*;
 import java.lang.*;
+import java.net.*;
 import java.util.*;
 import java.util.prefs.*;
+
+// BrowserLauncher
+import edu.stanford.ejalbert.*;
 
 import com.kfu.xm.*;
 
@@ -111,6 +116,7 @@ public static void main(String[] args) { new MainWindow(); }
     private JLabel channelGenreLabel;
     private JLabel channelArtistLabel;
     private JLabel channelTitleLabel;
+    private JLabel channelLogo;
     private ChannelTableModel channelTableModel;
     private JTable channelTable;
     private JMenu deviceMenu;
@@ -120,6 +126,7 @@ public static void main(String[] args) { new MainWindow(); }
     private JFrame myFrame;
     private JProgressBar satelliteMeter;
     private JProgressBar terrestrialMeter;
+    private JButton itmsButton;
     
     public MainWindow() {
 
@@ -140,6 +147,22 @@ public static void main(String[] args) { new MainWindow(); }
 	});
 
 	this.myFrame.getContentPane().setLayout(new BorderLayout());
+
+	JPanel top = new JPanel();
+	top.setLayout(new BoxLayout(top, BoxLayout.LINE_AXIS));
+
+	JPanel pictureFrame = new JPanel();
+	pictureFrame.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+	this.channelLogo = new JLabel();
+	this.channelLogo.setPreferredSize(new Dimension(150, 100));
+	this.setChannelLogo(-1);
+	this.channelLogo.addMouseListener(new MouseAdapter() {
+	    public void mouseClicked(MouseEvent e) {
+		MainWindow.this.surfToChannel(RadioCommander.theRadio().getChannel());
+	    }
+	});
+	pictureFrame.add(this.channelLogo);
+	top.add(pictureFrame);
 
 	// First, the "now playing" panel
 	JPanel jp = new JPanel();
@@ -179,9 +202,24 @@ public static void main(String[] args) { new MainWindow(); }
 	this.channelTitleLabel.setFont(new Font(null, Font.BOLD, 20));
 	gbc.gridy = 1;
 	jp.add(this.channelTitleLabel, gbc);
-	jp.setMinimumSize(new Dimension(0, 100));
+	jp.setMinimumSize(new Dimension(0, 75));
 	jp.setPreferredSize(jp.getMinimumSize());
-	this.myFrame.getContentPane().add(jp, BorderLayout.PAGE_START);
+	top.add(jp);
+	JPanel buttons = new JPanel();
+	buttons.setLayout(new BoxLayout(buttons, BoxLayout.PAGE_AXIS));
+	this.itmsButton = new JButton("iTunes Music Store");
+	this.itmsButton.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		MainWindow.this.itmsButtonClicked();
+	    }
+	});
+	this.itmsButton.setEnabled(false);
+	buttons.add(this.itmsButton);
+
+	top.add(buttons);
+	
+	this.myFrame.getContentPane().add(top, BorderLayout.PAGE_START);
+	//this.myFrame.getContentPane().add(this.channelLogo, BorderLayout.PAGE_START);
 
         final JTable channelTable = new JTable();
 	this.channelTable = channelTable;
@@ -374,6 +412,61 @@ public static void main(String[] args) { new MainWindow(); }
 	    this.turnPowerOn();
     }
 
+    private void itmsButtonClicked() {
+	String u = "itms://phobos.apple.com/WebObjects/MZSearch.woa/wa/com.apple.jingle.search.DirectAction/advancedSearchResults?";
+	ChannelInfo i;
+	try {
+	    i = RadioCommander.theRadio().getChannelInfo();
+	}
+	catch(RadioException e) {
+	    this.handleError(e);
+	    return;
+	}
+	try {
+	    String artist = URLEncoder.encode(i.getChannelArtist(), "US-ASCII");
+	    String title = URLEncoder.encode(i.getChannelTitle(), "US-ASCII");
+	    if (artist != "")
+		u += "artistTerm=" + artist;
+	    if (artist != "" && title != "");
+		u += "&";
+	    if (title != "")
+		u += "songTerm=" + title;
+	}
+	catch(UnsupportedEncodingException e) {
+	    // Oh, whatever!
+System.err.println(e.getMessage());
+e.printStackTrace();
+	    return;
+	}
+	try {
+	    BrowserLauncher.openURL(u.toString());
+	}
+	catch(IOException e) {
+System.err.println(e.getMessage());
+e.printStackTrace();
+	    // XXX what do we do about this?
+	}
+    }
+    private void surfToChannel(int chan) {
+	String u = "http://www.xmradio.com/programming/channel_page.jsp?ch=" + chan;
+	try {
+	    BrowserLauncher.openURL(u);
+	}
+	catch(IOException e) {
+System.err.println(e.getMessage());
+e.printStackTrace();
+	    // XXX what do we do about this?
+	}
+    }
+
+    private void setChannelLogo(int chan) {
+	URL logoUrl = this.getClass().getResource("/logos/" + chan + ".gif");
+	if (logoUrl == null)
+	    logoUrl = this.getClass().getResource("/logos/default.gif");
+	Icon logo = new ImageIcon(logoUrl);
+	this.channelLogo.setIcon(logo);
+    }
+
     private void muteClicked() {
 	this.smartMuteButton.setSelected(false);
 	boolean muteState;
@@ -527,11 +620,13 @@ public static void main(String[] args) { new MainWindow(); }
 	this.deviceMenu.setEnabled(false);
 	this.muteButton.setEnabled(true);
 	this.smartMuteButton.setEnabled(true);
+	this.itmsButton.setEnabled(true);
 	this.muteButton.setSelected(false);
 	this.smartMuteButton.setSelected(false);
 	this.smartMuteInfo = null;
 	this.powerCheckBox.setSelected(true);
 	this.myUserNode().put(DEVICE_NAME_KEY, this.deviceName);
+	this.channelChanged(); // We need to fake the first one
     }
 
     private void poweredDown() {
@@ -547,10 +642,12 @@ public static void main(String[] args) { new MainWindow(); }
 	this.powerCheckBox.setSelected(false);
 	this.muteButton.setEnabled(false);
 	this.smartMuteButton.setEnabled(false);
+	this.itmsButton.setEnabled(false);
 	this.muteButton.setSelected(false);
 	this.smartMuteButton.setSelected(false);
 	this.satelliteMeter.setValue(0);
 	this.terrestrialMeter.setValue(0);
+	this.setChannelLogo(-1);
 	new Thread() {
 	    public void run() {
 		try {
@@ -593,6 +690,7 @@ public static void main(String[] args) { new MainWindow(); }
     private void muteChanged() {
     }
     private void channelChanged() {
+	this.setChannelLogo(RadioCommander.theRadio().getChannel());
     }
 
     HashMap channelList;

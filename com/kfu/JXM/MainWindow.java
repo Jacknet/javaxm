@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.76 2004/03/23 19:25:49 nsayer Exp $
+ $Id: MainWindow.java,v 1.77 2004/03/23 21:06:16 nsayer Exp $
  
  */
 
@@ -528,8 +528,23 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	Iterator i = this.channelList.values().iterator();
 	while(i.hasNext()) {
 	    ChannelInfo info = (ChannelInfo)i.next();
-	    if (!this.filterList.contains(new Integer(info.getServiceID())))
-		temp.add(info);
+	    if (this.filterList.contains(new Integer(info.getServiceID())))
+		continue;
+
+	    String filter = this.searchField.getText();
+	    if (filter != null) {
+		filter = filter.trim().toLowerCase();
+		if (filter.length() == 0)
+		    filter = null;
+	    }
+	    if (filter != null &&
+		info.getChannelName().toLowerCase().indexOf(filter) < 0 &&
+		info.getChannelGenre().toLowerCase().indexOf(filter) < 0 &&
+		info.getChannelArtist().toLowerCase().indexOf(filter) < 0 &&
+		info.getChannelTitle().toLowerCase().indexOf(filter) < 0)
+		continue;
+
+	    temp.add(info);
 	}
 	ChannelInfo[] newList = (ChannelInfo[])temp.toArray(new ChannelInfo[0]);
 	Arrays.sort(newList, new Comparator() {
@@ -644,6 +659,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private ChannelInfoPanel nowPlayingPanel;
     private JLabel channelLogo;
     private ChannelTableModel channelTableModel;
+    private JTextField searchField;
+    private JButton searchFieldClear;
     private JTable channelTable;
     private JCheckBox powerCheckBox;
     private JCheckBox muteButton;
@@ -693,6 +710,30 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
     public final static Color stripeColor = new Color(.925f, .925f, 1f);
     public final static Color gridColor = new Color(.85f, .85f, .85f);
+
+    private class XIcon implements Icon {
+        public int getIconHeight() { return 11; }
+        public int getIconWidth() { return this.getIconHeight(); }
+	public void paintIcon(Component c, Graphics gg, int x, int y) {
+	    Graphics2D g = (Graphics2D)gg;
+	    if (c.isEnabled())
+		g.setColor(c.getForeground());
+	    else
+		g.setColor(Color.GRAY);
+
+	    g.translate(x,y);
+	    g.fillArc(0, 0, this.getIconWidth() - 1, this.getIconHeight() - 1, 0, 360);
+	    g.setColor(c.getBackground());
+	    int centerx = this.getIconWidth() / 2;
+	    int centery = this.getIconHeight() / 2;
+	    int xlen = (this.getIconHeight() * 2) / 10;
+	    g.setStroke(new BasicStroke(1.2f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+	    g.drawLine(centerx - xlen, centery - xlen, centerx + xlen, centery + xlen);
+	    g.drawLine(centerx + xlen, centery - xlen, centerx - xlen, centery + xlen);
+
+	    g.translate(-x,-y);
+        }
+    }
 
     private class ArrowIcon implements Icon, SwingConstants {
 	private int dir;
@@ -941,7 +982,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	toptop.add(this.nowPlayingPanel);
 	toptop.add(Box.createHorizontalStrut(5));
 	JPanel buttons = new JPanel();
-	buttons.setLayout(new BoxLayout(buttons, BoxLayout.PAGE_AXIS));
+	buttons.setLayout(new GridBagLayout());
+	GridBagConstraints gbc_but = new GridBagConstraints();
 /*
 	this.itmsButton = new JButton("iTunes Music Store");
 	this.itmsButton.addActionListener(new ActionListener() {
@@ -950,7 +992,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    }
 	});
 	this.itmsButton.setEnabled(false);
-	buttons.add(this.itmsButton);
+	buttons.add(this.itmsButton, gbc_but);
 */
 
 	this.memoryButton = new JButton("Add to notebook");
@@ -960,7 +1002,31 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    }
 	});
 	this.memoryButton.setEnabled(false);
-	buttons.add(this.memoryButton);
+	//gbc_but.weightx = 1;
+	gbc_but.weightx = 0;
+	gbc_but.fill = GridBagConstraints.NONE;
+	buttons.add(this.memoryButton, gbc_but);
+
+	JPanel searchHolder = new JPanel();
+	searchHolder.setOpaque(false);
+	searchHolder.setBorder(BorderFactory.createTitledBorder(/*BorderFactory.createEtchedBorder(EtchedBorder.LOWERED)*/BorderFactory.createLineBorder(new Color(0,0,0,0), 0) /* the null border */, "Quick Search", TitledBorder.CENTER, TitledBorder.BELOW_BOTTOM, new Font(null, Font.PLAIN, 10)));
+	this.searchField = new JTextField();
+	this.searchField.setPreferredSize(new Dimension(100, (int)this.searchField.getPreferredSize().getHeight()));
+	this.searchField.setEnabled(false);
+	searchHolder.add(this.searchField);
+	this.searchFieldClear = new JButton();
+	this.searchFieldClear.setIcon(new XIcon());
+	this.searchFieldClear.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		MainWindow.this.searchField.setText("");
+	    }
+	});
+	this.searchFieldClear.setEnabled(false);
+	searchHolder.add(this.searchFieldClear);
+	gbc_but.insets = new Insets(10, 0, 0, 0);
+	gbc_but.gridy = 1;
+	buttons.add(searchHolder, gbc_but);
+	buttons.setMaximumSize(buttons.getPreferredSize());
 
 	toptop.add(buttons);
 	toptop.add(Box.createHorizontalStrut(20));
@@ -1772,6 +1838,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.favoriteCheckbox.setEnabled(true);
 	this.filterMenuItem.setEnabled(true);
 	this.filterMenu.setEnabled(this.filterMenu.getItemCount() > 1);
+	this.searchField.setEnabled(true);
+	this.searchFieldClear.setEnabled(true);
 	this.compactMenuItem.setEnabled(true);
 	this.preferences.saveDevice();
 	this.bookmarkMenu.setEnabled(true);
@@ -1813,6 +1881,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		MainWindow.this.compactView.setChannelInfo(null);
 		MainWindow.this.nowPlayingPanel.setSongTime(null, null);
 		MainWindow.this.powerCheckBox.setSelected(false);
+		MainWindow.this.searchFieldClear.setEnabled(false);
 		MainWindow.this.muteButton.setEnabled(false);
 		MainWindow.this.smartMuteButton.setEnabled(false);
 		MainWindow.this.filterMenuItem.setEnabled(false);
@@ -1822,6 +1891,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		MainWindow.this.forceNormalView();
 		MainWindow.this.powerCheckBox.setSelected(false);
 		MainWindow.this.powerMenuItem.setText("Turn Radio On");
+		MainWindow.this.searchField.setEnabled(false);
 		//MainWindow.this.itmsButton.setEnabled(false);
 		MainWindow.this.memoryButton.setEnabled(false);
 		MainWindow.this.muteButton.setSelected(false);

@@ -114,6 +114,7 @@ public static void main(String[] args) { new MainWindow(); }
     private JTable channelTable;
     private JMenu deviceMenu;
     private JCheckBox powerCheckBox;
+    private JFrame myFrame;
     
     public MainWindow() {
 
@@ -124,15 +125,15 @@ public static void main(String[] args) { new MainWindow(); }
 	// Well, we tried
     }
 
-        JFrame frame = new JFrame("JXM");
-	frame.addWindowListener(new WindowAdapter() {
+        this.myFrame = new JFrame("JXM");
+	this.myFrame.addWindowListener(new WindowAdapter() {
 	    public void windowClosing(WindowEvent e) {
 		MainWindow.this.turnPowerOff();
 		System.exit(0);
 	    }
 	});
 
-	frame.getContentPane().setLayout(new BorderLayout());
+	this.myFrame.getContentPane().setLayout(new BorderLayout());
 
 	// First, the "now playing" panel
 	JPanel jp = new JPanel();
@@ -174,7 +175,7 @@ public static void main(String[] args) { new MainWindow(); }
 	jp.add(this.channelTitleLabel, gbc);
 	jp.setMinimumSize(new Dimension(0, 75));
 	jp.setPreferredSize(jp.getMinimumSize());
-	frame.getContentPane().add(jp, BorderLayout.PAGE_START);
+	this.myFrame.getContentPane().add(jp, BorderLayout.PAGE_START);
 
         final JTable channelTable = new JTable();
 	this.channelTable = channelTable;
@@ -226,7 +227,7 @@ public static void main(String[] args) { new MainWindow(); }
 			RadioCommander.theRadio().setChannel(i.getChannelNumber());
 		    }
 		    catch(RadioException ex) {
-			// XXX - ignore for now
+			MainWindow.this.handleError(ex);
 		    }
 		}
 	    }
@@ -246,7 +247,7 @@ public static void main(String[] args) { new MainWindow(); }
 	    }
 	});
 
-        frame.getContentPane().add(new JScrollPane(channelTable), BorderLayout.CENTER);
+        this.myFrame.getContentPane().add(new JScrollPane(channelTable), BorderLayout.CENTER);
 
 	JPanel bottom = new JPanel();
 	bottom.setLayout(new FlowLayout());
@@ -266,11 +267,11 @@ public static void main(String[] args) { new MainWindow(); }
 	jmb.add(this.deviceMenu);
 	bottom.add(jmb);
 
-	frame.getContentPane().add(bottom, BorderLayout.PAGE_END);
+	this.myFrame.getContentPane().add(bottom, BorderLayout.PAGE_END);
 	
-        frame.pack();
-        frame.setResizable(true);
-        frame.setVisible(true);
+        this.myFrame.pack();
+        this.myFrame.setResizable(true);
+        this.myFrame.setVisible(true);
     }
 
     private String deviceName = null;
@@ -338,7 +339,7 @@ public static void main(String[] args) { new MainWindow(); }
 	    RadioCommander.theRadio().turnOff();
 	}
 	catch(RadioException e) {
-	    // ignore for now?
+	    this.handleError(e);
 	}
     }
 
@@ -355,7 +356,7 @@ public static void main(String[] args) { new MainWindow(); }
 	}
 	catch(RadioException e) {
 	    this.powerCheckBox.setSelected(false);
-	    // XXX - complain
+	    this.handleError(e);
 	    return;
 	}
 	this.poweredUp();
@@ -376,9 +377,23 @@ public static void main(String[] args) { new MainWindow(); }
 	this.channelArtistLabel.setText("");
 	this.channelTitleLabel.setText("");
 	this.deviceMenu.setEnabled(true);
+	this.powerCheckBox.setSelected(false);
     }
 
-    private void handleError(Exception e) {
+    private void handleError(final Exception e) {
+	RadioCommander.theRadio().Dispose();
+	SwingUtilities.invokeLater(new Runnable() {
+	    public void run() {
+		MainWindow.this.poweredDown();
+		try {
+		   JOptionPane.showMessageDialog(MainWindow.this.myFrame, e.getMessage(),
+			"Error communicating with radio", JOptionPane.ERROR_MESSAGE);
+		}
+		catch(HeadlessException e) {
+		    System.err.println("Error communicating with radio: " + e.getMessage());
+		}
+	    }
+	});
     }
     private void muteChanged() {
     }

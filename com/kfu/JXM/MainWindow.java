@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.71 2004/03/22 00:00:51 nsayer Exp $
+ $Id: MainWindow.java,v 1.72 2004/03/22 00:30:14 nsayer Exp $
  
  */
 
@@ -200,6 +200,9 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    this.pack();
 	}
 	public void setChannelInfo(ChannelInfo i) {
+	    // if we're not actually viewing the compact view, then it's moot.
+	    if (!this.isVisible())
+		return;
 	// If we're in the middle of a change, we don't care about external updates, unless it's to power off.
 	    if (this.changeInProgress && i != null)
 		return;
@@ -947,10 +950,10 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.favoriteMenu.setEnabled(false);
 	this.favoriteMenu.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
-		if (e.getActionCommand() != "comboBoxChanged")
-		     return;
-		if (MainWindow.this.favoriteMenu.getItemCount() == 0)
-		    return; // This looks like a bug in JComboBox. Why is clearing it a "Change"?
+		//if (e.getActionCommand() != "comboBoxChanged")
+		//     return;
+		if (MainWindow.this.ignoreFavoriteMenu)
+		    return;
 		Object o = MainWindow.this.favoriteMenu.getSelectedItem();
 		if (!(o instanceof Integer))
 		    return; // They must have selected "Favorites"
@@ -1825,7 +1828,13 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.nowPlayingPanel.setChannelInfo(this.currentChannelInfo);
 	this.compactView.setChannelInfo(this.currentChannelInfo);
 	this.nowPlayingPanel.setSongTime(null, null);
-	this.favoriteCheckbox.setSelected(this.favoriteList.contains(sid));
+	boolean isFavorite = this.favoriteList.contains(sid);
+	this.favoriteCheckbox.setSelected(isFavorite);
+	if (isFavorite) {
+	    MainWindow.this.ignoreFavoriteMenu = true;
+	    this.favoriteMenu.setSelectedItem(sid);
+	    MainWindow.this.ignoreFavoriteMenu = false;
+	}
 	this.scrollToCurrentChannel();
     }
 
@@ -1837,6 +1846,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    this.rebuildFavoritesMenu();
     }
 
+    private boolean ignoreFavoriteMenu = false;
     private boolean disallowSelectionChange = false;
     private boolean ignoreSelectionChange = false;
     private void selectCurrentChannel() {
@@ -1844,6 +1854,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    return;
 	this.ignoreSelectionChange = true;
 	try {
+	if (this.currentChannelInfo == null)
+	    return;
 	int row = this.rowForSID(this.currentChannelInfo.getServiceID());
 	if (row < 0)
 	    return;
@@ -1871,6 +1883,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		return new Integer(i1.getChannelNumber()).compareTo(new Integer(i2.getChannelNumber()));
 	    }
 	});
+	this.ignoreFavoriteMenu = true;
+	try {
 	this.favoriteMenu.removeAllItems();
 	this.favoriteMenu.addItem("Favorites");
 	this.favoriteMenu.setSelectedIndex(0);
@@ -1880,6 +1894,18 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    this.favoriteMenu.setEnabled(true);	
 	    for(int j = 0; j < l.size(); j++)
 		this.favoriteMenu.addItem(new Integer(((ChannelInfo)(l.get(j))).getServiceID()));
+	}
+	if (this.currentChannelInfo == null)
+	    return;
+	Integer sid = new Integer(this.currentChannelInfo.getServiceID());
+	if (this.favoriteList.contains(sid)) {
+	    this.favoriteMenu.setSelectedItem(sid);
+	} else {
+	    this.favoriteMenu.setSelectedIndex(0);
+	}
+	}
+	finally {
+	    this.ignoreFavoriteMenu = false;
 	}
     }
 
@@ -2137,7 +2163,20 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	if (RadioCommander.theRadio().getChannel() == i.getChannelNumber()) {
 	    this.currentChannelInfo = i;
 	    // update the favorite checkbox
-	    this.favoriteCheckbox.setSelected(this.favoriteList.contains(new Integer(i.getServiceID())));
+	    Integer sid = new Integer(i.getServiceID());
+	    boolean isFavorite = this.favoriteList.contains(sid);
+	    this.favoriteCheckbox.setSelected(isFavorite);
+	    this.ignoreFavoriteMenu = true;
+	    try{
+	    if (isFavorite) {
+		this.favoriteMenu.setSelectedItem(sid);
+	    } else {
+		this.favoriteMenu.setSelectedIndex(0);
+	    }
+	    }
+	    finally {
+		this.ignoreFavoriteMenu = false;
+	    }
 	    // update the rating slider
 	    this.updateRatingSlider(i);
 	    // This is an update for the current channel - fix the labels.

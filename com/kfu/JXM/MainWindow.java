@@ -28,6 +28,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.lang.*;
+import java.lang.reflect.*;
 import java.net.*;
 import java.util.*;
 import java.util.prefs.*;
@@ -40,6 +41,58 @@ import com.kfu.xm.*;
 public class MainWindow implements RadioEventHandler {
 
 public static void main(String[] args) { new MainWindow(); }
+
+    // A popup menu for a given channel
+    private class ChannelPopupMenu extends JPopupMenu {
+	ChannelInfo channelInfo;
+
+	public ChannelPopupMenu(int sid) {
+/*
+	    int sid = MainWindow.this.sidForChannel(chan);
+	    if (sid < 0)
+		return;
+*/
+	    this.channelInfo = (ChannelInfo)MainWindow.this.channelList.get(new Integer(sid));
+
+	    JMenuItem jmi = new JMenuItem("Tune to channel");
+	    jmi.addActionListener(new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+		    try {
+			RadioCommander.theRadio().setChannel(ChannelPopupMenu.this.channelInfo.getChannelNumber());
+		    }
+		    catch(RadioException ee) {
+			MainWindow.this.handleError(ee);
+		    }
+		}
+	    });
+	    this.add(jmi);
+
+	    jmi = new JMenuItem("Google Search for Artist");
+	    jmi.addActionListener(new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+		    MainWindow.this.googleSearch(ChannelPopupMenu.this.channelInfo.getChannelArtist(), null);
+		}
+	    });
+	    this.add(jmi);
+
+	    jmi = new JMenuItem("Google Search for Title");
+	    jmi.addActionListener(new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+		    MainWindow.this.googleSearch(null, ChannelPopupMenu.this.channelInfo.getChannelTitle());
+		}
+	    });
+	    this.add(jmi);
+
+	    jmi = new JMenuItem("Google Search for Artist and Title");
+	    jmi.addActionListener(new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+		    MainWindow.this.googleSearch(ChannelPopupMenu.this.channelInfo.getChannelArtist(), ChannelPopupMenu.this.channelInfo.getChannelTitle());
+		}
+	    });
+	    this.add(jmi);
+
+	}
+    }
 
     private class ChannelTableModel extends AbstractTableModel {
         public int getRowCount() {
@@ -103,6 +156,16 @@ public static void main(String[] args) { new MainWindow(); }
 	return -1;
     }
 
+    private int sidForChannel(int chan) {
+	Iterator i = this.channelList.values().iterator();
+	while(i.hasNext()) {
+	    ChannelInfo info = (ChannelInfo)(i.next());
+	    if (info.getChannelNumber() == chan)
+		return info.getServiceID();
+	}
+	return -1;
+    }
+
     private int sidForRow(int row) {
 	return (this.getSortedSidList()[row]).intValue();
     }
@@ -157,7 +220,27 @@ public static void main(String[] args) { new MainWindow(); }
 	this.channelLogo.setPreferredSize(new Dimension(150, 100));
 	this.setChannelLogo(-1);
 	this.channelLogo.addMouseListener(new MouseAdapter() {
+	    boolean didPopup = false;
+
+	    public void mousePressed(MouseEvent e) { this.maybePopup(e); }
+	    public void mouseReleased(MouseEvent e) { this.maybePopup(e); }
+	    public void maybePopup(MouseEvent e) {
+		if (!RadioCommander.theRadio().isOn())
+		    return;
+		if (e.isPopupTrigger()) {
+		    didPopup = true;
+		    int sid = MainWindow.this.sidForChannel(RadioCommander.theRadio().getChannel());
+		    if (sid < 0)
+			return;
+		    JPopupMenu popup = new ChannelPopupMenu(sid);
+		    popup.show(e.getComponent(), e.getX(), e.getY());
+		}
+	    }
 	    public void mouseClicked(MouseEvent e) {
+		if (didPopup) {
+		    didPopup = false;
+		    return;
+		}
 		if (!RadioCommander.theRadio().isOn())
 		    return;
 		MainWindow.this.surfToChannel(RadioCommander.theRadio().getChannel());
@@ -223,8 +306,25 @@ public static void main(String[] args) { new MainWindow(); }
 	this.myFrame.getContentPane().add(top, BorderLayout.PAGE_START);
 	//this.myFrame.getContentPane().add(this.channelLogo, BorderLayout.PAGE_START);
 
-        final JTable channelTable = new JTable();
-	this.channelTable = channelTable;
+	this.channelTable = new JTable();
+	this.channelTable.addMouseListener(new MouseAdapter() {
+	    public void mousePressed(MouseEvent e) { this.maybePopup(e); }
+	    public void mouseReleased(MouseEvent e) { this.maybePopup(e); }
+	    private void maybePopup(MouseEvent e) {
+		if (!RadioCommander.theRadio().isOn())
+		    return;
+		if (!e.isPopupTrigger())
+		    return;
+		int row = MainWindow.this.channelTable.rowAtPoint(e.getPoint());
+		if (row < 0)
+		    return;
+		int sid = MainWindow.this.sidForRow(row);
+		if (sid < 0)
+		    return;
+		JPopupMenu jpm = new ChannelPopupMenu(sid);
+		jpm.show(e.getComponent(), e.getX(), e.getY());
+	    }
+	});
 
 	this.channelTableModel = new ChannelTableModel();
 	channelTable.setModel(this.channelTableModel);
@@ -440,17 +540,38 @@ System.err.println(e.getMessage());
 e.printStackTrace();
 	    return;
 	}
-	try {
-	    BrowserLauncher.openURL(u.toString());
-	}
-	catch(IOException e) {
-System.err.println(e.getMessage());
-e.printStackTrace();
-	    // XXX what do we do about this?
-	}
+	this.openURL(u.toString());
     }
+
     private void surfToChannel(int chan) {
 	String u = "http://www.xmradio.com/programming/channel_page.jsp?ch=" + chan;
+	this.openURL(u);
+    }
+
+    private void googleSearch(String artist, String title) {
+	StringBuffer sb = new StringBuffer("http://www.google.com/search?q=");
+	if (artist != null) {
+	    try {
+		sb.append(URLEncoder.encode("\"" + artist + "\"", "US-ASCII"));
+	    }
+	    catch(UnsupportedEncodingException e) {
+		// Mhmm.
+	    }
+	}
+	if (artist != null && title != null)
+	    sb.append('+');
+	if (title != null) {
+	    try {
+		sb.append(URLEncoder.encode("\"" + title + "\"", "US-ASCII"));
+	    }
+	    catch(UnsupportedEncodingException e) {
+		// Mhmm.
+	    }
+	}
+	this.openURL(sb.toString());
+    }
+
+    private void openURL(String u) {
 	try {
 	    BrowserLauncher.openURL(u);
 	}

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.57 2004/03/14 18:03:22 nsayer Exp $
+ $Id: MainWindow.java,v 1.58 2004/03/14 21:16:41 nsayer Exp $
  
  */
 
@@ -662,7 +662,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    }
 	});
 	favorites.add(this.favoriteMenu);
-	this.favoriteCheckbox = new JToggleButton(new ImageIcon(this.getClass().getResource("/images/heart.png")));
+	this.favoriteCheckbox = new JToggleButton(new ImageIcon(this.getClass().getResource("/images/no_heart.png")));
+	this.favoriteCheckbox.setSelectedIcon(new ImageIcon(this.getClass().getResource("/images/heart.png")));
 	this.favoriteCheckbox.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
 		Integer sid = new Integer(MainWindow.this.currentChannelInfo.getServiceID());

@@ -179,6 +179,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     }
 
     private int sidForChannel(int chan) {
+	if (this.channelList == null)
+	    return -1;
 	Iterator i = this.channelList.values().iterator();
 	while(i.hasNext()) {
 	    ChannelInfo info = (ChannelInfo)(i.next());
@@ -469,7 +471,7 @@ System.err.println("SHOW ABOUT WINDOW!");
 	});
 	this.favoriteMenu.setRenderer(new DefaultListCellRenderer() {
 	    public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-		if (value instanceof Integer) {
+		if (value instanceof Integer && MainWindow.this.channelList != null) {
 		    Integer sid = (Integer)value;
 		    ChannelInfo info = (ChannelInfo)MainWindow.this.channelList.get(sid);
 		    if (info == null) {
@@ -1222,7 +1224,7 @@ e.printStackTrace();
 	this.favoriteCheckbox.setSelected(this.favoriteList.contains(sid));
     }
 
-    HashMap channelList = new HashMap();
+    HashMap channelList;
 
     private void deleteChannel(int sid) {
 	this.channelList.remove(new Integer(sid));
@@ -1334,6 +1336,7 @@ e.printStackTrace();
     }
 
     private void loadChannelList() {
+	this.channelList = new HashMap();
 	Preferences node = this.myUserNode().node(GRID_NODE);
 	String[] keys;
 	try {

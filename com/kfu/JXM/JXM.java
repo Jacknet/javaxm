@@ -42,9 +42,16 @@ public class JXM {
             }
             System.exit(-1);
         }
-        new JXM();
-    }
-    public JXM() {
 	new MainWindow();
     }
+
+    public static String version() {
+	return "v0.3";
+    }
+    public static String userAgentString() {
+	return "JXM " + version();
+    }
+
+    // You can't have one!
+    private JXM() { }
 }

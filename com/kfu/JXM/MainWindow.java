@@ -118,6 +118,8 @@ public static void main(String[] args) { new MainWindow(); }
     private JCheckBox muteButton;
     private JCheckBox smartMuteButton;
     private JFrame myFrame;
+    private JProgressBar satelliteMeter;
+    private JProgressBar terrestrialMeter;
     
     public MainWindow() {
 
@@ -303,11 +305,50 @@ public static void main(String[] args) { new MainWindow(); }
 	jmb.add(this.deviceMenu);
 	bottom.add(jmb);
 
+	JPanel jp1 = new JPanel();
+	jp1.setLayout(new BorderLayout());
+	
+	JPanel jp2 = new JPanel();
+	jp2.setLayout(new BorderLayout());
+	JLabel jl = new JLabel("Satellite: ");
+	jl.setHorizontalAlignment(SwingConstants.LEADING);
+	jp2.add(jl, BorderLayout.LINE_START);
+	this.satelliteMeter = new JProgressBar(0, 100);
+	jp2.add(this.satelliteMeter, BorderLayout.LINE_END);
+	jp1.add(jp2, BorderLayout.PAGE_START);
+
+	jp2 = new JPanel();
+	jp2.setLayout(new BorderLayout());
+	jl = new JLabel("Terrestrial: ");
+	jl.setHorizontalAlignment(SwingConstants.LEADING);
+	jp2.add(jl, BorderLayout.LINE_START);
+	this.terrestrialMeter = new JProgressBar(0, 100);
+	jp2.add(this.terrestrialMeter, BorderLayout.LINE_END);
+	jp1.add(jp2, BorderLayout.PAGE_END);
+
+	bottom.add(jp1);
+
 	this.myFrame.getContentPane().add(bottom, BorderLayout.PAGE_END);
 	
         this.myFrame.pack();
         this.myFrame.setResizable(true);
         this.myFrame.setVisible(true);
+
+	java.util.Timer t = new java.util.Timer();
+	t.schedule(new TimerTask() {
+	    public void run() {
+		if (!RadioCommander.theRadio().isOn())
+		    return;
+		try {
+		    double[] out = RadioCommander.theRadio().getSignalStrength();
+		    MainWindow.this.satelliteMeter.setValue((int)out[RadioCommander.SIGNAL_STRENGTH_SAT]);
+		    MainWindow.this.terrestrialMeter.setValue((int)out[RadioCommander.SIGNAL_STRENGTH_TER]);
+		}
+		catch(RadioException e) {
+		    MainWindow.this.handleError(e);
+		}
+	    }
+	}, 0, 1000);
 
 	// We have a device saved... Try and power up
 	if (this.deviceName != null)
@@ -486,6 +527,8 @@ public static void main(String[] args) { new MainWindow(); }
 	this.smartMuteButton.setEnabled(false);
 	this.muteButton.setSelected(false);
 	this.smartMuteButton.setSelected(false);
+	this.satelliteMeter.setValue(0);
+	this.terrestrialMeter.setValue(0);
     }
 
     private void handleError(final Exception e) {
@@ -554,5 +597,6 @@ public static void main(String[] args) { new MainWindow(); }
 	}
 	// Next, we pass it around to the various things around here
 	// to see if anybody cares.
+
     }
 }

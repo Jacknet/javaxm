@@ -379,10 +379,6 @@ public class PreferencesDialog extends JDialog {
 	}
     }
 
-    private Preferences myNode() {
-	return Preferences.userNodeForPackage(this.getClass());
-    }
-
     private final static String XMTRACKER_URL = "TrackerURL";
     private final static String XMTRACKER_USER = "TrackerUser";
     private final static String XMTRACKER_PASS = "TrackerPassword";
@@ -402,9 +398,9 @@ public class PreferencesDialog extends JDialog {
 
     private void reloadFromDefaults() {
 	try {
-	if (!this.myNode().nodeExists(BOOKMARKS)) {
+	if (!JXM.myUserNode().nodeExists(BOOKMARKS)) {
 	    // Load up the default set
-	    Preferences marks = this.myNode().node(BOOKMARKS);
+	    Preferences marks = JXM.myUserNode().node(BOOKMARKS);
 	    for(int i = 0; i < defaultBookMarks.length; i++) {
 		String out;
 		try {
@@ -418,7 +414,7 @@ public class PreferencesDialog extends JDialog {
 	}
 	}
 	catch(BackingStoreException e) {}
-	Preferences marks = this.myNode().node(BOOKMARKS);
+	Preferences marks = JXM.myUserNode().node(BOOKMARKS);
 	String[] keys;
 	try {
 	    keys = marks.keys();
@@ -444,19 +440,19 @@ public class PreferencesDialog extends JDialog {
 	    this.bookmarks.add(this.bookmarks.getSize(), b);
 	}
 
-	this.trackerURL.setText(this.myNode().get(XMTRACKER_URL, "http://www.xmnation.net/tracker/"));
-	this.trackerUser.setText(this.myNode().get(XMTRACKER_USER, ""));
-	this.trackerPassword.setText(this.myNode().get(XMTRACKER_PASS, ""));
-	this.trackerEnabled.setSelected(this.myNode().getBoolean(XMTRACKER_ENABLED, false));
+	this.trackerURL.setText(JXM.myUserNode().get(XMTRACKER_URL, "http://www.xmnation.net/tracker/"));
+	this.trackerUser.setText(JXM.myUserNode().get(XMTRACKER_USER, ""));
+	this.trackerPassword.setText(JXM.myUserNode().get(XMTRACKER_PASS, ""));
+	this.trackerEnabled.setSelected(JXM.myUserNode().getBoolean(XMTRACKER_ENABLED, false));
 	this.trackerCheckboxClicked();
 	if (this.browserPath != null) {
-	    this.browserPath.setText(this.myNode().get(BROWSER_PATH, ""));
+	    this.browserPath.setText(JXM.myUserNode().get(BROWSER_PATH, ""));
 	    PlatformFactory.ourPlatform().setBrowserPath(this.browserPath.getText());
 	}
     }
 
     private void saveToDefaults() {
-	Preferences node = this.myNode().node(BOOKMARKS);
+	Preferences node = JXM.myUserNode().node(BOOKMARKS);
 	try {
 	    node.clear();
 	for(int i = 0; i < this.bookmarks.getSize(); i++) {
@@ -473,12 +469,12 @@ public class PreferencesDialog extends JDialog {
 	    this.doBookmarkRebuild();
 	}
 	catch(BackingStoreException e) { }
-	this.myNode().put(XMTRACKER_URL, this.trackerURL.getText());
-	this.myNode().put(XMTRACKER_USER, this.trackerUser.getText());
-	this.myNode().put(XMTRACKER_PASS, new String(this.trackerPassword.getPassword()));
-	this.myNode().putBoolean(XMTRACKER_ENABLED, this.trackerEnabled.isSelected());
+	JXM.myUserNode().put(XMTRACKER_URL, this.trackerURL.getText());
+	JXM.myUserNode().put(XMTRACKER_USER, this.trackerUser.getText());
+	JXM.myUserNode().put(XMTRACKER_PASS, new String(this.trackerPassword.getPassword()));
+	JXM.myUserNode().putBoolean(XMTRACKER_ENABLED, this.trackerEnabled.isSelected());
 	if (this.browserPath != null) {
-	    this.myNode().put(BROWSER_PATH, this.browserPath.getText());
+	    JXM.myUserNode().put(BROWSER_PATH, this.browserPath.getText());
 	    PlatformFactory.ourPlatform().setBrowserPath(this.browserPath.getText());
 	}
     }
@@ -519,7 +515,7 @@ public class PreferencesDialog extends JDialog {
             this.deviceMenu.addItem(name);
         }
         this.deviceMenu.setSelectedIndex(0);
-        this.deviceMenu.setSelectedItem(this.myNode().get(DEVICE_NAME_KEY, "Pick device"));
+        this.deviceMenu.setSelectedItem(JXM.myUserNode().get(DEVICE_NAME_KEY, "Pick device"));
     }
 
     // -----------------------
@@ -533,7 +529,7 @@ public class PreferencesDialog extends JDialog {
     }
     // Call this after a successfull power-up
     public void saveDevice() {
-	this.myNode().put(DEVICE_NAME_KEY, (String)this.deviceMenu.getSelectedItem());
+	JXM.myUserNode().put(DEVICE_NAME_KEY, (String)this.deviceMenu.getSelectedItem());
     }
     public String getTrackerURL() { return this.trackerURL.getText(); }
     public String getTrackerUser() { return this.trackerUser.getText(); }

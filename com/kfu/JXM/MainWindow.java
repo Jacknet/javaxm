@@ -161,7 +161,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     // the IPreferencesCallbackInterface
     public void clearChannelStats() {
 	this.tickList.clear();
-	Preferences node = this.myUserNode().node(TICK_NODE);
+	Preferences node = JXM.myUserNode().node(TICK_NODE);
 	try {
 	    node.clear();
 	}
@@ -220,6 +220,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	return sb.toString();
     }
 
+    private PreferencesDialog preferences;
+    private AboutDialog aboutDialog;
     private JLabel channelNumberLabel;
     private JLabel channelNameLabel;
     private JLabel channelGenreLabel;
@@ -237,7 +239,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private JProgressBar satelliteMeter;
     private JProgressBar terrestrialMeter;
     private JButton itmsButton;
-    private PreferencesDialog preferences;
     private JSlider ratingSlider;
     private JComboBox favoriteMenu;
     private JToggleButton favoriteCheckbox;
@@ -253,7 +254,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.preferences.show();
     }
     public void about() {
-System.err.println("SHOW ABOUT WINDOW!");
+	this.aboutDialog.show();
     }
 
     private void saveChannelTableLayout() {
@@ -263,7 +264,7 @@ System.err.println("SHOW ABOUT WINDOW!");
 	    TableColumn tc = this.channelTable.getColumnModel().getColumn(i);
 	    index[i] = (byte)tc.getModelIndex();
 	}
-	this.myUserNode().putByteArray(CHAN_TABLE_COLS, index);
+	JXM.myUserNode().putByteArray(CHAN_TABLE_COLS, index);
     }
 
     public MainWindow() {
@@ -288,6 +289,7 @@ System.err.println("SHOW ABOUT WINDOW!");
 	    }
 	});
 	this.preferences = new PreferencesDialog(this.myFrame, this);
+	this.aboutDialog = new AboutDialog(this.myFrame);
 
 	// If on a mac, don't do this - use the EAWT stuff instead
 	if (!PlatformFactory.ourPlatform().useMacMenus()) {
@@ -647,7 +649,7 @@ System.err.println("SHOW ABOUT WINDOW!");
 
 	byte cols[];
 
-	cols = this.myUserNode().getByteArray(CHAN_TABLE_COLS, null);
+	cols = JXM.myUserNode().getByteArray(CHAN_TABLE_COLS, null);
 
 	if (cols == null || cols.length != 6)
 	    cols = new byte[] {0, 1, 2, 3, 4, 5};
@@ -750,16 +752,16 @@ System.err.println("SHOW ABOUT WINDOW!");
 		    MainWindow.this.sortField = column;
 		    MainWindow.this.sortDirection = true;
 		}
-		MainWindow.this.myUserNode().putInt(SORT_FIELD, MainWindow.this.sortField);
-		MainWindow.this.myUserNode().putBoolean(SORT_DIR, MainWindow.this.sortDirection);
+		JXM.myUserNode().putInt(SORT_FIELD, MainWindow.this.sortField);
+		JXM.myUserNode().putBoolean(SORT_DIR, MainWindow.this.sortDirection);
 		MainWindow.this.scrollToCurrentChannel();
 	    }
 	});
 
-	this.sortField = this.myUserNode().getInt(SORT_FIELD, 0);
+	this.sortField = JXM.myUserNode().getInt(SORT_FIELD, 0);
 	if (this.sortField < 0 || this.sortField > 5)
 	    this.sortField = 0;
-	this.sortDirection = this.myUserNode().getBoolean(SORT_DIR, true);
+	this.sortDirection = JXM.myUserNode().getBoolean(SORT_DIR, true);
 
 	//channelTable.setMinimumSize(new Dimension(tw + 5, 0));
 	//channelTable.setPreferredViewportSize(new Dimension((int)channelTable.getMinimumSize().getWidth(), (int)channelTable.getPreferredSize().getHeight()));
@@ -896,9 +898,9 @@ System.err.println("SHOW ABOUT WINDOW!");
 	    }
 	}, 0, 1000);
 
-	String url = this.myUserNode().get(XMTRACKER_URL, null);
-	String user = this.myUserNode().get(XMTRACKER_USER, null);
-	String pass = this.myUserNode().get(XMTRACKER_PASS, null);
+	String url = JXM.myUserNode().get(XMTRACKER_URL, null);
+	String user = JXM.myUserNode().get(XMTRACKER_USER, null);
+	String pass = JXM.myUserNode().get(XMTRACKER_PASS, null);
 
 	if (url != null && user != null && pass != null) {
 	    try {
@@ -906,8 +908,8 @@ System.err.println("SHOW ABOUT WINDOW!");
 		XMTracker.theTracker().setCredentials(user, pass);
 	    }
 	    catch(TrackerException e) {
-		this.myUserNode().put(XMTRACKER_USER, null);
-		this.myUserNode().put(XMTRACKER_PASS, null);
+		JXM.myUserNode().put(XMTRACKER_USER, null);
+		JXM.myUserNode().put(XMTRACKER_PASS, null);
 		this.handleTrackerError(e);
 	    }
 	}
@@ -918,6 +920,16 @@ System.err.println("SHOW ABOUT WINDOW!");
 	String deviceName = this.preferences.getDevice();
 	if (deviceName != null)
 	    this.turnPowerOn();
+
+	new java.util.Timer().schedule(new TimerTask() {
+	    public void run() {
+		SwingUtilities.invokeLater(new Runnable() {
+		    public void run() {
+			MainWindow.this.aboutDialog.startupCheck();
+		    }
+		});
+	    }
+	}, 2500);
     }
 
     private void firePercentChanges() {
@@ -1071,10 +1083,6 @@ System.err.println("SHOW ABOUT WINDOW!");
 	}
 	this.poweredUp();
 	RadioCommander.theRadio().registerEventHandler(this);
-    }
-
-    private Preferences myUserNode() {
-	return Preferences.userNodeForPackage(this.getClass());
     }
 
     private final static String CHAN_TABLE_COLS = "ChannelTableColumnOrder";
@@ -1245,7 +1253,7 @@ System.err.println("SHOW ABOUT WINDOW!");
 
     private void loadFavorites() {
 	this.favoriteList.clear();
-	byte[] list = this.myUserNode().getByteArray(FAVORITE_LIST, new byte[0]);
+	byte[] list = JXM.myUserNode().getByteArray(FAVORITE_LIST, new byte[0]);
 	for(int i = 0; i < list.length; i++)
 	    this.favoriteList.add(new Integer(list[i] & 0xff));
     }
@@ -1255,11 +1263,11 @@ System.err.println("SHOW ABOUT WINDOW!");
 	Iterator i = this.favoriteList.iterator();
 	while(i.hasNext())
 	    list[n++] = (byte)((Integer)i.next()).intValue();
-	this.myUserNode().putByteArray(FAVORITE_LIST, list);
+	JXM.myUserNode().putByteArray(FAVORITE_LIST, list);
     }
 
     private void saveChannelList() {
-	Preferences node = this.myUserNode().node(GRID_NODE);
+	Preferences node = JXM.myUserNode().node(GRID_NODE);
 	try {
 	    node.clear();
 	}
@@ -1287,7 +1295,7 @@ System.err.println("SHOW ABOUT WINDOW!");
 	    }
 	    node.put(Integer.toString(info.getServiceID()), sb.toString());
 	}
-	node = this.myUserNode().node(TICK_NODE);
+	node = JXM.myUserNode().node(TICK_NODE);
 	try {
 	    node.clear();
 	}
@@ -1306,7 +1314,7 @@ System.err.println("SHOW ABOUT WINDOW!");
 
     private void loadChannelList() {
 	this.channelList = new HashMap();
-	Preferences node = this.myUserNode().node(GRID_NODE);
+	Preferences node = JXM.myUserNode().node(GRID_NODE);
 	String[] keys;
 	try {
 	    keys = node.keys();
@@ -1336,7 +1344,7 @@ System.err.println("SHOW ABOUT WINDOW!");
 	    }
 	    this.channelList.put(new Integer(info.getServiceID()), info);
 	}
-	node = this.myUserNode().node(TICK_NODE);
+	node = JXM.myUserNode().node(TICK_NODE);
 	try {
 	    keys = node.keys();
 	}
@@ -1428,6 +1436,7 @@ System.err.println("SHOW ABOUT WINDOW!");
                         sb.append(b);
                 }
                 this.lastRecordedUserID =  sb.toString();
+	this.aboutDialog.updateUserID(this.lastRecordedUserID);
     }
 
     private void rateSong(ChannelInfo info, int rating) throws Exception {

@@ -25,6 +25,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.lang.*;
 import java.util.*;
+import java.util.prefs.*;
 
 public class JXM {
     public static void main(String[] args) {
@@ -46,10 +47,14 @@ public class JXM {
     }
 
     public static String version() {
-	return "v0.5";
+	return "0.5";
     }
     public static String userAgentString() {
-	return "JXM " + version();
+	return "JXM v" + version();
+    }
+
+    public static Preferences myUserNode() {
+        return Preferences.userNodeForPackage(JXM.class);
     }
 
     // You can't have one!

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.87 2004/04/08 04:38:18 nsayer Exp $
+ $Id: MainWindow.java,v 1.88 2004/04/08 15:30:02 nsayer Exp $
  
  */
 
@@ -1259,6 +1259,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		    return;
 		if (!e.isPopupTrigger())
 		    return;
+		MainWindow.this.channelTableClickWasPopup = true;
 		int row = MainWindow.this.channelTable.rowAtPoint(e.getPoint());
 		if (row < 0)
 		    return;
@@ -1395,6 +1396,17 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    public void valueChanged(ListSelectionEvent e) {
 		if (MainWindow.this.ignoreSelectionChange)
 		    return;
+		// Stupid java! If the click was a *context* click, then
+		// it popped up the context menu. DON'T treat that as
+		// a selection change!
+		if (MainWindow.this.channelTableClickWasPopup == true) {
+		    if (e.getValueIsAdjusting())
+			return;
+		    MainWindow.this.channelTableClickWasPopup = false;
+		    MainWindow.this.disallowSelectionChange = false;
+		    MainWindow.this.selectCurrentChannel();
+		    return;
+		}
 		// While he's dragging through the list, bar 'selectCurrentChannel()' from ripping
 		// out from under him.
 		MainWindow.this.disallowSelectionChange = e.getValueIsAdjusting();
@@ -2223,6 +2235,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private boolean ignoreFavoriteMenu = false;
     private boolean disallowSelectionChange = false;
     private boolean ignoreSelectionChange = false;
+    private boolean channelTableClickWasPopup = false;
     private void selectCurrentChannel() {
 	if (!RadioCommander.theRadio().isOn()) // How can this happen?!
 	    return;

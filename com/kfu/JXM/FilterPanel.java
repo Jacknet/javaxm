@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: FilterPanel.java,v 1.7 2004/04/04 22:18:40 nsayer Exp $
+ $Id: FilterPanel.java,v 1.8 2004/06/27 16:56:49 nsayer Exp $
  
  */
 
@@ -200,6 +200,7 @@ public class FilterPanel extends JPanel {
             private void doIt() {
 		FilterPanel.this.currentFilter().setName(FilterPanel.this.filterNameField.getText());
                 FilterPanel.this.theTabbedPane.setTitleAt(FilterPanel.this.theTabbedPane.getSelectedIndex(), FilterPanel.this.filterNameField.getText());
+		FilterPanel.this.filterMenu.repaint();
             }
         });
 	this.filterNameField.setPreferredSize(new Dimension(150, (int)this.filterNameField.getPreferredSize().getHeight()));

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.98 2004/05/02 17:47:54 nsayer Exp $
+ $Id: MainWindow.java,v 1.99 2004/05/02 23:17:41 ttennebkram Exp $
  
  */
 
@@ -41,466 +41,472 @@ import java.awt.*;
 
 import com.kfu.xm.*;
 
-public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, IPreferenceCallbackHandler {
+public class MainWindow
+	implements RadioEventHandler, IPlatformCallbackHandler,
+	IPreferenceCallbackHandler {
 
     private class SignalProgressBar extends JProgressBar {
-	public SignalProgressBar(int a, int b) { super(a,b); }
-	// This makes the curve for creating the color arc from red to green
-	private float scale(float in) {
-	    if (in > .5)
-		return 1;
-	    in *= 2;
-	    return (float)Math.sin(in * Math.PI / 2f);
-	}
-	public void paint(Graphics g) {
-	    Rectangle bounds = this.getBounds();
-	    g.setColor(this.getBackground());
-	    g.fillRect(0, 0, (int)bounds.getWidth(), (int)bounds.getHeight());
-	    int valueWidth = this.getMaximum() - this.getMinimum();
-	    int valueSoFar = this.getValue() - this.getMinimum();
-	    // We want posSoFar, posSoFar/bounds.getWidth() = valueSoFar / valueWidth, or posSoFar = valueSoFar * bounds.getWidth() / valueWidth;
-	    int posSoFar = (int)((((float)valueSoFar) * ((float)bounds.getWidth())) / ((float)valueWidth));
-
-	    for(int x = 0; x < posSoFar; x += 4) {
-		// x is posHere. x / bounds.getWidth() = ? / valueWidth
-		float fracHere = (float) ((float)valueWidth * ((float)x / (float)bounds.getWidth())) / (float)valueWidth;
-		g.setColor(new Color(scale(1 - fracHere), scale(fracHere), 0, 1));
-		g.fillRect(x, 0, 2, (int)bounds.getHeight() - 1);
-	    }
-	}
+		public SignalProgressBar(int a, int b) { super(a,b); }
+		// This makes the curve for creating the color arc from red to green
+		private float scale(float in) {
+		    if (in > .5)
+			return 1;
+		    in *= 2;
+		    return (float)Math.sin(in * Math.PI / 2f);
+		}
+		public void paint(Graphics g) {
+		    Rectangle bounds = this.getBounds();
+		    g.setColor(this.getBackground());
+		    g.fillRect(0, 0, (int)bounds.getWidth(), (int)bounds.getHeight());
+		    int valueWidth = this.getMaximum() - this.getMinimum();
+		    int valueSoFar = this.getValue() - this.getMinimum();
+		    // We want posSoFar, posSoFar/bounds.getWidth() = valueSoFar / valueWidth, or posSoFar = valueSoFar * bounds.getWidth() / valueWidth;
+		    int posSoFar = (int)((((float)valueSoFar) * ((float)bounds.getWidth())) / ((float)valueWidth));
+	
+		    for(int x = 0; x < posSoFar; x += 4) {
+			// x is posHere. x / bounds.getWidth() = ? / valueWidth
+			float fracHere = (float) ((float)valueWidth * ((float)x / (float)bounds.getWidth())) / (float)valueWidth;
+			g.setColor(new Color(scale(1 - fracHere), scale(fracHere), 0, 1));
+			g.fillRect(x, 0, 2, (int)bounds.getHeight() - 1);
+		    }
+		}
     }
 
     private class CompactViewPanel extends JWindow {
-	class WindowMover extends MouseInputAdapter {
-	    private Container window;
-	    public WindowMover(Container c) { this.window = c; }
-	    int originX, originY;
-	    public void mousePressed(MouseEvent e) {
-		this.originX = e.getX();
-		this.originY = e.getY();
-	    }
-	    public void mouseDragged(MouseEvent e) {
-		Point p = MainWindow.this.compactView.getLocation();
-		MainWindow.this.compactView.setLocation(p.x + e.getX() - originX, p.y + e.getY() - originY);
-	    }
-	}
-
-	private SpinnerListModel compactSpinnerModel;
-	private JSpinner theSpinner;
-	private JLabel compactViewName, compactViewArtist, compactViewTitle;
-
-	public void refreshSpinnerModel() {
-	    this.timerIgnore = true;
-	    try {
-	    ArrayList al = new ArrayList();
-	    ChannelInfo[] sourceList = MainWindow.this.sortedChannelList;
-	    for(int i = 0; i < sourceList.length; i++)
-		al.add(new Integer(sourceList[i].getChannelNumber()));
-	    Collections.sort(al);
-	    if (al.size() != 0)
-	        this.compactSpinnerModel.setList(al);
-	    //this.compactSpinnerModel.setValue(new Integer(MainWindow.this.currentChannelInfo.getChannelNumber()));
-	    }
-	    finally {
-		this.timerIgnore = false;
-	    }
-	}
-
-	public void show() {
-	    this.refreshSpinnerModel();
-	    this.timerIgnore = true;
-	    try {
-		this.compactSpinnerModel.setValue(new Integer(MainWindow.this.currentChannelInfo.getChannelNumber()));
-	    }
-	    finally {
-		this.timerIgnore = false;
-	    }
-	    super.show();
-	    this.setChannelInfo(MainWindow.this.currentChannelInfo);
-	}
-
-	private boolean timerIgnore = false;
-	private boolean changeInProgress = false;
-	public synchronized void setTimerOff(final int chan) {
-	    this.changeTimer.cancel();
-	    this.changeTimer = null;
-	    this.timerIgnore = true;
-	    try {
-		// If the radio powered off in the meantime, then just forget it.
-		if (!RadioCommander.theRadio().isOn())
-		    return;
-		// If they did nothing, well, then we're done.
-		if (chan == RadioCommander.theRadio().getChannel())
-		    return;
-		SwingUtilities.invokeAndWait(new Runnable() {
-		    public void run() {
-			// Ignore further pounding while we're busy
-			CompactViewPanel.this.theSpinner.setEnabled(false);
+		class WindowMover extends MouseInputAdapter {
+		    private Container window;
+		    public WindowMover(Container c) { this.window = c; }
+		    int originX, originY;
+		    public void mousePressed(MouseEvent e) {
+			this.originX = e.getX();
+			this.originY = e.getY();
 		    }
-		});
-		// This is a separate invoke so we can be *sure* that
-		// we're disabled *before* we go set the channel
-		SwingUtilities.invokeAndWait(new Runnable() {
-		    public void run() {
-			MainWindow.this.setChannel(chan);
+		    public void mouseDragged(MouseEvent e) {
+			Point p = MainWindow.this.compactView.getLocation();
+			MainWindow.this.compactView.setLocation(p.x + e.getX() - originX, p.y + e.getY() - originY);
 		    }
-		});
-		// And *this* is an invokeLater so we can get back
-		// into timerIgnore=false position before re-enabling the spinner.
-		SwingUtilities.invokeLater(new Runnable() {
-		    public void run() {
-			CompactViewPanel.this.theSpinner.setEnabled(true);
+		}
+	
+		private SpinnerListModel compactSpinnerModel;
+		private JSpinner theSpinner;
+		private JLabel compactViewName, compactViewArtist, compactViewTitle;
+	
+		public void refreshSpinnerModel() {
+		    this.timerIgnore = true;
+		    try {
+		    ArrayList al = new ArrayList();
+		    ChannelInfo[] sourceList = MainWindow.this.sortedChannelList;
+		    for(int i = 0; i < sourceList.length; i++)
+			al.add(new Integer(sourceList[i].getChannelNumber()));
+		    Collections.sort(al);
+		    if (al.size() != 0)
+		        this.compactSpinnerModel.setList(al);
+		    //this.compactSpinnerModel.setValue(new Integer(MainWindow.this.currentChannelInfo.getChannelNumber()));
 		    }
-		});
-	    }
-	    catch(InterruptedException ex) { } // ignore
-	    catch(InvocationTargetException ex) { } // Can't happen
-	    finally {
-		this.timerIgnore = false;
-		this.changeInProgress = false;
-	    }
-	}
-
-	private java.util.Timer changeTimer = null;
-
-	public CompactViewPanel() {
-	    super();
-	    JPanel fake = new JPanel();
-	    FlowLayout l = new FlowLayout();
-	    l.setHgap(10);
-	    fake.setLayout(l);
-	    MouseInputAdapter mia = new WindowMover(this);
-	    this.addMouseMotionListener(mia);
-	    this.addMouseListener(mia);
-	    this.compactSpinnerModel = new SpinnerListModel();
-	    this.theSpinner = new JSpinner(this.compactSpinnerModel);
-	    this.theSpinner.setPreferredSize(new Dimension(60, (int)this.theSpinner.getPreferredSize().getHeight()));
-	    // If the spinner stays put for 1 second, then change the channel. This lets the user slam through a bunch of changes quickly.
-	    this.theSpinner.addChangeListener(new ChangeListener() {
-		public void stateChanged(ChangeEvent e) {
-		    synchronized(CompactViewPanel.this) {
-		    if (CompactViewPanel.this.timerIgnore)
+		    finally {
+			this.timerIgnore = false;
+		    }
+		}
+	
+		public void show() {
+		    this.refreshSpinnerModel();
+		    this.timerIgnore = true;
+		    try {
+				this.compactSpinnerModel.setValue(new Integer(MainWindow.this.currentChannelInfo.getChannelNumber()));
+		    }
+			    finally {
+				this.timerIgnore = false;
+		    }
+		    super.show();
+		    this.setChannelInfo(MainWindow.this.currentChannelInfo);
+		}
+	
+		private boolean timerIgnore = false;
+		private boolean changeInProgress = false;
+		public synchronized void setTimerOff(final int chan) {
+		    this.changeTimer.cancel();
+		    this.changeTimer = null;
+		    this.timerIgnore = true;
+		    try {
+			// If the radio powered off in the meantime, then just forget it.
+			if (!RadioCommander.theRadio().isOn())
+			    return;
+			// If they did nothing, well, then we're done.
+			if (chan == RadioCommander.theRadio().getChannel())
+			    return;
+			SwingUtilities.invokeAndWait(new Runnable() {
+			    public void run() {
+				// Ignore further pounding while we're busy
+				CompactViewPanel.this.theSpinner.setEnabled(false);
+			    }
+			});
+			// This is a separate invoke so we can be *sure* that
+			// we're disabled *before* we go set the channel
+			SwingUtilities.invokeAndWait(new Runnable() {
+			    public void run() {
+				MainWindow.this.setChannel(chan);
+			    }
+			});
+			// And *this* is an invokeLater so we can get back
+			// into timerIgnore=false position before re-enabling the spinner.
+			SwingUtilities.invokeLater(new Runnable() {
+			    public void run() {
+				CompactViewPanel.this.theSpinner.setEnabled(true);
+			    }
+			});
+		    }
+		    catch(InterruptedException ex) { } // ignore
+		    catch(InvocationTargetException ex) { } // Can't happen
+		    finally {
+			this.timerIgnore = false;
+			this.changeInProgress = false;
+		    }
+		}
+	
+		private java.util.Timer changeTimer = null;
+	
+		public CompactViewPanel() {
+		    super();
+		    JPanel fake = new JPanel();
+		    FlowLayout l = new FlowLayout();
+		    l.setHgap(10);
+		    fake.setLayout(l);
+		    MouseInputAdapter mia = new WindowMover(this);
+		    this.addMouseMotionListener(mia);
+		    this.addMouseListener(mia);
+		    this.compactSpinnerModel = new SpinnerListModel();
+		    this.theSpinner = new JSpinner(this.compactSpinnerModel);
+		    this.theSpinner.setPreferredSize(new Dimension(60, (int)this.theSpinner.getPreferredSize().getHeight()));
+		    // If the spinner stays put for 1 second, then change the channel. This lets the user slam through a bunch of changes quickly.
+		    this.theSpinner.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+			    synchronized(CompactViewPanel.this) {
+			    if (CompactViewPanel.this.timerIgnore)
+				return;
+			    // ARGH! If *WE'RE* why it's frigging changing, then we don't frigging care!
+			    CompactViewPanel.this.changeInProgress = true;
+			    final int chan = ((Integer)CompactViewPanel.this.compactSpinnerModel.getValue()).intValue();
+			    int sid = MainWindow.this.sidForChannel(chan);
+			    if (sid >= 0) {
+				ChannelInfo info = (ChannelInfo)MainWindow.this.channelList.get(new Integer(sid));
+				if (info != null) {
+				    CompactViewPanel.this.compactViewName.setText(info.getChannelName());
+				    CompactViewPanel.this.compactViewArtist.setText(info.getChannelArtist());
+				    CompactViewPanel.this.compactViewTitle.setText(info.getChannelTitle());
+				}
+			    }
+			    if (CompactViewPanel.this.changeTimer != null)
+				CompactViewPanel.this.changeTimer.cancel();
+			    CompactViewPanel.this.changeTimer = new java.util.Timer();
+			    CompactViewPanel.this.changeTimer.schedule(new TimerTask() {
+				public void run() {
+				    CompactViewPanel.this.setTimerOff(chan);
+				}
+			    }, 1000);
+			}
+			}
+		    });
+		    fake.add(this.theSpinner);
+		    this.compactViewName = new JLabel(" ");
+		    this.compactViewName.setPreferredSize(new Dimension(150, (int)this.compactViewName.getPreferredSize().getHeight()));
+		    fake.add(this.compactViewName);
+		    this.compactViewArtist = new JLabel(" ");
+		    this.compactViewArtist.setPreferredSize(new Dimension(150, (int)this.compactViewArtist.getPreferredSize().getHeight()));
+		    this.compactViewArtist.setHorizontalAlignment(SwingConstants.CENTER);
+		    fake.add(this.compactViewArtist);
+		    this.compactViewTitle = new JLabel(" ");
+		    this.compactViewTitle.setPreferredSize(new Dimension(150, (int)this.compactViewTitle.getPreferredSize().getHeight()));
+		    this.compactViewTitle.setHorizontalAlignment(SwingConstants.CENTER);
+		    fake.add(this.compactViewArtist);
+		    fake.add(this.compactViewTitle);
+		    JButton jb = new JButton("Restore");
+		    jb.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+			    MainWindow.this.toggleCompactView();
+			}
+		    });
+		    fake.add(jb);
+		    fake.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED), BorderFactory.createBevelBorder(BevelBorder.RAISED)));
+		    this.getContentPane().add(fake);
+		    this.pack();
+		}
+		public void setChannelInfo(ChannelInfo i) {
+		    // if we're not actually viewing the compact view, then it's moot.
+		    if (!this.isVisible())
 			return;
-		    // ARGH! If *WE'RE* why it's frigging changing, then we don't frigging care!
-		    CompactViewPanel.this.changeInProgress = true;
-		    final int chan = ((Integer)CompactViewPanel.this.compactSpinnerModel.getValue()).intValue();
-		    int sid = MainWindow.this.sidForChannel(chan);
-		    if (sid >= 0) {
-			ChannelInfo info = (ChannelInfo)MainWindow.this.channelList.get(new Integer(sid));
-			if (info != null) {
-			    CompactViewPanel.this.compactViewName.setText(info.getChannelName());
-			    CompactViewPanel.this.compactViewArtist.setText(info.getChannelArtist());
-			    CompactViewPanel.this.compactViewTitle.setText(info.getChannelTitle());
+		// If we're in the middle of a change, we don't care about external updates, unless it's to power off.
+		    if (this.changeInProgress && i != null)
+			return;
+		    if (i == null) {
+			//this.compactSpinnerModel.setList();
+			this.compactViewName.setText("");
+			this.compactViewArtist.setText("");
+			this.compactViewTitle.setText("");
+		    } else {
+			this.timerIgnore = true;
+			try {
+			    this.compactSpinnerModel.setValue(new Integer(i.getChannelNumber()));
 			}
+			finally {
+			    this.timerIgnore = false;
+			}
+			this.compactViewName.setText(i.getChannelName());
+			this.compactViewArtist.setText(i.getChannelArtist());
+			this.compactViewTitle.setText(i.getChannelTitle());
 		    }
-		    if (CompactViewPanel.this.changeTimer != null)
-			CompactViewPanel.this.changeTimer.cancel();
-		    CompactViewPanel.this.changeTimer = new java.util.Timer();
-		    CompactViewPanel.this.changeTimer.schedule(new TimerTask() {
-			public void run() {
-			    CompactViewPanel.this.setTimerOff(chan);
-			}
-		    }, 1000);
 		}
-		}
-	    });
-	    fake.add(this.theSpinner);
-	    this.compactViewName = new JLabel(" ");
-	    this.compactViewName.setPreferredSize(new Dimension(150, (int)this.compactViewName.getPreferredSize().getHeight()));
-	    fake.add(this.compactViewName);
-	    this.compactViewArtist = new JLabel(" ");
-	    this.compactViewArtist.setPreferredSize(new Dimension(150, (int)this.compactViewArtist.getPreferredSize().getHeight()));
-	    this.compactViewArtist.setHorizontalAlignment(SwingConstants.CENTER);
-	    fake.add(this.compactViewArtist);
-	    this.compactViewTitle = new JLabel(" ");
-	    this.compactViewTitle.setPreferredSize(new Dimension(150, (int)this.compactViewTitle.getPreferredSize().getHeight()));
-	    this.compactViewTitle.setHorizontalAlignment(SwingConstants.CENTER);
-	    fake.add(this.compactViewArtist);
-	    fake.add(this.compactViewTitle);
-	    JButton jb = new JButton("Restore");
-	    jb.addActionListener(new ActionListener() {
-		public void actionPerformed(ActionEvent e) {
-		    MainWindow.this.toggleCompactView();
-		}
-	    });
-	    fake.add(jb);
-	    fake.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createBevelBorder(BevelBorder.RAISED), BorderFactory.createBevelBorder(BevelBorder.RAISED)));
-	    this.getContentPane().add(fake);
-	    this.pack();
-	}
-	public void setChannelInfo(ChannelInfo i) {
-	    // if we're not actually viewing the compact view, then it's moot.
-	    if (!this.isVisible())
-		return;
-	// If we're in the middle of a change, we don't care about external updates, unless it's to power off.
-	    if (this.changeInProgress && i != null)
-		return;
-	    if (i == null) {
-		//this.compactSpinnerModel.setList();
-		this.compactViewName.setText("");
-		this.compactViewArtist.setText("");
-		this.compactViewTitle.setText("");
-	    } else {
-		this.timerIgnore = true;
-		try {
-		    this.compactSpinnerModel.setValue(new Integer(i.getChannelNumber()));
-		}
-		finally {
-		    this.timerIgnore = false;
-		}
-		this.compactViewName.setText(i.getChannelName());
-		this.compactViewArtist.setText(i.getChannelArtist());
-		this.compactViewTitle.setText(i.getChannelTitle());
-	    }
-	}
-    }
+    }	// end class CompactViewPanel
 
     public static class ChannelInfoPanel extends JPanel {
-	private class SongTimeProgressBar extends JProgressBar {
-	    public SongTimeProgressBar() {
-		super();
-	    }
-	    public void paintBorder(Graphics g) {
-		g.setColor(this.getForeground());
-		g.drawRect(0, 0, this.getWidth() - 1, this.getHeight() - 1);
-	    }
-	    public void paint(Graphics g) {
-		Rectangle bounds = this.getBounds();
-		g.setColor(this.getBackground());
-		// Inside the border, please.
-		g.fillRect(0, 0, (int)bounds.getWidth() - 1, (int)bounds.getHeight() - 1);
-		this.paintBorder(g); // XXX - Why is this necessary?! Why doesn't setBorder(true) work?!
-		int valueWidth = this.getMaximum() - this.getMinimum();
-		int valueSoFar = this.getValue() - this.getMinimum();
-		// We want posSoFar, posSoFar/bounds.getWidth() = valueSoFar / valueWidth, or posSoFar = valueSoFar * bounds.getWidth() / valueWidth;
-		int posSoFar = (int)((((float)valueSoFar) * ((float)bounds.getWidth())) / ((float)valueWidth));
-		int diamondHeightOffset = (int)(bounds.getHeight() * .1f);
-		Polygon p = new Polygon();
-		p.addPoint(posSoFar, diamondHeightOffset);
-		p.addPoint(posSoFar + (((int)bounds.getHeight() - 1) / 2 - diamondHeightOffset), (int)bounds.getHeight() / 2);
-		p.addPoint(posSoFar, (int)bounds.getHeight() - diamondHeightOffset - 1);
-		p.addPoint(posSoFar - (((int)bounds.getHeight() - 1) / 2 - diamondHeightOffset), (int)bounds.getHeight() / 2);
-		p.addPoint(posSoFar, diamondHeightOffset);
-		g.setColor(this.getForeground());
-		g.fillPolygon(p);
-	    }
-	}
-
-	public final static Font chNumFont = new Font(null, Font.BOLD, 18);
-	public final static Font chGenreFont = new Font(null, Font.PLAIN, 12);
-	public final static Font chNameFont = new Font(null, Font.PLAIN, 14);
-	public final static Font chArtistFont = new Font(null, Font.BOLD, 20);
-	public final static Font chTitleFont = new Font(null, Font.BOLD, 20);
-
-	private JLabel channelNumberLabel, channelGenreLabel, channelNameLabel, channelArtistLabel, channelTitleLabel;
-
-	private JProgressBar songTimeBar;
-
-	private Date songStart, songEnd;
-
-	private javax.swing.Timer songTimeTimer;
-
-	public ChannelInfoPanel() {
-		this.setLayout(new GridBagLayout());
-		GridBagConstraints gbc = new GridBagConstraints();
-		gbc.fill = GridBagConstraints.BOTH;
-
-		this.channelNumberLabel = new JLabel();
-		this.channelNumberLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		this.channelNumberLabel.setFont(chNumFont);
-		gbc.weightx = 0.25;
-		gbc.gridx = 0;
-		gbc.gridy = 0;
-		this.add(this.channelNumberLabel, gbc);
-		this.channelNameLabel = new JLabel();
-		this.channelNameLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		this.channelNameLabel.setFont(chNameFont);
-		gbc.gridy = 1;
-		this.add(this.channelNameLabel, gbc);
-		this.channelGenreLabel = new JLabel();
-		this.channelGenreLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		this.channelGenreLabel.setFont(chGenreFont);
-		gbc.gridy = 2;
-		this.add(this.channelGenreLabel, gbc);
-		this.channelArtistLabel = new JLabel();
-		this.channelArtistLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		this.channelArtistLabel.setFont(chArtistFont);
-		gbc.gridx = 1;
-		gbc.weightx = 0.75;
-		gbc.gridwidth = 2;
-		gbc.gridy = 0;
-		this.add(this.channelArtistLabel, gbc);
-		this.channelTitleLabel = new JLabel();
-		this.channelTitleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-		this.channelTitleLabel.setFont(chTitleFont);
-		gbc.gridy = 1;
-		this.add(this.channelTitleLabel, gbc);
-		this.songTimeBar = new SongTimeProgressBar();
-		this.songTimeBar.setVisible(false);
-		this.songTimeBar.setMinimum(0);
-		this.songTimeBar.setMaximum(1000);
-		this.songTimeBar.setBorderPainted(true); // XXX - this doesn't appear to frigging work.
-		this.songTimeBar.setBackground(this.channelTitleLabel.getBackground());
-		this.songTimeBar.setForeground(this.channelTitleLabel.getForeground());
-		this.songTimeBar.setPreferredSize(new Dimension((int)this.getPreferredSize().getWidth(), 10));
-		gbc.gridy = 2;
-		gbc.fill = GridBagConstraints.HORIZONTAL;
-		gbc.insets = new Insets(5, 20, 0, 20);
-		this.add(this.songTimeBar, gbc);
-
-		this.songTimeTimer = new javax.swing.Timer(50, new ActionListener() {
-		    public void actionPerformed(ActionEvent e) {
-			ChannelInfoPanel.this.timerTick();
+		private class SongTimeProgressBar extends JProgressBar {
+		    public SongTimeProgressBar() {
+			super();
 		    }
-		});
-		this.songTimeTimer.stop();
-	}
+		    public void paintBorder(Graphics g) {
+			g.setColor(this.getForeground());
+			g.drawRect(0, 0, this.getWidth() - 1, this.getHeight() - 1);
+		    }
+		    public void paint(Graphics g) {
+			Rectangle bounds = this.getBounds();
+			g.setColor(this.getBackground());
+			// Inside the border, please.
+			g.fillRect(0, 0, (int)bounds.getWidth() - 1, (int)bounds.getHeight() - 1);
+			this.paintBorder(g); // XXX - Why is this necessary?! Why doesn't setBorder(true) work?!
+			int valueWidth = this.getMaximum() - this.getMinimum();
+			int valueSoFar = this.getValue() - this.getMinimum();
+			// We want posSoFar, posSoFar/bounds.getWidth() = valueSoFar / valueWidth, or posSoFar = valueSoFar * bounds.getWidth() / valueWidth;
+			int posSoFar = (int)((((float)valueSoFar) * ((float)bounds.getWidth())) / ((float)valueWidth));
+			int diamondHeightOffset = (int)(bounds.getHeight() * .1f);
+			Polygon p = new Polygon();
+			p.addPoint(posSoFar, diamondHeightOffset);
+			p.addPoint(posSoFar + (((int)bounds.getHeight() - 1) / 2 - diamondHeightOffset), (int)bounds.getHeight() / 2);
+			p.addPoint(posSoFar, (int)bounds.getHeight() - diamondHeightOffset - 1);
+			p.addPoint(posSoFar - (((int)bounds.getHeight() - 1) / 2 - diamondHeightOffset), (int)bounds.getHeight() / 2);
+			p.addPoint(posSoFar, diamondHeightOffset);
+			g.setColor(this.getForeground());
+			g.fillPolygon(p);
+		    }
+		}
+	
+		public final static Font chNumFont = new Font(null, Font.BOLD, 18);
+		public final static Font chGenreFont = new Font(null, Font.PLAIN, 12);
+		public final static Font chNameFont = new Font(null, Font.PLAIN, 14);
+		public final static Font chArtistFont = new Font(null, Font.BOLD, 20);
+		public final static Font chTitleFont = new Font(null, Font.BOLD, 20);
+	
+		private JLabel channelNumberLabel, channelGenreLabel, channelNameLabel, channelArtistLabel, channelTitleLabel;
+	
+		private JProgressBar songTimeBar;
+	
+		private Date songStart, songEnd;
+	
+		private javax.swing.Timer songTimeTimer;
+	
+		public ChannelInfoPanel() {
+			this.setLayout(new GridBagLayout());
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.fill = GridBagConstraints.BOTH;
+	
+			this.channelNumberLabel = new JLabel();
+			this.channelNumberLabel.setHorizontalAlignment(SwingConstants.CENTER);
+			this.channelNumberLabel.setFont(chNumFont);
+			gbc.weightx = 0.25;
+			gbc.gridx = 0;
+			gbc.gridy = 0;
+			this.add(this.channelNumberLabel, gbc);
+			this.channelNameLabel = new JLabel();
+			this.channelNameLabel.setHorizontalAlignment(SwingConstants.CENTER);
+			this.channelNameLabel.setFont(chNameFont);
+			gbc.gridy = 1;
+			this.add(this.channelNameLabel, gbc);
+			this.channelGenreLabel = new JLabel();
+			this.channelGenreLabel.setHorizontalAlignment(SwingConstants.CENTER);
+			this.channelGenreLabel.setFont(chGenreFont);
+			gbc.gridy = 2;
+			this.add(this.channelGenreLabel, gbc);
+			this.channelArtistLabel = new JLabel();
+			this.channelArtistLabel.setHorizontalAlignment(SwingConstants.CENTER);
+			this.channelArtistLabel.setFont(chArtistFont);
+			gbc.gridx = 1;
+			gbc.weightx = 0.75;
+			gbc.gridwidth = 2;
+			gbc.gridy = 0;
+			this.add(this.channelArtistLabel, gbc);
+			this.channelTitleLabel = new JLabel();
+			this.channelTitleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+			this.channelTitleLabel.setFont(chTitleFont);
+			gbc.gridy = 1;
+			this.add(this.channelTitleLabel, gbc);
+			this.songTimeBar = new SongTimeProgressBar();
+			this.songTimeBar.setVisible(false);
+			this.songTimeBar.setMinimum(0);
+			this.songTimeBar.setMaximum(1000);
+			this.songTimeBar.setBorderPainted(true); // XXX - this doesn't appear to frigging work.
+			this.songTimeBar.setBackground(this.channelTitleLabel.getBackground());
+			this.songTimeBar.setForeground(this.channelTitleLabel.getForeground());
+			this.songTimeBar.setPreferredSize(new Dimension((int)this.getPreferredSize().getWidth(), 10));
+			gbc.gridy = 2;
+			gbc.fill = GridBagConstraints.HORIZONTAL;
+			gbc.insets = new Insets(5, 20, 0, 20);
+			this.add(this.songTimeBar, gbc);
+	
+			this.songTimeTimer = new javax.swing.Timer(50, new ActionListener() {
+			    public void actionPerformed(ActionEvent e) {
+				ChannelInfoPanel.this.timerTick();
+			    }
+			});
+			this.songTimeTimer.stop();
+		}
+	
+		public void timerTick() {
+		    if (this.songStart == null || this.songEnd == null)
+			return;
+	
+		    long len = this.songEnd.getTime() - this.songStart.getTime();
+		    long soFar = new Date().getTime() - this.songStart.getTime();
+		    float permill = (((float)soFar) / ((float)len)) * 1000.0f;
+		    int val;
+		    if (permill < 0f)
+			val = 0;
+		    else if (permill >= 1000f)
+			val = 1000;
+		    else
+			val = (int)permill;
+		    this.songTimeBar.setValue(val);
+		    if (val == 1000) {
+			this.songTimeBar.setVisible(false);
+			this.songTimeTimer.stop();
+		    }
+		    this.songTimeBar.repaint();
+		}
+	
+		public void setSongTime(Date start, Date end) {
+		    if (start == null || end == null) {
+			this.songStart = null;
+			this.songEnd = null;
+			this.songTimeTimer.stop();
+			this.songTimeBar.setVisible(false);
+		    } else {
+			this.songStart = start;
+			this.songEnd = end;
+			this.songTimeTimer.start();
+			this.songTimeBar.setVisible(true);
+		    }
+		}
+	
+		public void setChannelInfo(ChannelInfo info) {
+		    if (info != null) {
+			this.channelNumberLabel.setText(Integer.toString(info.getChannelNumber()));
+			this.channelGenreLabel.setText(info.getChannelGenre());
+			this.channelNameLabel.setText(info.getChannelName());
+			this.channelArtistLabel.setText(info.getChannelArtist());
+			this.channelTitleLabel.setText(info.getChannelTitle());
+		    } else {
+			this.channelNumberLabel.setText("");
+			this.channelGenreLabel.setText("");
+			this.channelNameLabel.setText("");
+			this.channelArtistLabel.setText("");
+			this.channelTitleLabel.setText("");
+		    }
+		}
+    }	// End class ChannelInfoPanel
 
-	public void timerTick() {
-	    if (this.songStart == null || this.songEnd == null)
-		return;
 
-	    long len = this.songEnd.getTime() - this.songStart.getTime();
-	    long soFar = new Date().getTime() - this.songStart.getTime();
-	    float permill = (((float)soFar) / ((float)len)) * 1000.0f;
-	    int val;
-	    if (permill < 0f)
-		val = 0;
-	    else if (permill >= 1000f)
-		val = 1000;
-	    else
-		val = (int)permill;
-	    this.songTimeBar.setValue(val);
-	    if (val == 1000) {
-		this.songTimeBar.setVisible(false);
-		this.songTimeTimer.stop();
-	    }
-	    this.songTimeBar.repaint();
-	}
-
-	public void setSongTime(Date start, Date end) {
-	    if (start == null || end == null) {
-		this.songStart = null;
-		this.songEnd = null;
-		this.songTimeTimer.stop();
-		this.songTimeBar.setVisible(false);
-	    } else {
-		this.songStart = start;
-		this.songEnd = end;
-		this.songTimeTimer.start();
-		this.songTimeBar.setVisible(true);
-	    }
-	}
-
-	public void setChannelInfo(ChannelInfo info) {
-	    if (info != null) {
-		this.channelNumberLabel.setText(Integer.toString(info.getChannelNumber()));
-		this.channelGenreLabel.setText(info.getChannelGenre());
-		this.channelNameLabel.setText(info.getChannelName());
-		this.channelArtistLabel.setText(info.getChannelArtist());
-		this.channelTitleLabel.setText(info.getChannelTitle());
-	    } else {
-		this.channelNumberLabel.setText("");
-		this.channelGenreLabel.setText("");
-		this.channelNameLabel.setText("");
-		this.channelArtistLabel.setText("");
-		this.channelTitleLabel.setText("");
-	    }
-	}
-    }
     private class BookmarkMenu extends JMenu {
-	// This is a "throwaway" menu - it's not dynamic
-	private ChannelInfo info;
-	public BookmarkMenu(ChannelInfo info) {
-	    super("Web Bookmarks");
-	    this.info = info;
-	    for(int i = 0; i < MainWindow.this.bookmarks.length; i++) {
-		final Bookmark b = MainWindow.this.bookmarks[i];
-		JMenuItem jmi = new JMenuItem(b.getName());
-		jmi.addActionListener(new ActionListener() {
-		    public void actionPerformed(ActionEvent e) {
-			MainWindow.this.bookmarkSurf(b, BookmarkMenu.this.info);
+		// This is a "throwaway" menu - it's not dynamic
+		private ChannelInfo info;
+		public BookmarkMenu(ChannelInfo info) {
+		    super("Web Bookmarks");
+		    this.info = info;
+		    for(int i = 0; i < MainWindow.this.bookmarks.length; i++) {
+			final Bookmark b = MainWindow.this.bookmarks[i];
+			JMenuItem jmi = new JMenuItem(b.getName());
+			jmi.addActionListener(new ActionListener() {
+			    public void actionPerformed(ActionEvent e) {
+				MainWindow.this.bookmarkSurf(b, BookmarkMenu.this.info);
+			    }
+			});
+			this.add(jmi);
 		    }
-		});
-		this.add(jmi);
-	    }
-	}
-    };
+		}
+    }	//	end class BookmarkMenu
+
 
     public final static int CHAN_POPUP_NO_MEM = 1;	// This popup won't add to memory
     public final static int CHAN_POPUP_NO_TUNE = 2;	// This popup won't tune to channel
 
     // A popup menu for a given channel
-    public class ChannelPopupMenu extends JPopupMenu {
-	ChannelInfo channelInfo;
-
-	public ChannelPopupMenu(ChannelInfo info) {
-	    this(info, 0);
-	}
-	public ChannelPopupMenu(ChannelInfo info, int flag) {
-	    super();
-	    this.channelInfo = info;
-
-	    JMenuItem jmi = new JMenuItem("Tune to channel");
-	    if (flag == MainWindow.CHAN_POPUP_NO_TUNE || !RadioCommander.theRadio().isOn()) {
-		jmi.setEnabled(false);
-	    } else {
-		jmi.addActionListener(new ActionListener() {
-		    public void actionPerformed(ActionEvent e) {
-			MainWindow.this.setChannel(ChannelPopupMenu.this.channelInfo.getChannelNumber());
+	public class ChannelPopupMenu extends JPopupMenu {
+		ChannelInfo channelInfo;
+	
+		public ChannelPopupMenu(ChannelInfo info) {
+		    this(info, 0);
+		}
+		public ChannelPopupMenu(ChannelInfo info, int flag) {
+		    super();
+		    this.channelInfo = info;
+	
+		    JMenuItem jmi = new JMenuItem("Tune to channel");
+		    if (flag == MainWindow.CHAN_POPUP_NO_TUNE || !RadioCommander.theRadio().isOn()) {
+			jmi.setEnabled(false);
+		    } else {
+			jmi.addActionListener(new ActionListener() {
+			    public void actionPerformed(ActionEvent e) {
+				MainWindow.this.setChannel(ChannelPopupMenu.this.channelInfo.getChannelNumber());
+			    }
+			});
 		    }
-		});
-	    }
-	    this.add(jmi);
-	    jmi = new JMenuItem("Add to notebook");
-	    if (flag == MainWindow.CHAN_POPUP_NO_MEM) {
-		jmi.setEnabled(false);
-	    } else {
-		jmi.addActionListener(new ActionListener() {
-		    public void actionPerformed(ActionEvent e) {
-			MainWindow.this.memorize(ChannelPopupMenu.this.channelInfo);
+		    this.add(jmi);
+		    jmi = new JMenuItem("Add to notebook");
+		    if (flag == MainWindow.CHAN_POPUP_NO_MEM) {
+			jmi.setEnabled(false);
+		    } else {
+			jmi.addActionListener(new ActionListener() {
+			    public void actionPerformed(ActionEvent e) {
+				MainWindow.this.memorize(ChannelPopupMenu.this.channelInfo);
+			    }
+			});
 		    }
-		});
-	    }
-	    this.add(jmi);
-	    this.add(new MainWindow.BookmarkMenu(this.channelInfo));
-	}
-    }
+		    this.add(jmi);
+		    this.add(new MainWindow.BookmarkMenu(this.channelInfo));
+		}
+    }	// End class ChannelPopupMenu
 
-    private void memorize(ChannelInfo info) {
-	this.forceNormalView();
-	this.memoryPanel.memorize(info);
-    }
+	private void memorize(ChannelInfo info) {
+		this.forceNormalView();
+		this.memoryPanel.memorize(info);
+	}
 
     private void bookmarkSurf(Bookmark b, ChannelInfo i) {
-	try {
-	    b.surf(i);
-	}
-	catch(IOException e) {
-	    JOptionPane.showMessageDialog(MainWindow.this.myFrame, e.getMessage(), "Error opening URL", JOptionPane.ERROR_MESSAGE);
-	}
+		try {
+		    b.surf(i);
+		}
+		catch(IOException e) {
+		    JOptionPane.showMessageDialog(MainWindow.this.myFrame, e.getMessage(), "Error opening URL", JOptionPane.ERROR_MESSAGE);
+		}
     }
 
-    private class ChannelTableModel extends AbstractTableModel {
+	private class ChannelTableModel extends AbstractTableModel {
         public int getRowCount() {
-	    return MainWindow.this.sortedChannelList.length;
+	    	return MainWindow.this.sortedChannelList.length;
         }
         public int getColumnCount() {
- 		return 6;           
+ 			return 6;           
         }
         public Object getValueAt(int row, int column) {
-	    ChannelInfo i = (ChannelInfo)MainWindow.this.sortedChannelList[row];
-	    switch(column) {
-		case 0: return new Integer(i.getChannelNumber());
-		case 1: return i.getChannelGenre();
-		case 2: return i.getChannelName();
-		case 3: return i.getChannelArtist();
-		case 4: return i.getChannelTitle();
-		case 5: return MainWindow.this.inUseForSID(i.getServiceID());
-		default: throw new IllegalArgumentException("Which column?");
-	    }
+		    ChannelInfo i = (ChannelInfo)MainWindow.this.sortedChannelList[row];
+		    switch(column) {
+				case 0: return new Integer(i.getChannelNumber());
+				case 1: return i.getChannelGenre();
+				case 2: return i.getChannelName();
+				case 3: return i.getChannelArtist();
+				case 4: return i.getChannelTitle();
+				case 5: return MainWindow.this.inUseForSID(i.getServiceID());
+				default: throw new IllegalArgumentException("Which column?");
+		    }
         }
-    }
+	}	// end class ChannelTableModel
+
 
     private int sortField = 0;
     private boolean sortDirection = true;
@@ -510,167 +516,169 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private ChannelInfo[] sortedChannelList = new ChannelInfo[0];
 
     // Called by the filter panel
-    public ChannelInfo[] getChannelList() {
-	ChannelInfo[] out = new ChannelInfo[this.channelList.size()];
-	Iterator i = this.channelList.values().iterator();
-	int j = 0;
-	while(i.hasNext()) {
-	    out[j++] = (ChannelInfo)i.next();
-	}
-	return out;
-    }
-    public void setFilter(byte[] sids) {
-	this.filterList.clear();
-	for(int i = 0; i < sids.length; i++)
-	    this.filterList.add(new Integer(sids[i] & 0xff));
-	this.rebuildSortedChannelList();
-    }
-
-    // Wow. This operation is stunningly inefficient. The horror.
-    private void rebuildSortedChannelList() {
-	//ChannelInfo[] newList = new ChannelInfo[this.channelList.size() - this.filterList.size()];
-	// Argh! Because the filter list *may* be filtering channels we don't have in the list yet, we don't know
-	// in advance the size of the filtered channel set.
-	ArrayList temp = new ArrayList();
-	Iterator i = this.channelList.values().iterator();
-	while(i.hasNext()) {
-	    ChannelInfo info = (ChannelInfo)i.next();
-	    if (this.filterList.contains(new Integer(info.getServiceID())))
-		continue;
-
-	    String filter = this.searchField.getText();
-	    if (filter != null) {
-		filter = filter.trim().toLowerCase();
-		if (filter.length() == 0)
-		    filter = null;
-	    }
-	    if (filter != null &&
-		info.getChannelName().toLowerCase().indexOf(filter) < 0 &&
-		info.getChannelGenre().toLowerCase().indexOf(filter) < 0 &&
-		info.getChannelArtist().toLowerCase().indexOf(filter) < 0 &&
-		info.getChannelTitle().toLowerCase().indexOf(filter) < 0)
-		continue;
-
-	    temp.add(info);
-	}
-	ChannelInfo[] newList = (ChannelInfo[])temp.toArray(new ChannelInfo[0]);
-	Arrays.sort(newList, new Comparator() {
-	    public int compare(Object o1, Object o2) {
-		ChannelInfo ci1 = (ChannelInfo)o1;
-		ChannelInfo ci2 = (ChannelInfo)o2;
-		int out = 0;
-		switch(MainWindow.this.sortField) {
-			case 0:	out = new Integer(ci1.getChannelNumber()).compareTo(new Integer(ci2.getChannelNumber()));
-				break;
-			case 1: out = ci1.getChannelGenre().compareTo(ci2.getChannelGenre());
-				break;
-			case 2: out = ci1.getChannelName().compareTo(ci2.getChannelName());
-				break;
-			case 3: out = ci1.getChannelArtist().compareTo(ci2.getChannelArtist());
-				break;
-			case 4: out = ci1.getChannelTitle().compareTo(ci2.getChannelTitle());
-				break;
-			case 5: Integer ticks1 = (Integer)MainWindow.this.tickList.get(new Integer(ci1.getServiceID()));
-				Integer ticks2 = (Integer)MainWindow.this.tickList.get(new Integer(ci2.getServiceID()));
-				if (ticks1 == null)
-					ticks1 = new Integer(0);
-				if (ticks2 == null)
-					ticks2 = new Integer(0);
-				out = ticks1.compareTo(ticks2);
-				break;
-				
+	public ChannelInfo[] getChannelList() {
+		ChannelInfo[] out = new ChannelInfo[this.channelList.size()];
+		Iterator i = this.channelList.values().iterator();
+		int j = 0;
+		while(i.hasNext()) {
+		    out[j++] = (ChannelInfo)i.next();
 		}
-		// Stupid Java. If it's a tie, then sub-sort on channel number, always ascending.
-		if (out == 0) {
-		    return new Integer(ci1.getChannelNumber()).compareTo(new Integer(ci2.getChannelNumber()));
-		}
-		out *= MainWindow.this.sortDirection?1:-1;
 		return out;
-	    }
-	});
-	ChannelInfo oldList[] = this.sortedChannelList;
-	this.sortedChannelList = newList;
-
-	if (oldList.length < newList.length) {
-	    this.channelTableModel.fireTableRowsInserted(oldList.length, newList.length - 1);
-	} else if (oldList.length > newList.length) {
-	    this.channelTableModel.fireTableRowsDeleted(newList.length, oldList.length - 1);
 	}
-	for(int j = 0; j < Math.min(oldList.length, newList.length); j++)
-	    if (!oldList[j].equals(newList[j]))
-		this.channelTableModel.fireTableRowsUpdated(j, j);
-    }
+
+	public void setFilter(byte[] sids) {
+		this.filterList.clear();
+		for(int i = 0; i < sids.length; i++)
+		    this.filterList.add(new Integer(sids[i] & 0xff));
+		this.rebuildSortedChannelList();
+	}
+
+	// Wow. This operation is stunningly inefficient. The horror.
+	private void rebuildSortedChannelList() {
+		//ChannelInfo[] newList = new ChannelInfo[this.channelList.size() - this.filterList.size()];
+		// Argh! Because the filter list *may* be filtering channels we don't have in the list yet, we don't know
+		// in advance the size of the filtered channel set.
+		ArrayList temp = new ArrayList();
+		Iterator i = this.channelList.values().iterator();
+		while(i.hasNext()) {
+		    ChannelInfo info = (ChannelInfo)i.next();
+		    if (this.filterList.contains(new Integer(info.getServiceID())))
+			continue;
+	
+		    String filter = this.searchField.getText();
+		    if (filter != null) {
+			filter = filter.trim().toLowerCase();
+			if (filter.length() == 0)
+			    filter = null;
+		    }
+		    if (filter != null &&
+			info.getChannelName().toLowerCase().indexOf(filter) < 0 &&
+			info.getChannelGenre().toLowerCase().indexOf(filter) < 0 &&
+			info.getChannelArtist().toLowerCase().indexOf(filter) < 0 &&
+			info.getChannelTitle().toLowerCase().indexOf(filter) < 0)
+			continue;
+	
+		    temp.add(info);
+		}
+		ChannelInfo[] newList = (ChannelInfo[])temp.toArray(new ChannelInfo[0]);
+		Arrays.sort(newList, new Comparator() {
+		    public int compare(Object o1, Object o2) {
+			ChannelInfo ci1 = (ChannelInfo)o1;
+			ChannelInfo ci2 = (ChannelInfo)o2;
+			int out = 0;
+			switch(MainWindow.this.sortField) {
+				case 0:	out = new Integer(ci1.getChannelNumber()).compareTo(new Integer(ci2.getChannelNumber()));
+					break;
+				case 1: out = ci1.getChannelGenre().compareTo(ci2.getChannelGenre());
+					break;
+				case 2: out = ci1.getChannelName().compareTo(ci2.getChannelName());
+					break;
+				case 3: out = ci1.getChannelArtist().compareTo(ci2.getChannelArtist());
+					break;
+				case 4: out = ci1.getChannelTitle().compareTo(ci2.getChannelTitle());
+					break;
+				case 5: Integer ticks1 = (Integer)MainWindow.this.tickList.get(new Integer(ci1.getServiceID()));
+					Integer ticks2 = (Integer)MainWindow.this.tickList.get(new Integer(ci2.getServiceID()));
+					if (ticks1 == null)
+						ticks1 = new Integer(0);
+					if (ticks2 == null)
+						ticks2 = new Integer(0);
+					out = ticks1.compareTo(ticks2);
+					break;
+					
+			}
+			// Stupid Java. If it's a tie, then sub-sort on channel number, always ascending.
+			if (out == 0) {
+			    return new Integer(ci1.getChannelNumber()).compareTo(new Integer(ci2.getChannelNumber()));
+			}
+			out *= MainWindow.this.sortDirection?1:-1;
+			return out;
+		    }
+		});	// end sort w/ anonymous inner class
+		ChannelInfo oldList[] = this.sortedChannelList;
+		this.sortedChannelList = newList;
+	
+		if (oldList.length < newList.length) {
+		    this.channelTableModel.fireTableRowsInserted(oldList.length, newList.length - 1);
+		} else if (oldList.length > newList.length) {
+		    this.channelTableModel.fireTableRowsDeleted(newList.length, oldList.length - 1);
+		}
+		for(int j = 0; j < Math.min(oldList.length, newList.length); j++)
+		    if (!oldList[j].equals(newList[j]))
+				this.channelTableModel.fireTableRowsUpdated(j, j);
+
+    }	// end method rebuildSortedChannelList
 
     private HashMap tickList = new HashMap();
 
     // the IPreferencesCallbackInterface
     public void reload() {
-	this.searchSystem.reload();
-	this.filterPanel.reload();
+		this.searchSystem.reload();
+		this.filterPanel.reload();
     }
     public void save() {
-	this.searchSystem.save();
-	this.filterPanel.save();
+		this.searchSystem.save();
+		this.filterPanel.save();
     }
     public JComponent getSearchPreferencePanel() {
-	return this.searchSystem.getPrefPanel();
+		return this.searchSystem.getPrefPanel();
     }
     public JComponent getFilterPreferencePanel() {
-	return this.filterPanel;
+		return this.filterPanel;
     }
     public void clearChannelStats() {
-	this.tickList.clear();
-	Preferences node = JXM.myUserNode().node(TICK_NODE);
-	try {
-	    node.clear();
-	}
-	catch(BackingStoreException e) {
-	}
+		this.tickList.clear();
+		Preferences node = JXM.myUserNode().node(TICK_NODE);
+		try {
+		    node.clear();
+		}
+		catch(BackingStoreException e) {
+		}
     }
 
     public void rebuildBookmarksMenu(Bookmark[] list) {
-	this.bookmarks = list;
+		this.bookmarks = list;
     }
 
     private int rowForSID(int sid) {
-	ChannelInfo channels[] = this.sortedChannelList;
-	for(int i = 0; i < channels.length; i++)
-	    if (channels[i].getServiceID() == sid)
-		return i;
-	return -1;
+		ChannelInfo channels[] = this.sortedChannelList;
+		for(int i = 0; i < channels.length; i++)
+		    if (channels[i].getServiceID() == sid)
+			return i;
+		return -1;
     }
 
     private int sidForChannel(int chan) {
-	Iterator i = this.channelList.values().iterator();
-	while(i.hasNext()) {
-	    ChannelInfo info = (ChannelInfo)(i.next());
-	    if (info.getChannelNumber() == chan)
-		return info.getServiceID();
-	}
-	return -1;
+		Iterator i = this.channelList.values().iterator();
+		while(i.hasNext()) {
+		    ChannelInfo info = (ChannelInfo)(i.next());
+		    if (info.getChannelNumber() == chan)
+			return info.getServiceID();
+		}
+		return -1;
     }
 
     private int totalTicks() {
-	int total = 0;
-	Iterator i = this.tickList.values().iterator();
-	while(i.hasNext())
-	    total += ((Integer)i.next()).intValue();
-	return total;
+		int total = 0;
+		Iterator i = this.tickList.values().iterator();
+		while(i.hasNext())
+		    total += ((Integer)i.next()).intValue();
+		return total;
     }
 
     private String inUseForSID(int sid) {
-	Integer ticks = (Integer)this.tickList.get(new Integer(sid));
-	if (ticks == null)
-	    ticks = new Integer(0);
-	int percent = (int)(1000f * ((float)ticks.intValue())/((float)this.totalTicks()));
-	if (percent < 1)
-	    return "";
-	StringBuffer sb = new StringBuffer();
-	sb.append(percent / 10);
-	sb.append(".");
-	sb.append(percent % 10);
-	sb.append('%');
-	return sb.toString();
+		Integer ticks = (Integer)this.tickList.get(new Integer(sid));
+		if (ticks == null)
+		    ticks = new Integer(0);
+		int percent = (int)(1000f * ((float)ticks.intValue())/((float)this.totalTicks()));
+		if (percent < 1)
+		    return "";
+		StringBuffer sb = new StringBuffer();
+		sb.append(percent / 10);
+		sb.append(".");
+		sb.append(percent % 10);
+		sb.append('%');
+		return sb.toString();
     }
 
     private SearchSystem searchSystem;
@@ -706,31 +714,31 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private ChannelInfo currentChannelInfo;
    
     public void quit() { 
-	if (RadioCommander.theRadio().isOn())
-	    MainWindow.this.turnPowerOff();
-	this.saveChannelTableLayout();
-	this.saveTickList();
-	this.memoryPanel.quit();
-	PlatformFactory.ourPlatform().quit();
-	System.exit(0);
+		if (RadioCommander.theRadio().isOn())
+		    MainWindow.this.turnPowerOff();
+		this.saveChannelTableLayout();
+		this.saveTickList();
+		this.memoryPanel.quit();
+		PlatformFactory.ourPlatform().quit();
+		System.exit(0);
     }
     public void prefs() {
-	this.forceNormalView();
-	this.preferences.show();
+		this.forceNormalView();
+		this.preferences.show();
     }
     public void about() {
-	this.forceNormalView();
-	this.aboutDialog.show();
+		this.forceNormalView();
+		this.aboutDialog.show();
     }
 
     private void saveChannelTableLayout() {
-	byte index[] = new byte[this.channelTableModel.getColumnCount()];
-
-	for(int i = 0; i < this.channelTableModel.getColumnCount(); i++) {
-	    TableColumn tc = this.channelTable.getColumnModel().getColumn(i);
-	    index[i] = (byte)tc.getModelIndex();
-	}
-	JXM.myUserNode().putByteArray(CHAN_TABLE_COLS, index);
+		byte index[] = new byte[this.channelTableModel.getColumnCount()];
+	
+		for(int i = 0; i < this.channelTableModel.getColumnCount(); i++) {
+		    TableColumn tc = this.channelTable.getColumnModel().getColumn(i);
+		    index[i] = (byte)tc.getModelIndex();
+		}
+		JXM.myUserNode().putByteArray(CHAN_TABLE_COLS, index);
     }
 
     public final static Color stripeColor = new Color(.925f, .925f, 1f);
@@ -739,66 +747,67 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private class XIcon implements Icon {
         public int getIconHeight() { return 17; }
         public int getIconWidth() { return this.getIconHeight(); }
-	public void paintIcon(Component c, Graphics gg, int x, int y) {
-	    Graphics2D g = (Graphics2D)gg;
-	    if (c.isEnabled())
-		g.setColor(c.getForeground());
-	    else
-		g.setColor(Color.GRAY);
-
-	    g.translate(x,y);
-	    g.fillArc(0, 0, this.getIconWidth() - 1, this.getIconHeight() - 1, 0, 360);
-	    g.setColor(c.getBackground());
-	    int centerx = this.getIconWidth() / 2;
-	    int centery = this.getIconHeight() / 2;
-	    int xlen = (this.getIconHeight() * 2) / 10;
-	    g.setStroke(new BasicStroke(1.3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-	    g.drawLine(centerx - xlen, centery - xlen, centerx + xlen, centery + xlen);
-	    g.drawLine(centerx + xlen, centery - xlen, centerx - xlen, centery + xlen);
-
-	    g.translate(-x,-y);
+		public void paintIcon(Component c, Graphics gg, int x, int y) {
+		    Graphics2D g = (Graphics2D)gg;
+		    if (c.isEnabled())
+			g.setColor(c.getForeground());
+		    else
+			g.setColor(Color.GRAY);
+	
+		    g.translate(x,y);
+		    g.fillArc(0, 0, this.getIconWidth() - 1, this.getIconHeight() - 1, 0, 360);
+		    g.setColor(c.getBackground());
+		    int centerx = this.getIconWidth() / 2;
+		    int centery = this.getIconHeight() / 2;
+		    int xlen = (this.getIconHeight() * 2) / 10;
+		    g.setStroke(new BasicStroke(1.3f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+		    g.drawLine(centerx - xlen, centery - xlen, centerx + xlen, centery + xlen);
+		    g.drawLine(centerx + xlen, centery - xlen, centerx - xlen, centery + xlen);
+	
+		    g.translate(-x,-y);
         }
-    }
+    }	// end private class XIcon
 
     private class ArrowIcon implements Icon, SwingConstants {
-	private int dir;
-	public ArrowIcon(int which) {
-	    if (which != NORTH && which != SOUTH)
-		throw new IllegalArgumentException("Arrow must point NORTH or SOUTH");
-	    this.dir = which;
-	}
-	private int width = 9;
-	private int height = 12;
-	public int getIconHeight() { return this.height; }
-	public int getIconWidth() { return this.width; }
-	public void paintIcon(Component c, Graphics g, int x, int y) {
-	    if (c.isEnabled())
-		g.setColor(c.getForeground());
-	    else
-		g.setColor(Color.GRAY);
-
-	    g.translate(x,y);
-	    Polygon p = new Polygon();
-	    switch(this.dir) {
-		case NORTH:
-			p.addPoint(0, this.height/2);
-			p.addPoint(this.width - 1, this.height/2);
-			p.addPoint(this.width/2, 1);
-			p.addPoint(0, this.height/2);
-		    break;
-		case SOUTH:
-			p.addPoint(0, this.height/2);
-			p.addPoint(this.width - 1, this.height/2);
-			p.addPoint(this.width/2, this.height - 2);
-			p.addPoint(0, this.height/2);
-		    break;
-		default: throw new IllegalArgumentException("How did this happen?!");
-	    }
-	    g.fillPolygon(p);
-	    // restore
-	    g.translate(-x,-y);
-	}
-    }
+		private int dir;
+		public ArrowIcon(int which) {
+		    if (which != NORTH && which != SOUTH)
+			throw new IllegalArgumentException("Arrow must point NORTH or SOUTH");
+		    this.dir = which;
+		}
+		private int width = 9;
+		private int height = 12;
+		public int getIconHeight() { return this.height; }
+		public int getIconWidth() { return this.width; }
+		public void paintIcon(Component c, Graphics g, int x, int y) {
+		    if (c.isEnabled())
+				g.setColor(c.getForeground());
+		    else
+				g.setColor(Color.GRAY);
+	
+		    g.translate(x,y);
+		    Polygon p = new Polygon();
+		    switch(this.dir) {
+			case NORTH:
+				p.addPoint(0, this.height/2);
+				p.addPoint(this.width - 1, this.height/2);
+				p.addPoint(this.width/2, 1);
+				p.addPoint(0, this.height/2);
+			    break;
+			case SOUTH:
+				p.addPoint(0, this.height/2);
+				p.addPoint(this.width - 1, this.height/2);
+				p.addPoint(this.width/2, this.height - 2);
+				p.addPoint(0, this.height/2);
+			    break;
+			default:
+				throw new IllegalArgumentException("How did this happen?!");
+		    }
+		    g.fillPolygon(p);
+		    // restore
+		    g.translate(-x,-y);
+		}
+    }	// end class ArrowIcon
 
     private final Icon upArrow = new ArrowIcon(SwingConstants.NORTH);
     private final Icon downArrow = new ArrowIcon(SwingConstants.SOUTH);
@@ -810,371 +819,371 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private static final int COL_TITLE = 4;
     private static final int COL_INUSE = 5;
 
-    private static void frontOrShow(Window w) {
-	if (w.isVisible())
-	    w.toFront();
-	else
-	    w.show();
-    }
+	private static void frontOrShow(Window w) {
+		if (w.isVisible())
+		    w.toFront();
+		else
+		    w.show();
+	}
 
     public MainWindow() {
 
-	// This MUST happen before we init the platform, because it may
-	// create swing objects (menus perhaps).
-	try {
-	    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-	}
-	catch(Exception e) {
-	    // Well, we tried
-	}
+		// This MUST happen before we init the platform, because it may
+		// create swing objects (menus perhaps).
+		try {
+		    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		}
+		catch(Exception e) {
+		    // Well, we tried
+		}
 
-	PlatformFactory.ourPlatform().registerCallbackHandler(this);
-
-	String[] logoPaths = {
-	    // The current working dir
-	    "file:" + System.getProperty("user.dir") + "/JXMlogos.jar",
-	    // The user's home dir
-	    "file:" + System.getProperty("user.home") + "/JXMlogos.jar",
-	    // The user's home dir, but with a "." path
-	    "file:" + System.getProperty("user.home") + "/.JXMlogos.jar",
-	};
-	for(int i = 0; i < logoPaths.length; this.logoJar = null, i++) {
-	    try {
-		this.logoJar = new URL(logoPaths[i]);
-		this.logoJar.openConnection().connect();
-	    }
-	    catch(MalformedURLException e) {
-		continue;
-	    }
-	    catch(IOException e) {
-		continue;
-	    }
-	    if (this.logoJar != null)
-		break;
-	}
-	// This is the ultimate fallback: Just use the logos dir built-in
-	// to the application.
+		PlatformFactory.ourPlatform().registerCallbackHandler(this);
+	
+		String[] logoPaths = {
+		    // The current working dir
+		    "file:" + System.getProperty("user.dir") + "/JXMlogos.jar",
+		    // The user's home dir
+		    "file:" + System.getProperty("user.home") + "/JXMlogos.jar",
+		    // The user's home dir, but with a "." path
+		    "file:" + System.getProperty("user.home") + "/.JXMlogos.jar",
+		};
+		for(int i = 0; i < logoPaths.length; this.logoJar = null, i++) {
+		    try {
+				this.logoJar = new URL(logoPaths[i]);
+				this.logoJar.openConnection().connect();
+		    }
+		    catch(MalformedURLException e) {
+				continue;
+		    }
+		    catch(IOException e) {
+				continue;
+		    }
+		    if (this.logoJar != null)
+				break;
+		}
+		// This is the ultimate fallback: Just use the logos dir built-in
+		// to the application.
 
         this.myFrame = new JFrame("JXM");
-	Image duke = Toolkit.getDefaultToolkit().getImage(this.getClass().getResource("/images/xm_duke.png"));
-	this.myFrame.setIconImage(duke);
-	this.myFrame.setJMenuBar(new JMenuBar());
-	this.myFrame.addWindowListener(new WindowAdapter() {
-	    public void windowClosing(WindowEvent e) {
-		MainWindow.this.quit();
-	    }
-	});
-	this.searchSystem = new SearchSystem(this);
-	this.filterPanel = new FilterPanel(this);
-	this.preferences = new PreferencesDialog(this.myFrame, this);
-	this.aboutDialog = new AboutDialog(this.myFrame);
-
-	JMenu jm;
-	JMenuItem jmi;
-
-	// If on a mac, don't do this - use the EAWT stuff instead
-	if (!PlatformFactory.ourPlatform().useMacMenus()) {
-	    jm = new JMenu("JXM");
-	    jmi = new JMenuItem("Preferences...");
-	    jmi.addActionListener(new ActionListener() {
-	        public void actionPerformed(ActionEvent e) {
-		MainWindow.this.prefs();
-	        }
-	    });
-	    jm.add(jmi);
-	    jmi = new JMenuItem("Exit");
-	    jmi.addActionListener(new ActionListener() {
-	        public void actionPerformed(ActionEvent e) {
-		    MainWindow.this.quit();
-	        }
-	    });
-	    jm.add(jmi);
-	    this.myFrame.getJMenuBar().add(jm);
-	}
-	// -----
-	// PUT MENUS HERE
-	jm = new JMenu("Actions");
-	this.powerMenuItem = new JMenuItem("Turn Radio On");
-	this.powerMenuItem.addActionListener(new ActionListener() {
-	    public void actionPerformed(ActionEvent e) {
-		MainWindow.this.powerToggle();
-	    }
-	});
-	jm.add(this.powerMenuItem);
-	this.compactMenuItem = new JMenuItem("Compact view");
-	this.compactMenuItem.addActionListener(new ActionListener() {
-	    public void actionPerformed(ActionEvent e) {
-		MainWindow.this.toggleCompactView();
-	    }
-	});
-	this.compactMenuItem.setEnabled(false);
-	jm.add(this.compactMenuItem);
-	this.myFrame.getJMenuBar().add(jm);
-
-	class DynamicBookmarkMenu extends JMenu {
-	    // Stupid Nick! How many times do we have to reimplement this same thing!?
-	    // This one fetches the current channel info every time it is opened.
-	    private ChannelInfo info;
-	    public DynamicBookmarkMenu(String name) {
-		super(name);
-		super.addMenuListener(new MenuListener() {
-		    public void menuDeselected(MenuEvent e) {}
-		    public void menuCanceled(MenuEvent e) {}
-		    public void menuSelected(MenuEvent e) {
-			DynamicBookmarkMenu.this.info = new ChannelInfo(MainWindow.this.currentChannelInfo);
-			DynamicBookmarkMenu.this.removeAll();
-			for(int i = 0; i < MainWindow.this.bookmarks.length; i++) {
-			    final Bookmark b = MainWindow.this.bookmarks[i];
-			    JMenuItem jmi = new JMenuItem(b.getName());
-			    jmi.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-				    MainWindow.this.bookmarkSurf(b, DynamicBookmarkMenu.this.info);
-				}
-			    });
-			    DynamicBookmarkMenu.this.add(jmi);
-			}
+		Image duke = Toolkit.getDefaultToolkit().getImage(this.getClass().getResource("/images/xm_duke.png"));
+		this.myFrame.setIconImage(duke);
+		this.myFrame.setJMenuBar(new JMenuBar());
+		this.myFrame.addWindowListener(new WindowAdapter() {
+		    public void windowClosing(WindowEvent e) {
+			MainWindow.this.quit();
 		    }
 		});
-	    }
-	}
- 	this.bookmarkMenu = new DynamicBookmarkMenu("Web Bookmarks");
-	this.bookmarkMenu.setEnabled(false);
-	this.myFrame.getJMenuBar().add(this.bookmarkMenu);
-	jm = new JMenu("Windows");
-	if (PlatformFactory.ourPlatform().useMacMenus()) {
-	    jmi = new JMenuItem("Main Window");
-	    jmi.addActionListener(new ActionListener() {
-		public void actionPerformed(ActionEvent e) {
-		    MainWindow.frontOrShow(MainWindow.this.myFrame);
+		this.searchSystem = new SearchSystem(this);
+		this.filterPanel = new FilterPanel(this);
+		this.preferences = new PreferencesDialog(this.myFrame, this);
+		this.aboutDialog = new AboutDialog(this.myFrame);
+	
+		JMenu jm;
+		JMenuItem jmi;
+
+		// If on a mac, don't do this - use the EAWT stuff instead
+		if (!PlatformFactory.ourPlatform().useMacMenus()) {
+		    jm = new JMenu("JXM");
+		    jmi = new JMenuItem("Preferences...");
+		    jmi.addActionListener(new ActionListener() {
+		        public void actionPerformed(ActionEvent e) {
+			MainWindow.this.prefs();
+		        }
+		    });
+		    jm.add(jmi);
+		    jmi = new JMenuItem("Exit");
+		    jmi.addActionListener(new ActionListener() {
+		        public void actionPerformed(ActionEvent e) {
+			    MainWindow.this.quit();
+		        }
+		    });
+		    jm.add(jmi);
+		    this.myFrame.getJMenuBar().add(jm);
 		}
-	    });
-	    jm.add(jmi);
-	}
-	jmi = new JMenuItem("Notebook");
-	jmi.addActionListener(new ActionListener() {
-	    public void actionPerformed(ActionEvent e) {
-		MainWindow.frontOrShow(MainWindow.this.memoryPanel);
-	    }
-	});
-	jm.add(jmi);
-	this.myFrame.getJMenuBar().add(jm);
-/*
-	this.filterMenuItem = new JMenuItem("Filters");
-	this.filterMenuItem.addActionListener(new ActionListener() {
-	    public void actionPerformed(ActionEvent e) {
-		MainWindow.frontOrShow(MainWindow.this.filterPanel);
-	    }
-	});
-	this.filterMenuItem.setEnabled(false);
-	jm.add(this.filterMenuItem);
-*/
-	// -----
-	if (!PlatformFactory.ourPlatform().useMacMenus()) {
-	    jm = new JMenu("Help");
-	    jmi = new JMenuItem("About JXM...");
-	    jmi.addActionListener(new ActionListener() {
-	        public void actionPerformed(ActionEvent e) {
-		MainWindow.this.about();
-	        }
-	    });
-	    jm.add(jmi);
-	    this.myFrame.getJMenuBar().add(jm);
-	}
-
-	this.myFrame.getContentPane().setLayout(new GridBagLayout());
-	GridBagConstraints frameGBC = new GridBagConstraints();
-
-	JPanel top = new JPanel();
-	top.setLayout(new BoxLayout(top, BoxLayout.PAGE_AXIS));
-	JPanel toptop = new JPanel();
-	toptop.setLayout(new BoxLayout(toptop, BoxLayout.LINE_AXIS));
-	toptop.add(Box.createHorizontalStrut(20));
-
-	JPanel pictureFrame = new JPanel();
-	pictureFrame.setBorder(BorderFactory.createLoweredBevelBorder());
-	this.channelLogo = new JLabel();
-	this.channelLogo.setToolTipText( "Click to visit this Channel's Home Page" );
-	this.channelLogo.setPreferredSize(new Dimension(150, 100));
-	this.setChannelLogo(-1);
-	this.channelLogo.addMouseListener(new MouseAdapter() {
-	    boolean didPopup = false;
-
-	    public void mousePressed(MouseEvent e) { this.maybePopup(e); }
-	    public void mouseReleased(MouseEvent e) { this.maybePopup(e); }
-	    public void maybePopup(MouseEvent e) {
-		if (!RadioCommander.theRadio().isOn())
-		    return;
-		if (e.isPopupTrigger()) {
-		    didPopup = true;
-		    ChannelInfo info = new ChannelInfo(MainWindow.this.currentChannelInfo);
-		    JPopupMenu popup = MainWindow.this.new ChannelPopupMenu(info, MainWindow.CHAN_POPUP_NO_TUNE);
-		    popup.show(e.getComponent(), e.getX(), e.getY());
-		}
-	    }
-	    public void mouseClicked(MouseEvent e) {
-		if (didPopup) {
-		    didPopup = false;
-		    return;
-		}
-		if (!RadioCommander.theRadio().isOn())
-		    return;
-		MainWindow.this.surfToChannel(RadioCommander.theRadio().getChannel());
-	    }
-	});
-	pictureFrame.add(this.channelLogo);
-	toptop.add(pictureFrame);
-	toptop.add(Box.createHorizontalStrut(5));
-
-	// First, the "now playing" panel
-	this.nowPlayingPanel = new ChannelInfoPanel();
-	this.nowPlayingPanel.setBorder(BorderFactory.createTitledBorder(
-	    BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Now Playing",
-	    TitledBorder.CENTER, TitledBorder.DEFAULT_POSITION));
-	this.nowPlayingPanel.addMouseListener(new MouseAdapter() {
-	    public void mousePressed(MouseEvent e) { this.maybePopup(e); }
-	    public void mouseReleased(MouseEvent e) { this.maybePopup(e); }
-	    private void maybePopup(MouseEvent e) {
-		if (!RadioCommander.theRadio().isOn())
-		    return;
-		if (!e.isPopupTrigger())
-		    return;
-		ChannelInfo info = new ChannelInfo(MainWindow.this.currentChannelInfo);
-		JPopupMenu jpm = MainWindow.this.new ChannelPopupMenu(info, MainWindow.CHAN_POPUP_NO_TUNE);
-		jpm.show(e.getComponent(), e.getX(), e.getY());
-	    }
-	});
-	toptop.add(this.nowPlayingPanel);
-	toptop.add(Box.createHorizontalStrut(5));
-	JPanel buttons = new JPanel();
-	buttons.setLayout(new GridBagLayout());
-	GridBagConstraints gbc_but = new GridBagConstraints();
-/*
-	this.itmsButton = new JButton("iTunes Music Store");
-	this.itmsButton.addActionListener(new ActionListener() {
-	    public void actionPerformed(ActionEvent e) {
-		MainWindow.this.itmsButtonClicked();
-	    }
-	});
-	this.itmsButton.setEnabled(false);
-	buttons.add(this.itmsButton, gbc_but);
-*/
-
-	this.memoryButton = new JButton("Add to notebook");
-	this.memoryButton.setToolTipText( "Adds current Song Info to your \"notebook\"" );
-	this.memoryButton.addActionListener(new ActionListener() {
-	    public void actionPerformed(ActionEvent e) {
-		MainWindow.this.memorize(MainWindow.this.currentChannelInfo);
-	    }
-	});
-	this.memoryButton.setEnabled(false);
-	//gbc_but.weightx = 1;
-	gbc_but.weightx = 0;
-	gbc_but.fill = GridBagConstraints.NONE;
-	buttons.add(this.memoryButton, gbc_but);
-
-	JPanel searchHolder = new JPanel();
-	searchHolder.setLayout(new GridBagLayout());
-	GridBagConstraints sh_gbc = new GridBagConstraints();
-	searchHolder.setOpaque(false);
-	searchHolder.setBorder(BorderFactory.createTitledBorder(/*BorderFactory.createEtchedBorder(EtchedBorder.LOWERED)*/BorderFactory.createLineBorder(new Color(0,0,0,0), 0) /* the null border */, "Quick Search", TitledBorder.CENTER, TitledBorder.BELOW_BOTTOM, new Font(null, Font.PLAIN, 10)));
-	this.searchField = new JTextField();
-	this.searchField.setToolTipText( "Filters Channel Grid as you type" );
-	this.searchField.getDocument().addDocumentListener(new DocumentListener() {
-	    public void changedUpdate(DocumentEvent e) { this.doit(); }
-	    public void insertUpdate(DocumentEvent e) { this.doit(); }
-	    public void removeUpdate(DocumentEvent e) { this.doit(); }
-	    private void doit() {
-		MainWindow.this.rebuildSortedChannelList();
-		MainWindow.this.selectCurrentChannel();
-	    }
-	});
-	this.searchField.setPreferredSize(new Dimension(100, (int)this.searchField.getPreferredSize().getHeight()));
-	this.searchField.setEnabled(false);
-	sh_gbc.weightx = 1;
-	sh_gbc.gridx = 0;
-	sh_gbc.gridy = 0;
-	sh_gbc.fill = GridBagConstraints.HORIZONTAL;
-	searchHolder.add(this.searchField, sh_gbc);
-	this.searchFieldClear = new JButton();
-	this.searchFieldClear.setIcon(new XIcon());
-	this.searchFieldClear.setToolTipText( "Clear Quick Search filter" );
-	this.searchFieldClear.addActionListener(new ActionListener() {
-	    public void actionPerformed(ActionEvent e) {
-		MainWindow.this.searchField.setText("");
-	    }
-	});
-	this.searchFieldClear.setEnabled(false);
-	sh_gbc.weightx = 0;
-	sh_gbc.gridx = 1;
-	sh_gbc.gridy = 0;
-	// Yes. We want them to overlap.
-	sh_gbc.fill = GridBagConstraints.NONE;
-	sh_gbc.anchor = GridBagConstraints.LINE_END;
-	searchHolder.add(this.searchFieldClear, sh_gbc);
-	gbc_but.insets = new Insets(10, 0, 0, 0);
-	gbc_but.gridy = 1;
-	buttons.add(searchHolder, gbc_but);
-	buttons.setMaximumSize(buttons.getPreferredSize());
-
-	toptop.add(buttons);
-	toptop.add(Box.createHorizontalStrut(20));
-	top.add(toptop);
-	top.add(Box.createVerticalStrut(10));
-	JPanel stripe = new JPanel();
-	stripe.setLayout(new GridBagLayout());
-	GridBagConstraints gbc = new GridBagConstraints();
-
-	JPanel favorites = new JPanel();
-	favorites.setLayout(new GridBagLayout());
-	GridBagConstraints gbc2 = new GridBagConstraints();
-	this.favoriteMenu = new JComboBox();
-	this.favoriteMenu.setToolTipText( "Jump to a Favorite Channel" );
-	this.favoriteMenu.setPreferredSize(new Dimension(150, (int)this.favoriteMenu.getPreferredSize().getHeight()));
-	this.favoriteMenu.addItem("Favorites");
-	this.favoriteMenu.setSelectedIndex(0);
-	this.favoriteMenu.setEnabled(false);
-	this.favoriteMenu.addActionListener(new ActionListener() {
-	    public void actionPerformed(ActionEvent e) {
-		//if (e.getActionCommand() != "comboBoxChanged")
-		//     return;
-		if (MainWindow.this.ignoreFavoriteMenu)
-		    return;
-		Object o = MainWindow.this.favoriteMenu.getSelectedItem();
-		if (!(o instanceof Integer)) {
-		    // They must have selected "Favorites"
-		    // So go reselect the current channel
-		    if (MainWindow.this.currentChannelInfo == null)
-			return;
-		    Integer sid = new Integer(MainWindow.this.currentChannelInfo.getServiceID());
-		    if (MainWindow.this.favoriteList.contains(sid)) {
-			MainWindow.this.ignoreFavoriteMenu = true;
-			MainWindow.this.favoriteMenu.setSelectedItem(sid);
-			MainWindow.this.ignoreFavoriteMenu = false;
+		// -----
+		// PUT MENUS HERE
+		jm = new JMenu("Actions");
+		this.powerMenuItem = new JMenuItem("Turn Radio On");
+		this.powerMenuItem.addActionListener(new ActionListener() {
+		    public void actionPerformed(ActionEvent e) {
+			MainWindow.this.powerToggle();
 		    }
-		    return;
-		}
-		Integer sid = (Integer)o;
-		MainWindow.this.favoriteMenu.setSelectedIndex(0);
-		ChannelInfo i = (ChannelInfo)MainWindow.this.channelList.get(sid);
-		if (i == null)
-		    return;
-		MainWindow.this.setChannel(i.getChannelNumber());
-	    }
-	});
-	this.favoriteMenu.setRenderer(new DefaultListCellRenderer() {
-	    public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-		if (value instanceof Integer && MainWindow.this.channelList != null) {
-		    Integer sid = (Integer)value;
-		    ChannelInfo info = (ChannelInfo)MainWindow.this.channelList.get(sid);
-		    if (info == null) {
-			value = "Service ID " + sid;
-		    } else {
-			value = Integer.toString(info.getChannelNumber()) + " - " + info.getChannelName();
+		});
+		jm.add(this.powerMenuItem);
+		this.compactMenuItem = new JMenuItem("Compact view");
+		this.compactMenuItem.addActionListener(new ActionListener() {
+		    public void actionPerformed(ActionEvent e) {
+			MainWindow.this.toggleCompactView();
 		    }
+		});
+		this.compactMenuItem.setEnabled(false);
+		jm.add(this.compactMenuItem);
+		this.myFrame.getJMenuBar().add(jm);
+
+		class DynamicBookmarkMenu extends JMenu {
+		    // Stupid Nick! How many times do we have to reimplement this same thing!?
+		    // This one fetches the current channel info every time it is opened.
+		    private ChannelInfo info;
+		    public DynamicBookmarkMenu(String name) {
+			super(name);
+				super.addMenuListener(new MenuListener() {
+				    public void menuDeselected(MenuEvent e) {}
+				    public void menuCanceled(MenuEvent e) {}
+				    public void menuSelected(MenuEvent e) {
+						DynamicBookmarkMenu.this.info = new ChannelInfo(MainWindow.this.currentChannelInfo);
+						DynamicBookmarkMenu.this.removeAll();
+						for(int i = 0; i < MainWindow.this.bookmarks.length; i++) {
+						    final Bookmark b = MainWindow.this.bookmarks[i];
+						    JMenuItem jmi = new JMenuItem(b.getName());
+						    jmi.addActionListener(new ActionListener() {
+							public void actionPerformed(ActionEvent e) {
+							    MainWindow.this.bookmarkSurf(b, DynamicBookmarkMenu.this.info);
+							}
+						    });
+						    DynamicBookmarkMenu.this.add(jmi);
+						}
+				    }
+				});
+		    }	// end of constructor
+		}	// end class DynamicBookmarkMenu
+		this.bookmarkMenu = new DynamicBookmarkMenu("Web Bookmarks");
+		this.bookmarkMenu.setEnabled(false);
+		this.myFrame.getJMenuBar().add(this.bookmarkMenu);
+		jm = new JMenu("Windows");
+		if (PlatformFactory.ourPlatform().useMacMenus()) {
+		    jmi = new JMenuItem("Main Window");
+		    jmi.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+			    MainWindow.frontOrShow(MainWindow.this.myFrame);
+			}
+		    });
+		    jm.add(jmi);
 		}
-        	return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-	    }
-	});
+		jmi = new JMenuItem("Notebook");
+		jmi.addActionListener(new ActionListener() {
+		    public void actionPerformed(ActionEvent e) {
+			MainWindow.frontOrShow(MainWindow.this.memoryPanel);
+		    }
+		});
+		jm.add(jmi);
+		this.myFrame.getJMenuBar().add(jm);
+/*
+		this.filterMenuItem = new JMenuItem("Filters");
+		this.filterMenuItem.addActionListener(new ActionListener() {
+		    public void actionPerformed(ActionEvent e) {
+			MainWindow.frontOrShow(MainWindow.this.filterPanel);
+		    }
+		});
+		this.filterMenuItem.setEnabled(false);
+		jm.add(this.filterMenuItem);
+*/
+		// -----
+		if (!PlatformFactory.ourPlatform().useMacMenus()) {
+		    jm = new JMenu("Help");
+		    jmi = new JMenuItem("About JXM...");
+		    jmi.addActionListener(new ActionListener() {
+		        public void actionPerformed(ActionEvent e) {
+			MainWindow.this.about();
+		        }
+		    });
+		    jm.add(jmi);
+		    this.myFrame.getJMenuBar().add(jm);
+		}
+
+		this.myFrame.getContentPane().setLayout(new GridBagLayout());
+		GridBagConstraints frameGBC = new GridBagConstraints();
+	
+		JPanel top = new JPanel();
+		top.setLayout(new BoxLayout(top, BoxLayout.PAGE_AXIS));
+		JPanel toptop = new JPanel();
+		toptop.setLayout(new BoxLayout(toptop, BoxLayout.LINE_AXIS));
+		toptop.add(Box.createHorizontalStrut(20));
+
+		JPanel pictureFrame = new JPanel();
+		pictureFrame.setBorder(BorderFactory.createLoweredBevelBorder());
+		this.channelLogo = new JLabel();
+		this.channelLogo.setToolTipText( "Click to visit this Channel's Home Page" );
+		this.channelLogo.setPreferredSize(new Dimension(150, 100));
+		this.setChannelLogo(-1);
+		this.channelLogo.addMouseListener(new MouseAdapter() {
+		    boolean didPopup = false;
+	
+		    public void mousePressed(MouseEvent e) { this.maybePopup(e); }
+		    public void mouseReleased(MouseEvent e) { this.maybePopup(e); }
+		    public void maybePopup(MouseEvent e) {
+				if (!RadioCommander.theRadio().isOn())
+				    return;
+				if (e.isPopupTrigger()) {
+				    didPopup = true;
+				    ChannelInfo info = new ChannelInfo(MainWindow.this.currentChannelInfo);
+				    JPopupMenu popup = MainWindow.this.new ChannelPopupMenu(info, MainWindow.CHAN_POPUP_NO_TUNE);
+				    popup.show(e.getComponent(), e.getX(), e.getY());
+				}
+		    }
+		    public void mouseClicked(MouseEvent e) {
+			if (didPopup) {
+			    didPopup = false;
+			    return;
+			}
+			if (!RadioCommander.theRadio().isOn())
+			    return;
+			MainWindow.this.surfToChannel(RadioCommander.theRadio().getChannel());
+		    }
+		});
+		pictureFrame.add(this.channelLogo);
+		toptop.add(pictureFrame);
+		toptop.add(Box.createHorizontalStrut(5));
+
+		// First, the "now playing" panel
+		this.nowPlayingPanel = new ChannelInfoPanel();
+		this.nowPlayingPanel.setBorder(BorderFactory.createTitledBorder(
+		    BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Now Playing",
+		    TitledBorder.CENTER, TitledBorder.DEFAULT_POSITION));
+		this.nowPlayingPanel.addMouseListener(new MouseAdapter() {
+		    public void mousePressed(MouseEvent e) { this.maybePopup(e); }
+		    public void mouseReleased(MouseEvent e) { this.maybePopup(e); }
+		    private void maybePopup(MouseEvent e) {
+			if (!RadioCommander.theRadio().isOn())
+			    return;
+			if (!e.isPopupTrigger())
+			    return;
+			ChannelInfo info = new ChannelInfo(MainWindow.this.currentChannelInfo);
+			JPopupMenu jpm = MainWindow.this.new ChannelPopupMenu(info, MainWindow.CHAN_POPUP_NO_TUNE);
+			jpm.show(e.getComponent(), e.getX(), e.getY());
+		    }
+		});
+		toptop.add(this.nowPlayingPanel);
+		toptop.add(Box.createHorizontalStrut(5));
+		JPanel buttons = new JPanel();
+		buttons.setLayout(new GridBagLayout());
+		GridBagConstraints gbc_but = new GridBagConstraints();
+/*
+		this.itmsButton = new JButton("iTunes Music Store");
+		this.itmsButton.addActionListener(new ActionListener() {
+		    public void actionPerformed(ActionEvent e) {
+			MainWindow.this.itmsButtonClicked();
+		    }
+		});
+		this.itmsButton.setEnabled(false);
+		buttons.add(this.itmsButton, gbc_but);
+*/
+
+		this.memoryButton = new JButton("Add to notebook");
+		this.memoryButton.setToolTipText( "Adds current Song Info to your \"notebook\"" );
+		this.memoryButton.addActionListener(new ActionListener() {
+		    public void actionPerformed(ActionEvent e) {
+			MainWindow.this.memorize(MainWindow.this.currentChannelInfo);
+		    }
+		});
+		this.memoryButton.setEnabled(false);
+		//gbc_but.weightx = 1;
+		gbc_but.weightx = 0;
+		gbc_but.fill = GridBagConstraints.NONE;
+		buttons.add(this.memoryButton, gbc_but);
+
+		JPanel searchHolder = new JPanel();
+		searchHolder.setLayout(new GridBagLayout());
+		GridBagConstraints sh_gbc = new GridBagConstraints();
+		searchHolder.setOpaque(false);
+		searchHolder.setBorder(BorderFactory.createTitledBorder(/*BorderFactory.createEtchedBorder(EtchedBorder.LOWERED)*/BorderFactory.createLineBorder(new Color(0,0,0,0), 0) /* the null border */, "Quick Search", TitledBorder.CENTER, TitledBorder.BELOW_BOTTOM, new Font(null, Font.PLAIN, 10)));
+		this.searchField = new JTextField();
+		this.searchField.setToolTipText( "Filters Channel Grid as you type" );
+		this.searchField.getDocument().addDocumentListener(new DocumentListener() {
+		    public void changedUpdate(DocumentEvent e) { this.doit(); }
+		    public void insertUpdate(DocumentEvent e) { this.doit(); }
+		    public void removeUpdate(DocumentEvent e) { this.doit(); }
+		    private void doit() {
+			MainWindow.this.rebuildSortedChannelList();
+			MainWindow.this.selectCurrentChannel();
+		    }
+		});
+		this.searchField.setPreferredSize(new Dimension(100, (int)this.searchField.getPreferredSize().getHeight()));
+		this.searchField.setEnabled(false);
+		sh_gbc.weightx = 1;
+		sh_gbc.gridx = 0;
+		sh_gbc.gridy = 0;
+		sh_gbc.fill = GridBagConstraints.HORIZONTAL;
+		searchHolder.add(this.searchField, sh_gbc);
+		this.searchFieldClear = new JButton();
+		this.searchFieldClear.setIcon(new XIcon());
+		this.searchFieldClear.setToolTipText( "Clear Quick Search filter" );
+		this.searchFieldClear.addActionListener(new ActionListener() {
+		    public void actionPerformed(ActionEvent e) {
+			MainWindow.this.searchField.setText("");
+		    }
+		});
+		this.searchFieldClear.setEnabled(false);
+		sh_gbc.weightx = 0;
+		sh_gbc.gridx = 1;
+		sh_gbc.gridy = 0;
+		// Yes. We want them to overlap.
+		sh_gbc.fill = GridBagConstraints.NONE;
+		sh_gbc.anchor = GridBagConstraints.LINE_END;
+		searchHolder.add(this.searchFieldClear, sh_gbc);
+		gbc_but.insets = new Insets(10, 0, 0, 0);
+		gbc_but.gridy = 1;
+		buttons.add(searchHolder, gbc_but);
+		buttons.setMaximumSize(buttons.getPreferredSize());
+
+		toptop.add(buttons);
+		toptop.add(Box.createHorizontalStrut(20));
+		top.add(toptop);
+		top.add(Box.createVerticalStrut(10));
+		JPanel stripe = new JPanel();
+		stripe.setLayout(new GridBagLayout());
+		GridBagConstraints gbc = new GridBagConstraints();
+	
+		JPanel favorites = new JPanel();
+		favorites.setLayout(new GridBagLayout());
+		GridBagConstraints gbc2 = new GridBagConstraints();
+		this.favoriteMenu = new JComboBox();
+		this.favoriteMenu.setToolTipText( "Jump to a Favorite Channel" );
+		this.favoriteMenu.setPreferredSize(new Dimension(150, (int)this.favoriteMenu.getPreferredSize().getHeight()));
+		this.favoriteMenu.addItem("Favorites");
+		this.favoriteMenu.setSelectedIndex(0);
+		this.favoriteMenu.setEnabled(false);
+		this.favoriteMenu.addActionListener(new ActionListener() {
+		    public void actionPerformed(ActionEvent e) {
+			//if (e.getActionCommand() != "comboBoxChanged")
+			//     return;
+			if (MainWindow.this.ignoreFavoriteMenu)
+			    return;
+			Object o = MainWindow.this.favoriteMenu.getSelectedItem();
+			if (!(o instanceof Integer)) {
+			    // They must have selected "Favorites"
+			    // So go reselect the current channel
+			    if (MainWindow.this.currentChannelInfo == null)
+				return;
+			    Integer sid = new Integer(MainWindow.this.currentChannelInfo.getServiceID());
+			    if (MainWindow.this.favoriteList.contains(sid)) {
+				MainWindow.this.ignoreFavoriteMenu = true;
+				MainWindow.this.favoriteMenu.setSelectedItem(sid);
+				MainWindow.this.ignoreFavoriteMenu = false;
+			    }
+			    return;
+			}
+			Integer sid = (Integer)o;
+			MainWindow.this.favoriteMenu.setSelectedIndex(0);
+			ChannelInfo i = (ChannelInfo)MainWindow.this.channelList.get(sid);
+			if (i == null)
+			    return;
+			MainWindow.this.setChannel(i.getChannelNumber());
+		    }
+		});
+		this.favoriteMenu.setRenderer(new DefaultListCellRenderer() {
+		    public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+			if (value instanceof Integer && MainWindow.this.channelList != null) {
+			    Integer sid = (Integer)value;
+			    ChannelInfo info = (ChannelInfo)MainWindow.this.channelList.get(sid);
+			    if (info == null) {
+				value = "Service ID " + sid;
+			    } else {
+				value = Integer.toString(info.getChannelNumber()) + " - " + info.getChannelName();
+			    }
+			}
+	        	return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+		    }
+		});
 	gbc2.weightx = 1;
 	gbc2.anchor = GridBagConstraints.CENTER;
 	gbc2.fill = GridBagConstraints.HORIZONTAL;
@@ -1562,7 +1571,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	bottom.add(this.muteButton, gbc);
 
 	this.smartMuteButton = new JCheckBox("Smart Mute");
-	this.smartMuteButton.setToolTipText( "Mutes radio volume until next Song" );
+	this.smartMuteButton.setToolTipText( "Mutes radio volume until Artist/Title changes" );
 	this.smartMuteButton.setEnabled(false);
 	this.smartMuteButton.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
@@ -1590,7 +1599,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	bottom.add(this.powerCheckBox, gbc);
 
 	this.sleepButton = new JButton("Sleep");
-	this.sleepButton.setToolTipText( "Turn off radio after a specified time" );
+	this.sleepButton.setToolTipText( "Mute radio after a specified time" );
 	this.sleepButton.setIcon(this.nullIcon);
 	this.sleepButton.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {

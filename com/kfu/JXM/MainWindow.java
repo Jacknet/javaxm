@@ -17,17 +17,13 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.86 2004/04/07 08:14:02 nsayer Exp $
+ $Id: MainWindow.java,v 1.87 2004/04/08 04:38:18 nsayer Exp $
  
  */
 
 package com.kfu.JXM;
 
-import javax.swing.*;
-import javax.swing.border.*;
-import javax.swing.event.*;
-import javax.swing.table.*;
-import java.awt.*;
+import java.awt.datatransfer.*;
 import java.awt.event.*;
 import java.io.*;
 import java.lang.*;
@@ -37,6 +33,11 @@ import java.security.*;
 import java.util.*;
 import java.util.prefs.*;
 import java.util.regex.*;
+import javax.swing.*;
+import javax.swing.border.*;
+import javax.swing.event.*;
+import javax.swing.table.*;
+import java.awt.*;
 
 import com.kfu.xm.*;
 
@@ -585,10 +586,11 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	ChannelInfo oldList[] = this.sortedChannelList;
 	this.sortedChannelList = newList;
 
-	if (oldList.length < newList.length)
-	    this.channelTableModel.fireTableRowsInserted(oldList.length - 1, newList.length - 1);
-	else if (oldList.length > newList.length)
-	    this.channelTableModel.fireTableRowsDeleted(newList.length - 1, oldList.length - 1);
+	if (oldList.length < newList.length) {
+	    this.channelTableModel.fireTableRowsInserted(oldList.length, newList.length - 1);
+	} else if (oldList.length > newList.length) {
+	    this.channelTableModel.fireTableRowsDeleted(newList.length, oldList.length - 1);
+	}
 	for(int j = 0; j < Math.min(oldList.length, newList.length); j++)
 	    if (!oldList[j].equals(newList[j]))
 		this.channelTableModel.fireTableRowsUpdated(j, j);
@@ -1862,13 +1864,134 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 				MainWindow.this.channelSongTime((RadioCommander.SongTiming)item);
 				break;
 			case RadioCommander.ACTIVATION_CHANGED:
-				// XXX ignore for now
+				MainWindow.this.handleActivation(((Boolean)item).booleanValue());
 				break;
 			default:
 				throw new IllegalArgumentException("Which kind of notification?");
 		    }
 		}
 	    });
+    }
+
+    JDialog activationDialog;
+    private class ActivationDialog extends JDialog {
+	private final String radioID;
+	private JFrame frame;
+	public ActivationDialog(JFrame parentFrame, String radioID) {
+	    super(parentFrame, "Your XMPCR is not activated");
+	    this.radioID = radioID;
+	    this.frame = parentFrame;
+
+	    JTabbedPane tabs = new JTabbedPane();
+
+	    JPanel jp = new JPanel();
+	    jp.setLayout(new GridBagLayout());
+	    GridBagConstraints gbc = new GridBagConstraints();
+	    gbc.insets = new Insets(10, 10, 10, 10);
+	    gbc.weightx = 1;
+	    gbc.weighty = 1;
+	    gbc.gridwidth = 2;
+	    JLabel jl = new JLabel(
+"<html>Clicking \"Activate Now\" will take you to<br>" +
+"XM Radio's radio activation web site. Your<br>" +
+"Radio ID will be copied into the clipboard<br>" +
+"for you. When the activation procedure asks<br>" +
+"for your radio ID, you may simply paste it<br>"+
+"into the form.</html>"
+);
+	    jp.add(jl, gbc);
+	    JButton jb = new JButton("Activate later");
+	    jb.addActionListener(new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+		    ActivationDialog.this.hide();
+		}
+	    });
+	    gbc.gridwidth = 1;
+	    gbc.weighty = 0;
+	    gbc.weightx = 0;
+	    gbc.gridx = 1;
+	    gbc.anchor = GridBagConstraints.LINE_START;
+	    jp.add(jb, gbc);
+	    jb = new JButton("Activate Now");
+	    jb.addActionListener(new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+		    StringSelection s = new StringSelection(ActivationDialog.this.radioID);
+		    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(s,s);
+		    ActivationDialog.this.hide();
+		    try {
+			PlatformFactory.ourPlatform().openURL("http://www.xmradio.com/activation/");
+		    }
+		    catch(IOException ex) {
+			JOptionPane.showMessageDialog(ActivationDialog.this.frame, ex.getMessage(), "Could not open XM activation page", JOptionPane.ERROR_MESSAGE);
+		    }
+		}
+	    });
+	    gbc.gridy = 1;
+	    gbc.anchor = GridBagConstraints.LINE_END;
+	    jp.add(jb, gbc);
+	    tabs.addTab("Activate Online", jp);
+
+	    jp = new JPanel();
+	    jp.setLayout(new GridBagLayout());
+	    gbc = new GridBagConstraints();
+	    jl = new JLabel(
+"<html>To activate your XMPCR by phone, call 1-800-852-9696.<br>" +
+"They will ask for your Radio ID.</html>");
+	    gbc.insets = new Insets(10, 10, 10, 10);
+	    gbc.gridy = 0;
+	    gbc.gridx = 0;
+	    jp.add(jl, gbc);
+/*
+	    jl = new JLabel("Your radio ID is");
+	    jl.setHorizontalAlignment(SwingConstants.CENTER);
+	    jl.setFont(new Font(null, Font.PLAIN, 14));
+	    gbc.gridy = 1;
+	    jp.add(jl, gbc);
+*/
+	    jl = new JLabel(this.radioID);
+	    jl.setHorizontalAlignment(SwingConstants.CENTER);
+	    jl.setFont(new Font("Monospaced", Font.BOLD, 18));
+	    jl.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(Color.BLACK), "Your Radio ID"));
+	    jl.setPreferredSize(new Dimension(150, (int)jl.getPreferredSize().getHeight() + 10));
+	    gbc.gridy = 1;
+	    jp.add(jl, gbc);
+	    jb = new JButton("Done");
+	    jb.addActionListener(new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+		    ActivationDialog.this.hide();
+		}
+	    });
+	    gbc.gridy = 2;
+	    jp.add(jb, gbc);
+	    tabs.addTab("Activate by phone", jp);
+
+	    this.getContentPane().add(tabs);
+	    this.pack();
+	}
+    }
+
+    private void handleActivation(final boolean isActivated) {
+	if (isActivated) {
+	    // We transitioned from de-activated to activated.
+	    if (this.activationDialog != null) {
+		this.activationDialog.hide();
+		// XXX - do we need to do anything else to get rid of it?
+		this.activationDialog = null;
+	    }
+	    JOptionPane.showMessageDialog(this.myFrame, "Your XMPCR has been activated.\nThe channel grid will fill in shortly.", "Activation successful", JOptionPane.INFORMATION_MESSAGE);
+	} else {
+	    // create and show an activation dialog.
+	    String radioID;
+	    try {
+		radioID = RadioCommander.theRadio().getRadioID();
+	    }
+	    catch(RadioException ex) {
+		this.handleError(ex);
+		return;
+	    }
+	    this.activationDialog = new ActivationDialog(this.myFrame, radioID);
+	    this.activationDialog.show();
+	}
     }
 
     private int doNotSelectChannelsUntil = -1;

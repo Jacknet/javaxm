@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.104 2004/05/04 16:01:35 nsayer Exp $
+ $Id: MainWindow.java,v 1.105 2004/05/09 16:37:41 nsayer Exp $
  
  */
 
@@ -2534,9 +2534,11 @@ public class MainWindow
 			if (this.currentChannelInfo == null)
 				return;
 			int row = this.rowForSID(this.currentChannelInfo.getServiceID());
-			if (row < 0)
-				return;
-			this.channelTable.addRowSelectionInterval(row, row);
+			if (row < 0) {
+				this.channelTable.clearSelection();
+			} else {
+				this.channelTable.addRowSelectionInterval(row, row);
+			}
 		}
 		finally {
 			this.ignoreSelectionChange = false;

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.83 2004/04/07 07:05:39 nsayer Exp $
+ $Id: MainWindow.java,v 1.84 2004/04/07 08:03:26 nsayer Exp $
  
  */
 
@@ -585,13 +585,13 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	ChannelInfo oldList[] = this.sortedChannelList;
 	this.sortedChannelList = newList;
 
-	if (oldList.length != newList.length)
-	    this.channelTableModel.fireTableDataChanged();
-	else {
-	    for(int j = 0; j < oldList.length; j++)
-		if (!oldList[j].equals(newList[j]))
-		    this.channelTableModel.fireTableRowsUpdated(j, j);
-	}
+	if (oldList.length < newList.length)
+	    this.channelTableModel.fireTableRowsInserted(oldList.length - 1, newList.length - 1);
+	else if (oldList.length > newList.length)
+	    this.channelTableModel.fireTableRowsDeleted(newList.length - 1, oldList.length - 1);
+	for(int j = 0; j < Math.min(oldList.length, newList.length); j++)
+	    if (!oldList[j].equals(newList[j]))
+		this.channelTableModel.fireTableRowsUpdated(j, j);
     }
 
     private HashMap tickList = new HashMap();
@@ -1871,7 +1871,9 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    });
     }
 
+    private int doNotSelectChannelsUntil = -1;
     private void setChannel(int chan) {
+	this.doNotSelectChannelsUntil = chan;
 	try {
 	    RadioCommander.theRadio().setChannel(chan);
 	}
@@ -1912,15 +1914,16 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	}
 	// Attempt to power up the radio
 	try {
+	    RadioCommander.theRadio().registerEventHandler(this);
 	    RadioCommander.theRadio().turnOn(deviceName, initialChannel);
 	}
 	catch(RadioException e) {
+	    RadioCommander.theRadio().unregisterEventHandler(this);
 	    this.powerCheckBox.setSelected(false);
 	    this.handleError(e);
 	    return;
 	}
-	this.poweredUp();
-	RadioCommander.theRadio().registerEventHandler(this);
+	//this.poweredUp();
     }
 
     private final static String CHAN_TABLE_COLS = "ChannelTableColumnOrder";
@@ -2097,8 +2100,13 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private boolean disallowSelectionChange = false;
     private boolean ignoreSelectionChange = false;
     private void selectCurrentChannel() {
+	if (!RadioCommander.theRadio().isOn()) // How can this happen?!
+	    return;
 	if (this.disallowSelectionChange)
 	    return;
+	if (this.doNotSelectChannelsUntil >= 0 && this.doNotSelectChannelsUntil != this.currentChannelInfo.getChannelNumber())
+	    return;
+	this.doNotSelectChannelsUntil = -1;
 	this.ignoreSelectionChange = true;
 	try {
 	if (this.currentChannelInfo == null)

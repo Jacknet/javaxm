@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: RadioCommander.java,v 1.17 2004/04/07 02:37:09 nsayer Exp $
+ $Id: RadioCommander.java,v 1.18 2004/04/07 08:03:27 nsayer Exp $
  
  */
 
@@ -1035,9 +1035,20 @@ t.printStackTrace();
 	catch(InterruptedException e) {
 		// ignore
 	}
-		
+
+	if (this.myDeviceIn == null || this.myDeviceOut == null) {
+	    // This is truly perverse.
+	    //
+	    // If we are suddenly powered down, then we must have gotten some sort of
+	    // exception handling while we were waiting.
+	    //
+	    // We'll just ASSume that this was already sent to the UI via the async
+	    // exception reporting and just bail.
+	    return;
+	}
+
 	// The radio power-up may have failed, and we may only now be hearing about it.
-	this.checkDisposed();
+	//this.checkDisposed();
 
 	// Audio is now going. Notify the UI.
         this.notifyGUI(POWERED_ON);
@@ -1060,7 +1071,9 @@ t.printStackTrace();
 		
 	// Set up the channel surfer
 	this.lastChannel = 0;
-	this.channelList = new HashSet();
+	synchronized(this.channelList) {
+	    this.channelList.clear();
+	}
 	this.theSurfer = new Timer();
 	this.theSurfer.schedule(new TimerTask() {
 	    public void run() {
@@ -1286,13 +1299,16 @@ finally {
     // The last channel we polled
     int lastChannel;
     // The list of channels we're aware of
-    HashSet channelList;
+    HashSet channelList = new HashSet();
     // The channel surfer
     Timer theSurfer;
 
     public void setChannelList(int[] list) {
+	synchronized(this.channelList) {
+	this.channelList.clear();
 	for(int i = 0; i < list.length; i++)
 	    this.channelList.add(new Integer(list[i]));
+	}
     }
     private void timerJob() {
 	ChannelInfo info;
@@ -1311,6 +1327,7 @@ finally {
 
 	if (info == null) {
 	    // We fell off the end. Delete any channels higher than the last one
+	synchronized(this.channelList) {
 	    Iterator i = this.channelList.iterator();
 	    while(i.hasNext()) {
 	        int chan = ((Integer)i.next()).intValue();
@@ -1319,6 +1336,7 @@ finally {
 		    this.notifyGUI(CHANNEL_DELETE, new Integer(chan));
 	        }
 	    }
+	}
 	    this.lastChannel = 0;
 	    return;
 	}
@@ -1328,6 +1346,7 @@ finally {
 
 	// Now we need to go through the channelList sending delete notifications for any channels that
 	// aren't there anymore.
+	synchronized(this.channelList) {
 	Iterator i = this.channelList.iterator();
 	while(i.hasNext()) {
 	    int chan = ((Integer)i.next()).intValue();
@@ -1335,6 +1354,7 @@ finally {
 		i.remove();
 		this.notifyGUI(CHANNEL_DELETE, new Integer(chan));
 	    }
+	}
 	}
 	this.lastChannel = info.getChannelNumber();
     }

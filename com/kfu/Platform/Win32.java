@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: Win32.java,v 1.6 2004/04/10 08:38:55 nsayer Exp $
+ $Id: Win32.java,v 1.7 2004/04/10 17:44:46 nsayer Exp $
  
  */
 
@@ -91,13 +91,14 @@ public class Win32 implements IPlatformHandler {
 	    super.showMenu(x, y);
 	}
 
-	private JMenuItem chanItem, artistItem, titleItem;
+	private JMenuItem chanItem, artistItem, titleItem, memoryItem;
 	private JCheckBoxMenuItem muteItem, smartMuteItem;
 	private JMenu bookmarkMenu, favoriteMenu;
 
+	private ChannelInfo menuInfo;
+
 	private void rebuild() {
-	    final ChannelInfo info;
-	    if (!Win32.this.cb.radioIsOn() || (info = Win32.this.cb.getChannelInfo()) == null) {
+	    if (!Win32.this.cb.radioIsOn() || (menuInfo = Win32.this.cb.getChannelInfo()) == null) {
 		this.chanItem.setText("");
 		this.artistItem.setText("");
 		this.titleItem.setText("");
@@ -106,13 +107,14 @@ public class Win32 implements IPlatformHandler {
 		this.muteItem.setState(false);
 		this.smartMuteItem.setEnabled(false);
 		this.smartMuteItem.setState(false);
+		this.memoryItem.setEnabled(false);
 		this.bookmarkMenu.removeAll();
 		this.favoriteMenu.removeAll();
 		return;
 	    }
-	    this.chanItem.setText(Integer.toString(info.getChannelNumber()) + " - " + info.getChannelName());
-	    this.artistItem.setText(info.getChannelArtist());
-	    this.titleItem.setText(info.getChannelTitle());
+	    this.chanItem.setText(Integer.toString(menuInfo.getChannelNumber()) + " - " + menuInfo.getChannelName());
+	    this.artistItem.setText(menuInfo.getChannelArtist());
+	    this.titleItem.setText(menuInfo.getChannelTitle());
 	    this.setEnabled(true);
 
 	    int muteState = Win32.this.cb.getMuteState();
@@ -120,6 +122,7 @@ public class Win32 implements IPlatformHandler {
 	    this.smartMuteItem.setState(muteState == PlatformFactory.SMART_MUTE_ON);
 	    this.muteItem.setEnabled(true);
 	    this.smartMuteItem.setEnabled(true);
+	    this.memoryItem.setEnabled(true);
 
 	    // rebuild the bookmark menu
 	    Bookmark[] marks = Win32.this.cb.getBookmarks();
@@ -130,7 +133,7 @@ public class Win32 implements IPlatformHandler {
 		jmi.addActionListener(new ActionListener() {
 		    public void actionPerformed(ActionEvent e) {
 			try {
-			    mark.surf(info);
+			    mark.surf(menuInfo);
 			}
 			catch(IOException ex) {
 			    // now what?
@@ -173,6 +176,16 @@ public class Win32 implements IPlatformHandler {
 
 	    this.favoriteMenu = new JMenu("Favorites");
 	    this.add(this.favoriteMenu);
+	    this.addSeparator();
+
+	    this.memoryItem = new JMenuItem("Add to notebook");
+	    this.memoryItem.addActionListener(new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+		    Win32.this.cb.platformNotify(PlatformFactory.PLAT_CB_MEMORY, menuInfo);
+		}
+	    });
+	    this.memoryItem.setEnabled(false);
+	    this.add(this.memoryItem);
 	    this.addSeparator();
 
 	    this.muteItem = new JCheckBoxMenuItem("Mute");

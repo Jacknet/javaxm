@@ -664,40 +664,48 @@ e.printStackTrace();
 
     // the RadioEventHandler interface
     public void notify(RadioCommander theRadio, final int type, final Object item) {
+	// This must be handled immediately to make sure we close the Tracker when quitting.
+	if (type == RadioCommander.POWERED_OFF) {
+	    this.poweredDown();
+	    return;
+	}
+	//try {
 	// First, get back on the main thread
-	SwingUtilities.invokeLater(new Runnable() {
-	    public void run() {
-	    switch(type) {
-	    case RadioCommander.POWERED_ON:
-		MainWindow.this.poweredUp();
-		break;
-	    case RadioCommander.POWERED_OFF:
-		MainWindow.this.poweredDown();
-		break;
-	    case RadioCommander.CHANNEL_DELETE:
-		MainWindow.this.deleteChannel(((Integer)item).intValue());
-		break;
-	    case RadioCommander.CHANNEL_INFO_UPDATE:
-		MainWindow.this.update((ChannelInfo) item);
-		break;
-	    case RadioCommander.EXCEPTION:
-		MainWindow.this.handleError((Exception)item);
-		break;
-	    case RadioCommander.CHANNEL_CHANGED:
-		MainWindow.this.channelChanged();
-		break;
-	    case RadioCommander.MUTE_CHANGED:
-		MainWindow.this.muteChanged();
-		break;
-	    case RadioCommander.ACTIVATION_CHANGED:
-	    case RadioCommander.SONG_TIME_UPDATE:
-		// XXX ignore for now
-		break;
-	    default:
-		throw new IllegalArgumentException("Which kind of notification?");
-	    }
-	    }
-	});
+	    SwingUtilities.invokeLater(new Runnable() {
+		public void run() {
+		    switch(type) {
+			case RadioCommander.POWERED_ON:
+				MainWindow.this.poweredUp();
+				break;
+			case RadioCommander.CHANNEL_DELETE:
+				MainWindow.this.deleteChannel(((Integer)item).intValue());
+				break;
+			case RadioCommander.CHANNEL_INFO_UPDATE:
+				MainWindow.this.update((ChannelInfo) item);
+				break;
+			case RadioCommander.EXCEPTION:
+				MainWindow.this.handleError((Exception)item);
+				break;
+			case RadioCommander.CHANNEL_CHANGED:
+				MainWindow.this.channelChanged();
+				break;
+			case RadioCommander.MUTE_CHANGED:
+				MainWindow.this.muteChanged();
+				break;
+			case RadioCommander.ACTIVATION_CHANGED:
+			case RadioCommander.SONG_TIME_UPDATE:
+				// XXX ignore for now
+				break;
+			default:
+				throw new IllegalArgumentException("Which kind of notification?");
+		    }
+		}
+	    });
+	//}
+	//catch(Exception e) {
+//System.err.println(e.getMessage());
+//e.printStackTrace();
+	//}
     }
 
     private void turnPowerOff() {
@@ -754,33 +762,37 @@ e.printStackTrace();
 
     private void poweredDown() {
 	RadioCommander.theRadio().unregisterEventHandler(this);
-	this.channelList = null;
-	this.channelTableModel.fireTableDataChanged();
-	this.channelNumberLabel.setText("");
-	this.channelNameLabel.setText("");
-	this.channelGenreLabel.setText("");
-	this.channelArtistLabel.setText("");
-	this.channelTitleLabel.setText("");
-	this.deviceMenu.setEnabled(true);
-	this.powerCheckBox.setSelected(false);
-	this.muteButton.setEnabled(false);
-	this.smartMuteButton.setEnabled(false);
-	this.itmsButton.setEnabled(false);
-	this.muteButton.setSelected(false);
-	this.smartMuteButton.setSelected(false);
-	this.satelliteMeter.setValue(0);
-	this.terrestrialMeter.setValue(0);
-	this.setChannelLogo(-1);
-	new Thread() {
-	    public void run() {
+	/*new Thread() {
+	    public void run() { */
 		try {
 		    XMTracker.theTracker().turnOff();
 		}
 		catch(TrackerException e) {
 		    MainWindow.this.handleTrackerError(e);
 		}
+	/*    }
+	}.start(); */
+	this.channelList = null;
+	this.channelTableModel.fireTableDataChanged();
+	SwingUtilities.invokeLater(new Runnable() {
+	    public void run() {
+		MainWindow.this.channelNumberLabel.setText("");
+		MainWindow.this.channelNameLabel.setText("");
+		MainWindow.this.channelGenreLabel.setText("");
+		MainWindow.this.channelArtistLabel.setText("");
+		MainWindow.this.channelTitleLabel.setText("");
+		MainWindow.this.deviceMenu.setEnabled(true);
+		MainWindow.this.powerCheckBox.setSelected(false);
+		MainWindow.this.muteButton.setEnabled(false);
+		MainWindow.this.smartMuteButton.setEnabled(false);
+		MainWindow.this.itmsButton.setEnabled(false);
+		MainWindow.this.muteButton.setSelected(false);
+		MainWindow.this.smartMuteButton.setSelected(false);
+		MainWindow.this.satelliteMeter.setValue(0);
+		MainWindow.this.terrestrialMeter.setValue(0);
+		MainWindow.this.setChannelLogo(-1);
 	    }
-	}.start();
+	});
     }
 
     private void handleTrackerError(final Exception e) {

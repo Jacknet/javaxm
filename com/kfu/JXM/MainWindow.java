@@ -763,6 +763,8 @@ e.printStackTrace();
 	URL logoUrl = this.getClass().getResource("/logos/" + chan + ".gif");
 	if (logoUrl == null)
 	    logoUrl = this.getClass().getResource("/logos/default.gif");
+	if (logoUrl == null)
+	    return; // just give up rather than throw outwards
 	Icon logo = new ImageIcon(logoUrl);
 	this.channelLogo.setIcon(logo);
     }

@@ -752,6 +752,7 @@ public class RadioCommander implements IAsyncExceptionHandler {
     
     private InputStream myDeviceIn;
     private OutputStream myDeviceOut;
+    private SerialPort mySerialPort;
     
     public static String[] getPotentialDevices() {
 ArrayList l = new ArrayList();
@@ -778,6 +779,7 @@ ArrayList l = new ArrayList();
     private RadioCommander() {
         this.myDeviceIn = null;
         this.myDeviceOut = null;
+        this.mySerialPort = null;
     }
     
     private synchronized Response performCommand(Command command, Class expectedReplyClass) throws RadioException {
@@ -953,6 +955,7 @@ ArrayList l = new ArrayList();
 
             this.myDeviceOut = sp.getOutputStream();
             this.myDeviceIn = sp.getInputStream();
+	    this.mySerialPort = sp;
 
         }
         catch (Exception e) {
@@ -967,6 +970,7 @@ ArrayList l = new ArrayList();
 				this.myDeviceIn.read();
         }
         catch(IOException e) {
+	    this.Dispose();
             throw new RadioException(e.getMessage());
         }
         
@@ -1084,25 +1088,25 @@ ArrayList l = new ArrayList();
     // After calling Dispose(), you can no longer call any other methods on this object.
     private boolean disposing = false;
     public void Dispose() {
-		if (this.disposing)
-			return;
-		this.disposing = true;
+	if (this.disposing)
+	    return;
+	this.disposing = true;
         if (this.theSurfer != null)
             this.theSurfer.cancel();
         this.theSurfer = null;
         
-		InputStream in = this.myDeviceIn;
-		this.myDeviceIn = null;
+	InputStream in = this.myDeviceIn;
+	this.myDeviceIn = null;
         try {
             if (in != null)
                 in.close();
-		}
+	}
         catch (IOException e) {
             // This is really unlikely
             Log("Could not close device input: " + e.getMessage());
         }
-		OutputStream out = this.myDeviceOut;
-		this.myDeviceOut = null;
+	OutputStream out = this.myDeviceOut;
+	this.myDeviceOut = null;
         try {
             if (out != null)
                 out.close();
@@ -1111,19 +1115,22 @@ ArrayList l = new ArrayList();
             // This is really unlikely
             Log("Could not close device output: " + e.getMessage());
         }
+	if (this.mySerialPort != null)
+	    this.mySerialPort.close();
+	this.mySerialPort = null;
 		
-		/* 
-			if (this.myReplyWatcher != null) {
-				try {
-					this.myReplyWatcher.join();
-				}
-				catch(InterruptedException e) {
-					// ignore
-				}
-			}
-		 */
+	/* 
+	if (this.myReplyWatcher != null) {
+	    try {
+		this.myReplyWatcher.join();
+	    }
+	    catch(InterruptedException e) {
+		// ignore
+	    }
+	}
+	*/
         this.myReplyWatcher = null;
-		this.disposing = false;
+	this.disposing = false;
     }
     
     public void turnOff() throws RadioException {

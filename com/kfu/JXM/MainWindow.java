@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.42 2004/03/09 07:11:04 nsayer Exp $
+ $Id: MainWindow.java,v 1.43 2004/03/09 08:24:45 nsayer Exp $
  
  */
 
@@ -118,9 +118,21 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
     private int sortField = 0;
     private boolean sortDirection = true;
-    private Integer[] getSortedSidList() {
-	Integer sids[] = (Integer[])this.channelList.keySet().toArray(new Integer[0]);
-	Arrays.sort(sids, new Comparator() {
+
+    private HashSet filterList = new HashSet();
+
+    private Integer[] sortedSidList = new Integer[0];
+
+    // Wow. This operation is stunningly inefficient
+    private void rebuildSortedSidList() {
+	ArrayList sids = new ArrayList();
+	Iterator i = this.channelList.keySet().iterator();
+	while(i.hasNext()) {
+	    Integer sid = (Integer)i.next();
+	    if (!this.filterList.contains(sid))
+		sids.add(sid);
+	}
+	Collections.sort(sids, new Comparator() {
 	    public int compare(Object o1, Object o2) {
 		Integer sid1 = (Integer)o1;
 		Integer sid2 = (Integer)o2;
@@ -156,7 +168,11 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		return out;
 	    }
 	});
-	return sids;
+	Integer oldList[] = this.sortedSidList;
+	Integer newList[] = (Integer[])sids.toArray(new Integer[0]);
+	this.sortedSidList = newList;
+	if (!Arrays.equals(oldList, newList))
+	    this.channelTableModel.fireTableDataChanged();
     }
 
     private HashMap tickList = new HashMap();
@@ -177,7 +193,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     }
 
     private int rowForSID(int sid) {
-	Integer sids[] = this.getSortedSidList();
+	Integer sids[] = this.sortedSidList;
 	for(int i = 0; i < sids.length; i++)
 	    if (sids[i].intValue() == sid)
 		return i;
@@ -197,7 +213,10 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     }
 
     private int sidForRow(int row) {
-	return (this.getSortedSidList()[row]).intValue();
+	// This can happen at startup.
+	if (this.sortedSidList.length != this.channelList.size())
+	    this.rebuildSortedSidList();
+	return (this.sortedSidList[row]).intValue();
     }
 
     private int totalTicks() {
@@ -758,6 +777,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		}
 		JXM.myUserNode().putInt(SORT_FIELD, MainWindow.this.sortField);
 		JXM.myUserNode().putBoolean(SORT_DIR, MainWindow.this.sortDirection);
+		MainWindow.this.rebuildSortedSidList();
 		MainWindow.this.scrollToCurrentChannel();
 	    }
 	});
@@ -898,6 +918,11 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		    ticks = new Integer(0);
 		ticks = new Integer(ticks.intValue() + 1);
 		MainWindow.this.tickList.put(sid, ticks);
+		if (MainWindow.this.sortField == 5) {
+		    // If we're not sorting by percentage, then this could not have changed the order.
+		    // Otherwise, it just might.
+		    MainWindow.this.rebuildSortedSidList();
+		}
 		MainWindow.this.firePercentChanges();
 	    }
 	}, 0, 1000);
@@ -937,14 +962,14 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     }
 
     private void firePercentChanges() {
-	Iterator i = this.tickList.keySet().iterator();
-	while(i.hasNext()) {
-	    Integer sid = (Integer)i.next();
-	    int row = this.rowForSID(sid.intValue());
-	    if (row < 0)
-		continue;
-	    this.channelTableModel.fireTableRowsUpdated(row, row);
-	}
+       Iterator i = this.tickList.keySet().iterator();
+       while(i.hasNext()) {
+           Integer sid = (Integer)i.next();
+           int row = this.rowForSID(sid.intValue());
+           if (row < 0)
+               continue;
+           this.channelTableModel.fireTableRowsUpdated(row, row);
+       }
     }
 
     private Bookmark itmsButtonMark = new Bookmark("", "itms://phobos.apple.com/WebObjects/MZSearch.woa/wa/com.apple.jingle.search.DirectAction/advancedSearchResults?artistTerm={ARTIST}&songTerm={TITLE}");
@@ -1482,6 +1507,9 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	} else {
 	    this.channelTableModel.fireTableRowsUpdated(row, row);
 	}
+
+	// Alas, if we're sorting on artist or title, then any update could dirty the sort list
+	this.rebuildSortedSidList();
 
 	this.selectCurrentChannel();
 

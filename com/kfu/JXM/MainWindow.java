@@ -158,6 +158,8 @@ public static void main(String[] args) { new MainWindow(); }
 	this.setChannelLogo(-1);
 	this.channelLogo.addMouseListener(new MouseAdapter() {
 	    public void mouseClicked(MouseEvent e) {
+		if (!RadioCommander.theRadio().isOn())
+		    return;
 		MainWindow.this.surfToChannel(RadioCommander.theRadio().getChannel());
 	    }
 	});

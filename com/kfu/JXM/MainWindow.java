@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.48 2004/03/11 06:52:06 nsayer Exp $
+ $Id: MainWindow.java,v 1.49 2004/03/11 07:07:02 nsayer Exp $
  
  */
 
@@ -1264,7 +1264,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		MainWindow.this.setChannelLogo(-1);
 		MainWindow.this.favoriteMenu.setEnabled(false);
 		MainWindow.this.favoriteCheckbox.setEnabled(false);
-		MainWindow.this.bookmarkMenu.setEnabled(true);
+		MainWindow.this.bookmarkMenu.setEnabled(false);
 	        MainWindow.this.preferences.turnOff();
 	    }
 	});
@@ -1308,6 +1308,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.setChannelLogo(channel);
 
 	Integer sid = new Integer(this.sidForChannel(channel));
+	this.currentChannelInfo = (ChannelInfo)this.channelList.get(sid);
 	this.favoriteCheckbox.setSelected(this.favoriteList.contains(sid));
 	this.scrollToCurrentChannel();
     }

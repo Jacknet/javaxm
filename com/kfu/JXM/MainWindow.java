@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.45 2004/03/10 06:19:19 nsayer Exp $
+ $Id: MainWindow.java,v 1.46 2004/03/11 04:18:13 nsayer Exp $
  
  */
 
@@ -255,7 +255,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private Bookmark[] bookmarks;
     private JProgressBar satelliteMeter;
     private JProgressBar terrestrialMeter;
-    private JButton itmsButton;
+    //private JButton itmsButton;
+    private JButton memoryButton;
     private JSlider ratingSlider;
     private JComboBox favoriteMenu;
     private JToggleButton favoriteCheckbox;
@@ -265,6 +266,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	if (RadioCommander.theRadio().isOn())
 	    MainWindow.this.turnPowerOff();
 	this.saveChannelTableLayout();
+	this.saveTickList();
+	this.saveMemory();
 	System.exit(0);
     }
     public void prefs() {
@@ -475,6 +478,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	toptop.add(Box.createHorizontalStrut(5));
 	JPanel buttons = new JPanel();
 	buttons.setLayout(new BoxLayout(buttons, BoxLayout.PAGE_AXIS));
+/*
 	this.itmsButton = new JButton("iTunes Music Store");
 	this.itmsButton.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
@@ -483,6 +487,16 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	});
 	this.itmsButton.setEnabled(false);
 	buttons.add(this.itmsButton);
+*/
+
+	this.memoryButton = new JButton("Add to memory");
+	this.memoryButton.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		MainWindow.this.memorize(MainWindow.this.currentChannelInfo);
+	    }
+	});
+	this.memoryButton.setEnabled(false);
+	buttons.add(this.memoryButton);
 
 	toptop.add(buttons);
 	toptop.add(Box.createHorizontalStrut(20));
@@ -931,6 +945,9 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
 	this.loadFavorites();
 
+	this.loadTickList();
+	this.loadMemory();
+
 	// We have a device saved... Try and power up
 	String deviceName = this.preferences.getDevice();
 	if (deviceName != null)
@@ -958,13 +975,17 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
        }
     }
 
+/*
     private Bookmark itmsButtonMark = new Bookmark("", "itms://phobos.apple.com/WebObjects/MZSearch.woa/wa/com.apple.jingle.search.DirectAction/advancedSearchResults?artistTerm={ARTIST}&songTerm={TITLE}");
     private void itmsButtonClicked() {
 	this.bookmarkSurf(this.itmsButtonMark, this.currentChannelInfo);
     }
+*/
 
     private Bookmark channelMark = new Bookmark("", "http://www.xmradio.com/programming/channel_page.jsp?ch={NUMBER}");
     private void surfToChannel(int chan) {
+	if (this.currentChannelInfo == null)
+	    return;
 	this.bookmarkSurf(this.channelMark, this.currentChannelInfo);
     }
 
@@ -1155,6 +1176,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
     private final static String CHAN_TABLE_COLS = "ChannelTableColumnOrder";
     private final static String GRID_NODE = "ChannelGrid";
+    private final static String MEMORY_NODE = "MemoryList";
     private final static String TICK_NODE = "ChannelUsage";
     private final static String SORT_DIR = "SortDirection";
     private final static String SORT_FIELD = "SortColumn";
@@ -1167,7 +1189,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.loadChannelList();
 	this.muteButton.setEnabled(true);
 	this.smartMuteButton.setEnabled(true);
-	this.itmsButton.setEnabled(true);
+	//this.itmsButton.setEnabled(true);
+	this.memoryButton.setEnabled(true);
 	this.muteButton.setSelected(false);
 	this.smartMuteButton.setSelected(false);
 	this.smartMuteInfo = null;
@@ -1213,7 +1236,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		MainWindow.this.powerCheckBox.setSelected(false);
 		MainWindow.this.muteButton.setEnabled(false);
 		MainWindow.this.smartMuteButton.setEnabled(false);
-		MainWindow.this.itmsButton.setEnabled(false);
+		//MainWindow.this.itmsButton.setEnabled(false);
+		MainWindow.this.memoryButton.setEnabled(false);
 		MainWindow.this.muteButton.setSelected(false);
 		MainWindow.this.smartMuteButton.setSelected(false);
 		MainWindow.this.satelliteMeter.setValue(0);
@@ -1363,7 +1387,9 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    }
 	    node.put(Integer.toString(info.getServiceID()), sb.toString());
 	}
-	node = JXM.myUserNode().node(TICK_NODE);
+    }
+    private void saveTickList() {
+	Preferences node = JXM.myUserNode().node(TICK_NODE);
 	try {
 	    node.clear();
 	}
@@ -1372,7 +1398,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	}
 	if (this.tickList == null)
 	    return;
-	i = this.tickList.keySet().iterator();
+	Iterator i = this.tickList.keySet().iterator();
 	while(i.hasNext()) {
 	    Integer sid = (Integer)i.next();
 	    int ticks = ((Integer)this.tickList.get(sid)).intValue();
@@ -1412,7 +1438,10 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    }
 	    this.channelList.put(new Integer(info.getServiceID()), info);
 	}
-	node = JXM.myUserNode().node(TICK_NODE);
+    }
+    private void loadTickList() {
+	Preferences node = JXM.myUserNode().node(TICK_NODE);
+	String[] keys;
 	try {
 	    keys = node.keys();
 	}
@@ -1531,7 +1560,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	c.getContent();
     }
 
-    private void update(final ChannelInfo i) {
+    private synchronized void update(final ChannelInfo i) {
 	// We got an update. First, we file it, firing table update events
 	// while we're at it.
 	if (this.channelList == null) // spurious update
@@ -1588,5 +1617,85 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    return;
 	Rectangle rect = this.channelTable.getCellRect(row, 0, true);
 	this.channelTable.scrollRectToVisible(rect);
+    }
+
+    private void loadMemory() {
+	Preferences node = JXM.myUserNode().node(MEMORY_NODE);
+	String[] keys;
+	try {
+	    keys = node.keys();
+	}
+	catch(BackingStoreException e) {
+	    // ignore
+	    return;
+	}
+	this.memoryListModel.removeAllElements();
+	for(int i = 0; i < keys.length; i++) {
+	    String record = node.get(keys[i], "");
+	    String[] fields = record.split(":");
+	    if (fields.length != 7)
+		continue;
+	    try {
+		Date when = new Date(Long.parseLong(fields[0]));
+		int chan = Integer.parseInt(fields[1]);
+		int sid = Integer.parseInt(fields[2]);
+		String name = URLDecoder.decode(fields[3], "US-ASCII");
+		String genre = URLDecoder.decode(fields[4], "US-ASCII");
+		String artist = URLDecoder.decode(fields[5], "US-ASCII");
+		String title = URLDecoder.decode(fields[6], "US-ASCII");
+		ChannelInfo ci = new ChannelInfo(chan, sid, genre, name, artist, title);
+		MemoryListItem mli = new MemoryListItem(when, ci);
+		int j;
+		for(j = 0; j < this.memoryListModel.getSize(); j++)
+		    if (((MemoryListItem)this.memoryListModel.getElementAt(j)).getDate().getTime() > when.getTime())
+			continue;
+		this.memoryListModel.add(j, mli);
+	    }
+	    catch(NumberFormatException e) {
+		// ignore
+	    }
+	    catch(UnsupportedEncodingException e) {
+		// impossible
+	    }
+	}
+    }
+    private void saveMemory() {
+	Preferences node = JXM.myUserNode().node(MEMORY_NODE);
+	try {
+	    node.clear();
+	}
+	catch(BackingStoreException e) {
+	    return;
+	}
+	for(int i = 0; i < this.memoryListModel.getSize(); i++) {
+	    try{
+	    MemoryListItem mli = ((MemoryListItem)this.memoryListModel.getElementAt(i));
+	    StringBuffer sb = new StringBuffer();
+	    sb.append(Long.toString(mli.getDate().getTime()));
+	    sb.append(":");
+	    sb.append(mli.getChannelInfo().getChannelNumber());
+	    sb.append(":");
+	    sb.append(mli.getChannelInfo().getServiceID());
+	    sb.append(":");
+	    sb.append(URLEncoder.encode(mli.getChannelInfo().getChannelName(), "US-ASCII"));
+	    sb.append(":");
+	    sb.append(URLEncoder.encode(mli.getChannelInfo().getChannelGenre(), "US-ASCII"));
+	    sb.append(":");
+	    sb.append(URLEncoder.encode(mli.getChannelInfo().getChannelArtist(), "US-ASCII"));
+	    sb.append(":");
+	    sb.append(URLEncoder.encode(mli.getChannelInfo().getChannelTitle(), "US-ASCII"));
+	    node.put(Integer.toString(i), sb.toString());
+	    }
+	    catch(UnsupportedEncodingException e) {
+		// impossible;
+	    }
+	}
+    }
+
+    private DefaultListModel memoryListModel = new DefaultListModel();
+
+    private void memorize(ChannelInfo i) {
+	MemoryListItem mli = new MemoryListItem(i);
+	this.memoryListModel.add(this.memoryListModel.getSize(), mli);
     }
 }

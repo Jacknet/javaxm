@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.97 2004/05/02 01:10:43 nsayer Exp $
+ $Id: MainWindow.java,v 1.98 2004/05/02 17:47:54 nsayer Exp $
  
  */
 
@@ -2801,4 +2801,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.channelTable.scrollRectToVisible(rect);
     }
 
+    // Pass-through routine for the search system.
+    double getSearchAccuracy() { return this.preferences.getSearchAccuracy(); }
 }

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: SearchSystem.java,v 1.5 2004/05/02 01:14:06 nsayer Exp $
+ $Id: SearchSystem.java,v 1.6 2004/05/02 17:47:55 nsayer Exp $
  
  */
 
@@ -44,12 +44,7 @@ import com.wcohen.secondstring.*;
 
 public class SearchSystem {
 
-    private static float winningScore = .9f;
-
-    // Set by the preferences pane
-    public static void setSearchMatchScore(float win) {
-	winningScore = win;
-    }
+    private double getWinningScore() { return this.parent.getSearchAccuracy(); }
 
     private final static Pattern legal = Pattern.compile("^\\s*(\\d+|\\d+\\s*\\-\\s*\\d+)(\\s*,\\s*(\\d+|\\d+\\s*\\-\\s*\\d+))*\\s*$");
     private final static Pattern extract = Pattern.compile("((?:\\d+)(?:\\s*\\-\\s*\\d+)?)");
@@ -188,12 +183,12 @@ public class SearchSystem {
 
 	    // Step 2... If there is an artist match, get the artist score
 	    //           If lower than the winningScore, return false
-	    if (this.artistMatcher != null && matchAlgorithm.score(this.artistMatcher, artist) < winningScore)
+	    if (this.artistMatcher != null && matchAlgorithm.score(this.artistMatcher, artist) < getWinningScore())
 		return false;
 
 	    // Step 3... If there is a title match, get the title score
 	    //           If lower than the winningScore, return false
-	    if (this.titleMatcher != null && matchAlgorithm.score(this.titleMatcher, title) < winningScore)
+	    if (this.titleMatcher != null && matchAlgorithm.score(this.titleMatcher, title) < getWinningScore())
 		return false;
 
 	    return true;

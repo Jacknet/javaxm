@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: PreferencesDialog.java,v 1.28 2004/05/02 01:10:44 nsayer Exp $
+ $Id: PreferencesDialog.java,v 1.29 2004/05/02 17:47:55 nsayer Exp $
  
  */
 
@@ -36,24 +36,25 @@ import java.util.prefs.*;
 import com.kfu.xm.*;
 
 public class PreferencesDialog extends JDialog {
-    JTabbedPane theTabs;
-    JComboBox deviceMenu;
-    JLabel radioID;
-    JTextField trackerURL;
-    JTextField trackerUser;
-    JPasswordField trackerPassword;
-    JCheckBox trackerEnabled;
-    JTextField browserPath = null;
-    IPreferenceCallbackHandler handler;
-    DefaultListModel bookmarks = new DefaultListModel();
-    JList bookmarkList;
-    JButton bookmarkDelButton;
-    JTextField bmName;
-    JTextField bmURL;
-    JButton moveUpButton;
-    JButton moveDownButton;
-    JCheckBox startupCheckbox;
-    JComboBox sleepAction;
+    private JTabbedPane theTabs;
+    private JComboBox deviceMenu;
+    private JLabel radioID;
+    private JTextField trackerURL;
+    private JTextField trackerUser;
+    private JPasswordField trackerPassword;
+    private JCheckBox trackerEnabled;
+    private JTextField browserPath = null;
+    private IPreferenceCallbackHandler handler;
+    private DefaultListModel bookmarks = new DefaultListModel();
+    private JList bookmarkList;
+    private JButton bookmarkDelButton;
+    private JTextField bmName;
+    private JTextField bmURL;
+    private JButton moveUpButton;
+    private JButton moveDownButton;
+    private JCheckBox startupCheckbox;
+    private JComboBox sleepAction;
+    private JSlider searchAccuracy;
 
     String[] sleepActions = {"Mute", "Turn Radio Off", "Quit" };
     static final int SLEEP_MUTE = 0;
@@ -374,6 +375,7 @@ public class PreferencesDialog extends JDialog {
 	gbc.gridy++;
 	gbc.gridx = 0;
 	gbc.gridwidth = 2;
+	gbc.insets = new Insets(5, 0, 5, 0);
 	jp.add(jb, gbc);
 
 	this.startupCheckbox = new JCheckBox("Check for new version at startup");
@@ -390,6 +392,36 @@ public class PreferencesDialog extends JDialog {
 	this.sleepAction = new JComboBox(sleepActions);
 	gbc.gridx = 1;
 	jp.add(this.sleepAction, gbc);
+
+	jl = new JLabel("search accuracy");
+	gbc.gridx = 0;
+	gbc.gridy++;
+	gbc.gridwidth = 2;
+	gbc.insets = new Insets(5, 0, 0, 0);
+	jp.add(jl, gbc);
+	this.searchAccuracy = new JSlider();
+	this.searchAccuracy.setMinimum(500);
+	this.searchAccuracy.setMaximum(1000);
+	this.searchAccuracy.setMajorTickSpacing(500);
+	this.searchAccuracy.setMinorTickSpacing(100);
+	this.searchAccuracy.setPaintTicks(true);
+	this.searchAccuracy.setSnapToTicks(false);
+	this.searchAccuracy.setValue(900);
+	gbc.gridy++;
+	gbc.insets = new Insets(0, 0, 0, 0);
+	gbc.fill = GridBagConstraints.HORIZONTAL;
+	jp.add(this.searchAccuracy, gbc);
+	jl = new JLabel("loose");
+	gbc.gridy++;
+	gbc.gridwidth = 1;
+	gbc.insets = new Insets(0, 0, 5, 0);
+	gbc.fill = GridBagConstraints.NONE;
+	gbc.anchor = GridBagConstraints.LINE_START;
+	jp.add(jl, gbc);
+	jl = new JLabel("tight");
+	gbc.gridx = 1;
+	gbc.anchor = GridBagConstraints.LINE_END;
+	jp.add(jl, gbc);
 
 	this.theTabs.insertTab("Misc", null, jp, null, TAB_MISC);
 
@@ -456,6 +488,7 @@ public class PreferencesDialog extends JDialog {
     // Used by about class
     final static String STARTUP_CHECK = "StartupVersionCheck";
     private final static String SLEEP_ACTION = "SleepAction";
+    private final static String SEARCH_ACCURACY = "SearchAccuracy";
     private final static String XMTRACKER_URL = "TrackerURL";
     private final static String XMTRACKER_USER = "TrackerUser";
     private final static String XMTRACKER_PASS = "TrackerPassword";
@@ -482,6 +515,11 @@ public class PreferencesDialog extends JDialog {
 	if (val < 0 || val > SLEEP_MAX)
 	    val = 0;
 	this.sleepAction.setSelectedIndex(val);
+
+	val = JXM.myUserNode().getInt(SEARCH_ACCURACY, 900);
+	if (val < 500 || val > 1000)
+	    val = 900;
+	this.searchAccuracy.setValue(val);
 
 	try {
 	if (!JXM.myUserNode().nodeExists(BOOKMARKS)) {
@@ -552,6 +590,7 @@ public class PreferencesDialog extends JDialog {
 	this.handler.save();
 	JXM.myUserNode().putBoolean(STARTUP_CHECK, this.startupCheckbox.isSelected());
 	JXM.myUserNode().putInt(SLEEP_ACTION, this.sleepAction.getSelectedIndex());
+	JXM.myUserNode().putInt(SEARCH_ACCURACY, this.searchAccuracy.getValue());
 
 	Preferences node = JXM.myUserNode().node(BOOKMARKS);
 	try {
@@ -650,5 +689,6 @@ public class PreferencesDialog extends JDialog {
     public String getTrackerURL() { return this.trackerURL.getText(); }
     public String getTrackerUser() { return this.trackerUser.getText(); }
     public String getTrackerPassword() { return new String(this.trackerPassword.getPassword()); }
+    public double getSearchAccuracy() { return this.searchAccuracy.getValue()/1000f; }
     public boolean isTrackerEnabled() { return this.trackerEnabled.isSelected(); }
 }

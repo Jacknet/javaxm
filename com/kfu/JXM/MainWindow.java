@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.105 2004/05/09 16:37:41 nsayer Exp $
+ $Id: MainWindow.java,v 1.106 2004/05/11 00:09:51 nsayer Exp $
  
  */
 
@@ -474,6 +474,13 @@ public class MainWindow
 			}
 			this.add(jmi);
 			this.add(new MainWindow.BookmarkMenu(this.channelInfo));
+			jmi = new JMenuItem("New search entry for this song");
+			jmi.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					MainWindow.this.preferences.addNewSongSearch(ChannelPopupMenu.this.channelInfo);
+				}
+			});
+			this.add(jmi);
 		}
 	}	// End class ChannelPopupMenu
 
@@ -618,6 +625,9 @@ public class MainWindow
 	private HashMap tickList = new HashMap();
 
 	// the IPreferencesCallbackInterface
+	public SearchSystem getSearchSystem() {
+		return this.searchSystem;
+	}
 	public void reload() {
 		this.searchSystem.reload();
 		this.filterPanel.reload();

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: SearchSystem.java,v 1.7 2004/05/03 23:51:57 nsayer Exp $
+ $Id: SearchSystem.java,v 1.8 2004/05/11 00:09:51 nsayer Exp $
  
  */
 
@@ -49,6 +49,8 @@ public class SearchSystem {
     private final static Pattern legal = Pattern.compile("^\\s*(\\d+|\\d+\\s*\\-\\s*\\d+)(\\s*,\\s*(\\d+|\\d+\\s*\\-\\s*\\d+))*\\s*$");
     private final static Pattern extract = Pattern.compile("((?:\\d+)(?:\\s*\\-\\s*\\d+)?)");
     private static int[] parseChannelList(String s) {
+	if (s.length() == 0)
+	    return new int[0];
 	Matcher m = legal.matcher(s);
 	if (!m.matches()) {
 	    throw new IllegalArgumentException("Channel list syntax error");
@@ -100,11 +102,7 @@ public class SearchSystem {
 	    if (list == null)
 		list = "";
 	    list = list.trim();
-	    if (list.length() == 0) {
-		this.acceptableChannels = new int[0];
-	    } else {
-		this.acceptableChannels = parseChannelList(list);
-	    }
+	    this.acceptableChannels = parseChannelList(list);
 	    this.acceptableChannelsString = list;
 	}
 	public void setArtist(String artist) {
@@ -348,7 +346,7 @@ public class SearchSystem {
 	});
 	this.channelEditor.setInputVerifier(new InputVerifier() {
 	    public boolean verify(JComponent tf) {
-		String val = ((JTextField)tf).getText();
+		String val = ((JTextField)tf).getText().trim();
 		try {
 		    parseChannelList(val);
 		    return true;
@@ -468,6 +466,15 @@ public class SearchSystem {
 	this.searchMatches.pack();
 
 	this.reloadFromPreferences();
+    }
+
+    public void addNewSong(ChannelInfo info) {
+	SearchMatcher sm = new SearchMatcher();
+	sm.setArtist(info.getChannelArtist());
+	sm.setTitle(info.getChannelTitle());
+	sm.setChannels(Integer.toString(info.getChannelNumber()));
+	this.searchList.add(SearchSystem.this.searchList.size(), sm);
+	this.configList.setSelectedIndex(SearchSystem.this.searchList.size() - 1);
     }
 
     private final static String SEARCH_LIST_KEY = "SearchItems";

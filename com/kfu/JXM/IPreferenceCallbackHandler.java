@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: IPreferenceCallbackHandler.java,v 1.4 2004/04/04 22:18:40 nsayer Exp $
+ $Id: IPreferenceCallbackHandler.java,v 1.5 2004/05/11 00:09:51 nsayer Exp $
  
  */
 
@@ -26,6 +26,7 @@ package com.kfu.JXM;
 import javax.swing.*;
 
 public interface IPreferenceCallbackHandler {
+    public SearchSystem getSearchSystem();
     public void clearChannelStats();
     public void rebuildBookmarksMenu(Bookmark[] list);
 

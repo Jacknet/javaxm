@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: PreferencesDialog.java,v 1.30 2004/05/02 23:17:41 ttennebkram Exp $
+ $Id: PreferencesDialog.java,v 1.31 2004/05/11 00:09:51 nsayer Exp $
  
  */
 
@@ -83,6 +83,12 @@ public class PreferencesDialog extends JDialog {
 		this.theTabs.setSelectedIndex(tab);
 		this.show();
     }
+	public void addNewSongSearch(ChannelInfo info) {
+		this.reloadFromDefaults();
+		this.theTabs.setSelectedIndex(TAB_SEARCH);
+		this.handler.getSearchSystem().addNewSong(info);
+		super.show();
+	}
 
     public PreferencesDialog(JFrame parent, IPreferenceCallbackHandler handler) {
 		super(parent, "JXM Preferences", true);

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.79 2004/03/25 06:00:49 nsayer Exp $
+ $Id: MainWindow.java,v 1.80 2004/03/25 06:24:41 nsayer Exp $
  
  */
 
@@ -1236,7 +1236,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		    this.setBackground(table.getSelectionBackground());
 		    this.setHorizontalTextPosition(SwingConstants.LEADING);
 		    this.setVerticalTextPosition(SwingConstants.CENTER);
-		    this.setIcon(MainWindow.this.sortDirection?MainWindow.this.downArrow:MainWindow.this.upArrow);
+		    this.setIcon(MainWindow.this.sortDirection?MainWindow.this.upArrow:MainWindow.this.downArrow);
 		} else {
 		    this.setForeground(UIManager.getColor("TableHeader.foreground"));
 		    this.setBackground(UIManager.getColor("TableHeader.background"));

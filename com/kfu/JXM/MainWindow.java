@@ -40,8 +40,6 @@ import com.kfu.xm.*;
 
 public class MainWindow implements RadioEventHandler {
 
-public static void main(String[] args) { new MainWindow(); }
-
     // A popup menu for a given channel
     private class ChannelPopupMenu extends JPopupMenu {
 	ChannelInfo channelInfo;
@@ -190,7 +188,17 @@ public static void main(String[] args) { new MainWindow(); }
     private JProgressBar satelliteMeter;
     private JProgressBar terrestrialMeter;
     private JButton itmsButton;
-    
+    private PreferencesDialog preferences;
+   
+    public void quit() { 
+	if (RadioCommander.theRadio().isOn())
+	    MainWindow.this.turnPowerOff();
+	System.exit(0);
+    }
+    public void prefs() {
+	this.preferences.show();
+    }
+
     public MainWindow() {
 
     try {
@@ -201,13 +209,33 @@ public static void main(String[] args) { new MainWindow(); }
     }
 
         this.myFrame = new JFrame("JXM");
+	this.myFrame.setJMenuBar(new JMenuBar());
 	this.myFrame.addWindowListener(new WindowAdapter() {
 	    public void windowClosing(WindowEvent e) {
-		if (RadioCommander.theRadio().isOn())
-		    MainWindow.this.turnPowerOff();
-		System.exit(0);
+		MainWindow.this.quit();
 	    }
 	});
+	this.preferences = new PreferencesDialog(this.myFrame);
+
+	// -----
+	// If on a mac, don't do this - use the MRJ stuff instead
+	JMenu jm = new JMenu("File");
+	JMenuItem jmi = new JMenuItem("Preferences...");
+	jmi.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		MainWindow.this.prefs();
+	    }
+	});
+	jm.add(jmi);
+	jmi = new JMenuItem("Quit");
+	jmi.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		MainWindow.this.quit();
+	    }
+	});
+	jm.add(jmi);
+	this.myFrame.getJMenuBar().add(jm);
+	// -----
 
 	this.myFrame.getContentPane().setLayout(new BorderLayout());
 
@@ -770,6 +798,13 @@ e.printStackTrace();
 	this.powerCheckBox.setSelected(true);
 	this.myUserNode().put(DEVICE_NAME_KEY, this.deviceName);
 	this.channelChanged(); // We need to fake the first one
+	try {
+	    String rid = RadioCommander.theRadio().getRadioID();
+	    this.preferences.turnOn(rid);
+	}
+	catch(RadioException e) {
+	    this.handleError(e);
+	}
     }
 
     private void poweredDown() {
@@ -803,6 +838,7 @@ e.printStackTrace();
 		MainWindow.this.satelliteMeter.setValue(0);
 		MainWindow.this.terrestrialMeter.setValue(0);
 		MainWindow.this.setChannelLogo(-1);
+	        MainWindow.this.preferences.turnOff();
 	    }
 	});
     }

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: RadioCommander.java,v 1.16 2004/03/22 05:00:48 nsayer Exp $
+ $Id: RadioCommander.java,v 1.17 2004/04/07 02:37:09 nsayer Exp $
  
  */
 
@@ -1290,6 +1290,10 @@ finally {
     // The channel surfer
     Timer theSurfer;
 
+    public void setChannelList(int[] list) {
+	for(int i = 0; i < list.length; i++)
+	    this.channelList.add(new Integer(list[i]));
+    }
     private void timerJob() {
 	ChannelInfo info;
 	try {

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.81 2004/04/04 22:18:40 nsayer Exp $
+ $Id: MainWindow.java,v 1.82 2004/04/07 02:37:09 nsayer Exp $
  
  */
 
@@ -2079,10 +2079,17 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
     private Map channelList = Collections.synchronizedMap(new HashMap());
 
-    private void deleteChannel(int sid) {
-	this.channelList.remove(new Integer(sid));
-	if (this.channelList.containsKey(new Integer(sid)))
-	    this.rebuildFavoritesMenu();
+    private void deleteChannel(int chan) {
+	int sid;
+	Iterator i = this.channelList.values().iterator();
+	while(i.hasNext()) {
+	    ChannelInfo info = (ChannelInfo)i.next();
+	    if (info.getChannelNumber() == chan) {
+		i.remove();
+		if (this.favoriteList.contains(new Integer(info.getServiceID())))
+		    this.rebuildFavoritesMenu();
+	    }
+	}
     }
 
     private boolean ignoreFavoriteMenu = false;
@@ -2134,8 +2141,9 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    for(int j = 0; j < l.size(); j++)
 		this.favoriteMenu.addItem(new Integer(((ChannelInfo)(l.get(j))).getServiceID()));
 	}
-	if (this.currentChannelInfo == null)
+	if (this.currentChannelInfo == null || !RadioCommander.theRadio().isOn()) {
 	    return;
+	}
 	Integer sid = new Integer(this.currentChannelInfo.getServiceID());
 	if (this.favoriteList.contains(sid)) {
 	    this.favoriteMenu.setSelectedItem(sid);
@@ -2242,6 +2250,13 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    }
 	    this.channelList.put(new Integer(info.getServiceID()), info);
 	}
+	int[] chanList = new int[this.channelList.size()];
+	Iterator it = this.channelList.values().iterator();
+	int i = 0;
+	while(it.hasNext()) {
+	    chanList[i++] = ((ChannelInfo)it.next()).getChannelNumber();
+	}
+	RadioCommander.theRadio().setChannelList(chanList);
     }
     private void loadTickList() {
 	Preferences node = JXM.myUserNode().node(TICK_NODE);

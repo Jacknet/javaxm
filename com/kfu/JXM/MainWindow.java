@@ -22,6 +22,7 @@
 package com.kfu.JXM;
 
 import javax.swing.*;
+import javax.swing.border.*;
 import javax.swing.event.*;
 import javax.swing.table.*;
 import java.awt.*;
@@ -418,7 +419,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	// First, the "now playing" panel
 	JPanel jp = new JPanel();
 	jp.setBorder(BorderFactory.createTitledBorder(
-	    BorderFactory.createLineBorder(Color.BLACK), "Now Playing"));
+	    BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Now Playing",
+	    TitledBorder.CENTER, TitledBorder.DEFAULT_POSITION));
 	jp.setLayout(new GridBagLayout());
 	GridBagConstraints gbc = new GridBagConstraints();
 	gbc.fill = GridBagConstraints.BOTH;

@@ -1,6 +1,7 @@
-NOTE: As a special exemption, it is explicitely permitted to link or otherwise
-use code licensed herein with any implementation of the javax.comm API
-regardless of whether or not source code is supplied with said implementation.
+NOTE: As a special exemption, it is explicitely permitted to link or
+otherwise use code licensed herein with any implementation of the
+javax.comm API regardless of whether or not source code is supplied
+with said implementation.
 
 		    GNU GENERAL PUBLIC LICENSE
 		       Version 2, June 1991

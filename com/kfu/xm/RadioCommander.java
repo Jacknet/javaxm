@@ -1027,17 +1027,6 @@ public class RadioCommander implements IAsyncExceptionHandler {
 	// Audio is now going. Notify the UI.
         this.notifyGUI(POWERED_ON);
 
-	// Set up the channel surfer
-	this.lastChannel = 0;
-	this.channelList = new HashSet();
-	this.theSurfer = new Timer();
-	this.theSurfer.schedule(new TimerTask() {
-	    public void run() {
-		RadioCommander.this.timerJob();
-	    }
-	}, 100, 100);
-
-
 	// Argh! The last channel is stored by service ID, not by channel number.
 	// So we're going to have to ask the surfer to look it up in the cache. Ick!
 	int chan = this.getChannelInfoByServiceID(reply.getLastAudioService()).getChannelNumber();
@@ -1051,6 +1040,16 @@ public class RadioCommander implements IAsyncExceptionHandler {
 	if (this.currentChannel == -1)
 		this.setChannel(1);
 		
+	// Set up the channel surfer
+	this.lastChannel = 0;
+	this.channelList = new HashSet();
+	this.theSurfer = new Timer();
+	this.theSurfer.schedule(new TimerTask() {
+	    public void run() {
+		RadioCommander.this.timerJob();
+	    }
+	}, 100, 100);
+
         // Powering up clears out the duration/progress times
         this.currentSongStarted = this.currentSongEnds = null;
     }

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: PlatformFactory.java,v 1.5 2004/03/11 04:23:28 nsayer Exp $
+ $Id: PlatformFactory.java,v 1.6 2004/03/14 05:23:13 nsayer Exp $
  
  */
 
@@ -64,7 +64,11 @@ public class PlatformFactory {
 		platform = (IPlatformHandler)o;
 		return; // First one wins
 	    }
-	    catch(Exception e) {
+	    catch(Throwable t) {
+		// Attempting to touch platform handdlers on the wrong
+		// platform is likely to cough up all sorts of bad things.
+		// But we don't care, since some other platform will do
+		// the right thing.
 		continue;
 	    }
 	}

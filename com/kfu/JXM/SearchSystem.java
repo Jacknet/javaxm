@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: SearchSystem.java,v 1.9 2004/05/11 00:13:52 nsayer Exp $
+ $Id: SearchSystem.java,v 1.10 2004/07/22 21:11:54 nsayer Exp $
  
  */
 
@@ -217,25 +217,26 @@ public class SearchSystem {
 	this.configList = new JList(this.searchList);
 	class SearchConfigRenderer extends JPanel implements ListCellRenderer {
 	    JLabel chanLabel, artLabel, titLabel;
+	    JLabel chanName, artName, titName;
 	    public SearchConfigRenderer() {
 		this.setOpaque(true);
 		this.setLayout(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
-		JLabel jl = new JLabel("Channels:");
-		jl.setHorizontalAlignment(SwingConstants.TRAILING);
+		this.chanName = new JLabel("Channels:");
+		this.chanName.setHorizontalAlignment(SwingConstants.TRAILING);
 		gbc.insets = new Insets(0, 10, 0, 10);
 		gbc.anchor = GridBagConstraints.LINE_END;
 		gbc.fill = GridBagConstraints.NONE;
 		gbc.weightx = 0;
-		this.add(jl, gbc);
-		jl = new JLabel("Artist:");
-		jl.setHorizontalAlignment(SwingConstants.TRAILING);
+		this.add(this.chanName, gbc);
+		this.artName = new JLabel("Artist:");
+		this.artName.setHorizontalAlignment(SwingConstants.TRAILING);
 		gbc.gridy = 1;
-		this.add(jl, gbc);
-		jl = new JLabel("Title:");
-		jl.setHorizontalAlignment(SwingConstants.TRAILING);
+		this.add(this.artName, gbc);
+		this.titName = new JLabel("Title:");
+		this.titName.setHorizontalAlignment(SwingConstants.TRAILING);
 		gbc.gridy = 2;
-		this.add(jl, gbc);
+		this.add(this.titName, gbc);
 		this.chanLabel = new JLabel();
 		this.chanLabel.setHorizontalAlignment(SwingConstants.LEADING);
 		gbc.gridx = 1;
@@ -260,9 +261,23 @@ public class SearchSystem {
 		this.titLabel.setText(sm.getTitle());
 		if (isSelected) {
 		    this.setBackground(SearchSystem.this.configList.getSelectionBackground());
+		    this.setForeground(SearchSystem.this.configList.getSelectionForeground());
 		} else {
 		    this.setBackground(SearchSystem.this.configList.getBackground());
+		    this.setForeground(SearchSystem.this.configList.getForeground());
 		}
+		this.chanLabel.setForeground(this.getForeground());
+		this.chanLabel.setBackground(this.getBackground());
+		this.artLabel.setForeground(this.getForeground());
+		this.artLabel.setBackground(this.getBackground());
+		this.titLabel.setForeground(this.getForeground());
+		this.titLabel.setBackground(this.getBackground());
+		this.chanName.setForeground(this.getForeground());
+		this.chanName.setBackground(this.getBackground());
+		this.artName.setForeground(this.getForeground());
+		this.artName.setBackground(this.getBackground());
+		this.titName.setForeground(this.getForeground());
+		this.titName.setBackground(this.getBackground());
                 this.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, MainWindow.gridColor));
 		return this;
 	    }

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.107 2004/05/11 16:07:58 nsayer Exp $
+ $Id: MainWindow.java,v 1.108 2004/07/22 21:11:53 nsayer Exp $
  
  */
 
@@ -293,11 +293,11 @@ public class MainWindow
 			}
 		}
 	
-		public final static Font chNumFont = new Font(null, Font.BOLD, 18);
+		public final static Font chNumFont = new Font(null, Font.BOLD, 16);
 		public final static Font chGenreFont = new Font(null, Font.PLAIN, 12);
 		public final static Font chNameFont = new Font(null, Font.PLAIN, 14);
-		public final static Font chArtistFont = new Font(null, Font.BOLD, 20);
-		public final static Font chTitleFont = new Font(null, Font.BOLD, 20);
+		public final static Font chArtistFont = new Font(null, Font.BOLD, 18);
+		public final static Font chTitleFont = new Font(null, Font.BOLD, 18);
 	
 		private JLabel channelNumberLabel, channelGenreLabel, channelNameLabel, channelArtistLabel, channelTitleLabel;
 	
@@ -757,7 +757,7 @@ public class MainWindow
 		JXM.myUserNode().putByteArray(CHAN_TABLE_COLS, index);
 	}
 
-	public final static Color stripeColor = new Color(.925f, .925f, 1f);
+	public final static Color stripeColor = new Color(.85f, .85f, 1f);
 	public final static Color gridColor = new Color(.85f, .85f, .85f);
 
 	private class XIcon implements Icon {
@@ -846,15 +846,6 @@ public class MainWindow
 
 	private static final int DEFAULT_TABLE_ROWS = 15;
 	public MainWindow() {
-
-		// This MUST happen before we init the platform, because it may
-		// create swing objects (menus perhaps).
-		try {
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		}
-		catch(Exception e) {
-			// Well, we tried
-		}
 
 		PlatformFactory.ourPlatform().registerCallbackHandler(this);
 	
@@ -989,16 +980,7 @@ public class MainWindow
 		});
 		jm.add(jmi);
 		this.myFrame.getJMenuBar().add(jm);
-/*
-		this.filterMenuItem = new JMenuItem("Filters");
-		this.filterMenuItem.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-			MainWindow.frontOrShow(MainWindow.this.filterPanel);
-			}
-		});
-		this.filterMenuItem.setEnabled(false);
-		jm.add(this.filterMenuItem);
-*/
+
 		// -----
 		if (!PlatformFactory.ourPlatform().useMacMenus()) {
 			jm = new JMenu("Help");
@@ -1085,16 +1067,6 @@ public class MainWindow
 		JPanel buttons = new JPanel();
 		buttons.setLayout(new GridBagLayout());
 		GridBagConstraints gbc_but = new GridBagConstraints();
-/*
-		this.itmsButton = new JButton("iTunes Music Store");
-		this.itmsButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-			MainWindow.this.itmsButtonClicked();
-			}
-		});
-		this.itmsButton.setEnabled(false);
-		buttons.add(this.itmsButton, gbc_but);
-*/
 
 		this.memoryButton = new JButton("Add to notebook");
 		this.memoryButton.setToolTipText( "Adds current Song Info to your \"notebook\"" );
@@ -1324,8 +1296,9 @@ public class MainWindow
 		// =============================================	
 		this.channelTable = new JTable();
 		this.channelTable.setAutoCreateColumnsFromModel(false);
-		this.channelTable.setShowHorizontalLines(false);
-		this.channelTable.setShowVerticalLines(true);
+		this.channelTable.setShowGrid(true);
+		//this.channelTable.setShowHorizontalLines(false);
+		//this.channelTable.setShowVerticalLines(true);
 		this.channelTable.setGridColor(gridColor);
 		this.channelTable.addMouseListener(new MouseAdapter() {
 			public void mousePressed(MouseEvent e) { this.maybePopup(e); }
@@ -1554,11 +1527,15 @@ public class MainWindow
 			y -= this.getViewPosition().getY() % (stripeHeight * 2);
 	
 			while(y < this.getHeight()) {
+				g.setColor(MainWindow.gridColor);
+				g.drawLine(0, y - 1, (int)this.getWidth(), y - 1);
 				g.setColor(Color.WHITE);
-				g.fillRect(0, y - 1, (int)this.getWidth(), stripeHeight + 1);
+				g.fillRect(0, y, (int)this.getWidth(), stripeHeight);
 				y += stripeHeight;
+				g.setColor(MainWindow.gridColor);
+				g.drawLine(0, y - 1, (int)this.getWidth(), y - 1);
 				g.setColor(MainWindow.stripeColor);
-				g.fillRect(0, y, (int)this.getWidth(), stripeHeight - 1);
+				g.fillRect(0, y, (int)this.getWidth(), stripeHeight);
 				y += stripeHeight;
 			}
 			int selRow = MainWindow.this.channelTable.getSelectedRow();
@@ -1567,15 +1544,6 @@ public class MainWindow
 			if (selectedStripePos >= -(stripeHeight) && selectedStripePos <= this.getHeight()) {
 				g.setColor(MainWindow.this.channelTable.getSelectionBackground());
 				g.fillRect(0, selectedStripePos, (int)this.getWidth(), stripeHeight - 1);
-			}
-	
-			g.setColor(MainWindow.gridColor);
-			int so_far = -1; // XXX this is what looks best on a mac, at least.
-			Enumeration e = MainWindow.this.channelTable.getColumnModel().getColumns();
-			while(e.hasMoreElements()) {
-				TableColumn tc = (TableColumn)e.nextElement();
-				so_far += tc.getWidth();
-				g.drawLine(so_far, 0, so_far, this.getHeight());
 			}
 			
 			super.paint(g);
@@ -1853,13 +1821,6 @@ public class MainWindow
 	   }
 	}
 
-/*
-	private Bookmark itmsButtonMark = new Bookmark("", "itms://phobos.apple.com/WebObjects/MZSearch.woa/wa/com.apple.jingle.search.DirectAction/advancedSearchResults?artistTerm={ARTIST}&songTerm={TITLE}");
-	private void itmsButtonClicked() {
-	this.bookmarkSurf(this.itmsButtonMark, this.currentChannelInfo);
-	}
-*/
-
 	private Bookmark channelMark = new Bookmark("", "http://www.xmradio.com/programming/channel_page.jsp?ch={NUMBER}");
 	private void surfToChannel(int chan) {
 		if (this.currentChannelInfo == null)
@@ -1902,11 +1863,7 @@ public class MainWindow
 	MediaTracker myMT = new MediaTracker(this.channelLogo);
 	private void setChannelLogo(int chan) {
 		Icon logo;
-		if (chan >= 210 && chan <= 230) { // traffic & weather "neighborhood"
-			logo = this.findLogo("traffic.gif");
-		} else {
-			logo = this.findLogo(chan + ".gif");
-		}
+		logo = this.findLogo(chan + ".png");
 		if (logo == null) {
 			logo = this.findLogo("default.gif");
 		}
@@ -2127,13 +2084,6 @@ public class MainWindow
 			gbc.gridy = 0;
 			gbc.gridx = 0;
 			jp.add(jl, gbc);
-	/*
-			jl = new JLabel("Your radio ID is");
-			jl.setHorizontalAlignment(SwingConstants.CENTER);
-			jl.setFont(new Font(null, Font.PLAIN, 14));
-			gbc.gridy = 1;
-			jp.add(jl, gbc);
-	*/
 			jl = new JLabel(this.radioID);
 			jl.setHorizontalAlignment(SwingConstants.CENTER);
 			jl.setFont(new Font("Monospaced", Font.BOLD, 18));
@@ -2283,16 +2233,12 @@ public class MainWindow
 
 	private void poweredDown() {
 		RadioCommander.theRadio().unregisterEventHandler(this);
-		/*new Thread() {
-			public void run() { */
-			try {
-				XMTracker.theTracker().turnOff();
-			}
-			catch(TrackerException e) {
-				MainWindow.this.handleTrackerError(e);
-			}
-		/*	}
-		}.start(); */
+		try {
+			XMTracker.theTracker().turnOff();
+		}
+		catch(TrackerException e) {
+			MainWindow.this.handleTrackerError(e);
+		}
 		this.updateRatingSlider(null);
 		// If the list is empty right now, then don't do an update, just in case.
 		if (this.channelList.size() != 0)
@@ -2429,12 +2375,7 @@ public class MainWindow
 			else if (which == 1) {
 			g.setColor(c.getForeground());
 			g.fillArc(0, 0, this.getIconWidth(), this.getIconHeight(), 0, 360);
-			} /*else if (which == 2) {
-			g.setColor(Color.YELLOW);
-			g.fillArc(0, 0, this.getIconWidth(), this.getIconHeight(), 0, 360);
-			g.setColor(new Color(0, 0, 0, 0));
-			g.fillArc(moonFactor, 0, this.getIconWidth() - moonFactor, this.getIconHeight(), 0, 360);
-			} */
+			}
 			g.translate(-x, -y);
 		}
 	}	// end class BlinkingIcon

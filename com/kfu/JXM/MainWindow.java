@@ -28,6 +28,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.lang.*;
 import java.util.*;
+import java.util.prefs.*;
 
 import com.kfu.xm.*;
 
@@ -296,6 +297,10 @@ public static void main(String[] args) { new MainWindow(); }
         this.myFrame.pack();
         this.myFrame.setResizable(true);
         this.myFrame.setVisible(true);
+
+	// We have a device saved... Try and power up
+	if (this.deviceName != null)
+	    this.turnPowerOn();
     }
 
     private void muteClicked() {
@@ -341,9 +346,16 @@ public static void main(String[] args) { new MainWindow(); }
     private void refreshDeviceMenu() {
 	while(this.deviceMenu.getItemCount() > 0)
 	    this.deviceMenu.remove(0);
+
+	String defaultDevice = this.myUserNode().get(DEVICE_NAME_KEY, null);
+	boolean foundDevice = false;
+
 	String[] devices = RadioCommander.getPotentialDevices();
 	for(int i = 0; i < devices.length; i++) {
 	    final String name = devices[i];
+	    if (name.equals(defaultDevice))
+		foundDevice = true;
+
 	    JMenuItem jmi = new JMenuItem(name);
 	    jmi.addActionListener(new ActionListener() {
 		public void actionPerformed(ActionEvent e) {
@@ -352,6 +364,14 @@ public static void main(String[] args) { new MainWindow(); }
 		}
 	    });
 	    this.deviceMenu.add(jmi);
+	}
+
+	if (foundDevice) {
+	    this.deviceName = defaultDevice;
+	    this.deviceMenu.setText(this.deviceName);
+	} else {
+	    this.deviceName = null;
+	    this.deviceMenu.setText("Pick Device");
 	}
     }
 
@@ -422,6 +442,12 @@ public static void main(String[] args) { new MainWindow(); }
 	RadioCommander.theRadio().registerEventHandler(this);
     }
 
+    private Preferences myUserNode() {
+	return Preferences.userNodeForPackage(this.getClass());
+    }
+
+    private final static String DEVICE_NAME_KEY = "DefaultDevice";
+
     private void poweredUp() {
 	this.channelList = new HashMap();
 	this.deviceMenu.setEnabled(false);
@@ -430,6 +456,8 @@ public static void main(String[] args) { new MainWindow(); }
 	this.muteButton.setSelected(false);
 	this.smartMuteButton.setSelected(false);
 	this.smartMuteInfo = null;
+	this.powerCheckBox.setSelected(true);
+	this.myUserNode().put(DEVICE_NAME_KEY, this.deviceName);
     }
 
     private void poweredDown() {

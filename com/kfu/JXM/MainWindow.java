@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.74 2004/03/22 05:00:46 nsayer Exp $
+ $Id: MainWindow.java,v 1.75 2004/03/23 01:13:55 nsayer Exp $
  
  */
 
@@ -245,7 +245,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		int valueSoFar = this.getValue() - this.getMinimum();
 		// We want posSoFar, posSoFar/bounds.getWidth() = valueSoFar / valueWidth, or posSoFar = valueSoFar * bounds.getWidth() / valueWidth;
 		int posSoFar = (int)((((float)valueSoFar) * ((float)bounds.getWidth())) / ((float)valueWidth));
-		int diamondHeightOffset = (int)(bounds.getHeight() * .2f);
+		int diamondHeightOffset = (int)(bounds.getHeight() * .1f);
 		Polygon p = new Polygon();
 		p.addPoint(posSoFar, diamondHeightOffset);
 		p.addPoint(posSoFar + (((int)bounds.getHeight() - 1) / 2 - diamondHeightOffset), (int)bounds.getHeight() / 2);
@@ -1056,11 +1056,12 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.filterPanel = new FilterPanel(this);
 	this.filterMenu = this.filterPanel.getFilterMenu();
 	gbc.gridx = 2;
-	gbc.weightx = 0;
-	gbc.anchor = GridBagConstraints.LINE_END;
+	gbc.weightx = 1;
+	gbc.fill = GridBagConstraints.HORIZONTAL;
+	gbc.anchor = GridBagConstraints.CENTER;
 	gbc.insets = new Insets(0, 0, 0, 20);
 	gbc.fill = GridBagConstraints.NONE;
-	this.filterMenu.setPreferredSize(favorites.getPreferredSize());
+	this.filterMenu.setPreferredSize(new Dimension((int)favorites.getPreferredSize().getWidth(), (int)this.filterMenu.getPreferredSize().getHeight()));
 	stripe.add(this.filterMenu, gbc);
 
 	top.add(stripe);

@@ -29,7 +29,10 @@ import java.io.*;
 import java.lang.*;
 import java.util.prefs.*;
 
+import com.kfu.xm.*;
+
 public class PreferencesDialog extends JDialog {
+    JComboBox deviceMenu;
     JLabel radioID;
     JTextField trackerURL;
     JTextField trackerUser;
@@ -46,6 +49,12 @@ public class PreferencesDialog extends JDialog {
 	JPanel jp = new JPanel();
 	jp.setLayout(new BoxLayout(jp, BoxLayout.PAGE_AXIS));
 	JPanel jp2 = new JPanel();
+	this.deviceMenu = new JComboBox();
+	this.refreshDeviceMenu();
+	jp2.add(this.deviceMenu);
+	jp.add(jp2);
+
+	jp2 = new JPanel();
 	jp2.setLayout(new FlowLayout());
 	JLabel jl = new JLabel("Radio ID:");
 	jp2.add(jl);
@@ -195,19 +204,40 @@ public class PreferencesDialog extends JDialog {
     // This is called when the radio is turned on
     public void turnOn(String radioID) {
 	this.radioID.setText(radioID);
+	this.deviceMenu.setEnabled(false);
     }
 
     // This is called when the radio is turned off
     public void turnOff() {
 	this.radioID.setText("");
+	this.deviceMenu.setEnabled(true);
     }
 
     private void handleTrackerException(Exception e) {
     }
 
+    private final static String DEVICE_NAME_KEY = "DefaultDevice";
+    private void refreshDeviceMenu() {
+        this.deviceMenu = new JComboBox();
+        this.deviceMenu.addItem("Pick device");
+
+        String[] devices = RadioCommander.getPotentialDevices();
+        for(int i = 0; i < devices.length; i++) {
+            final String name = devices[i];
+            this.deviceMenu.addItem(name);
+        }
+        this.deviceMenu.setSelectedIndex(0);
+        this.deviceMenu.setSelectedItem(this.myNode().get(DEVICE_NAME_KEY, "Pick device"));
+    }
+
     // -----------------------
     // Below are the properties we export to the world.
 
+    public String getDevice() { return (String)this.deviceMenu.getSelectedItem(); }
+    // Call this after a successfull power-up
+    public void saveDevice() {
+	this.myNode().put(DEVICE_NAME_KEY, (String)this.deviceMenu.getSelectedItem());
+    }
     public String getTrackerURL() { return this.trackerURL.getText(); }
     public String getTrackerUser() { return this.trackerUser.getText(); }
     public String getTrackerPassword() { return this.trackerPassword.getText(); }

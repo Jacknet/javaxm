@@ -180,7 +180,6 @@ public class MainWindow implements RadioEventHandler {
     private JLabel channelLogo;
     private ChannelTableModel channelTableModel;
     private JTable channelTable;
-    private JMenu deviceMenu;
     private JCheckBox powerCheckBox;
     private JCheckBox muteButton;
     private JCheckBox smartMuteButton;
@@ -189,6 +188,9 @@ public class MainWindow implements RadioEventHandler {
     private JProgressBar terrestrialMeter;
     private JButton itmsButton;
     private PreferencesDialog preferences;
+    private JSlider ratingSlider;
+    private JComboBox favoriteMenu;
+    private JCheckBox favoriteCheckbox;
    
     public void quit() { 
 	if (RadioCommander.theRadio().isOn())
@@ -240,8 +242,10 @@ public class MainWindow implements RadioEventHandler {
 	this.myFrame.getContentPane().setLayout(new BorderLayout());
 
 	JPanel top = new JPanel();
-	top.setLayout(new BoxLayout(top, BoxLayout.LINE_AXIS));
-	top.add(Box.createHorizontalStrut(20));
+	top.setLayout(new BoxLayout(top, BoxLayout.PAGE_AXIS));
+	JPanel toptop = new JPanel();
+	toptop.setLayout(new BoxLayout(toptop, BoxLayout.LINE_AXIS));
+	toptop.add(Box.createHorizontalStrut(20));
 
 	JPanel pictureFrame = new JPanel();
 	pictureFrame.setBorder(BorderFactory.createLineBorder(Color.BLACK));
@@ -276,7 +280,8 @@ public class MainWindow implements RadioEventHandler {
 	    }
 	});
 	pictureFrame.add(this.channelLogo);
-	top.add(pictureFrame);
+	toptop.add(pictureFrame);
+	toptop.add(Box.createHorizontalStrut(5));
 
 	// First, the "now playing" panel
 	JPanel jp = new JPanel();
@@ -318,7 +323,7 @@ public class MainWindow implements RadioEventHandler {
 	jp.add(this.channelTitleLabel, gbc);
 	jp.setMinimumSize(new Dimension(0, 75));
 	jp.setPreferredSize(jp.getMinimumSize());
-	top.add(jp);
+	toptop.add(jp);
 	JPanel buttons = new JPanel();
 	buttons.setLayout(new BoxLayout(buttons, BoxLayout.PAGE_AXIS));
 	this.itmsButton = new JButton("iTunes Music Store");
@@ -330,8 +335,129 @@ public class MainWindow implements RadioEventHandler {
 	this.itmsButton.setEnabled(false);
 	buttons.add(this.itmsButton);
 
-	top.add(buttons);
-	top.add(Box.createHorizontalStrut(20));
+	toptop.add(buttons);
+	toptop.add(Box.createHorizontalStrut(20));
+	top.add(toptop);
+	top.add(Box.createVerticalStrut(10));
+	JPanel stripe = new JPanel();
+	stripe.setLayout(new GridBagLayout());
+	gbc = new GridBagConstraints();
+
+	JPanel favorites = new JPanel();
+	this.favoriteMenu = new JComboBox();
+	this.favoriteMenu.addItem("Favorites");
+	this.favoriteMenu.setSelectedIndex(0);
+	this.favoriteMenu.setEnabled(false);
+	this.favoriteMenu.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		if (e.getActionCommand() != "comboBoxChanged")
+		     return;
+		if (MainWindow.this.favoriteMenu.getItemCount() == 0)
+		    return; // XXX - this looks like a bug in JComboBox. Why is clearing it a "Change"?
+		Object o = MainWindow.this.favoriteMenu.getSelectedItem();
+		if (!(o instanceof Integer))
+		    return; // They must have selected "Favorites"
+		Integer sid = (Integer)o;
+		MainWindow.this.favoriteMenu.setSelectedIndex(0);
+		ChannelInfo i = (ChannelInfo)MainWindow.this.channelList.get(sid);
+		if (i == null)
+		    return;
+		try {
+		    RadioCommander.theRadio().setChannel(i.getChannelNumber());
+		}
+		catch(RadioException ee) {
+		    MainWindow.this.handleError(ee);
+		}
+	    }
+	});
+	this.favoriteMenu.setRenderer(new DefaultListCellRenderer() {
+	    public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+		if (value instanceof Integer) {
+		    Integer sid = (Integer)value;
+		    ChannelInfo info = (ChannelInfo)MainWindow.this.channelList.get(sid);
+		    if (info == null) {
+			value = "Service ID " + sid;
+		    } else {
+			value = Integer.toString(info.getChannelNumber()) + " - " + info.getChannelName();
+		    }
+		}
+        	return super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+	    }
+	});
+	favorites.add(this.favoriteMenu);
+	this.favoriteCheckbox = new JCheckBox();
+	this.favoriteCheckbox.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		Integer sid;
+		try {
+		    sid = new Integer(RadioCommander.theRadio().getChannelInfo().getServiceID());
+		}
+		catch(RadioException ee) {
+		    MainWindow.this.handleError(ee);
+		    return;
+		}
+		boolean becoming = MainWindow.this.favoriteCheckbox.isSelected();
+		if (becoming) {
+		    MainWindow.this.favoriteList.add(sid);
+		} else {
+		    MainWindow.this.favoriteList.remove(sid);
+		}
+		MainWindow.this.saveFavorites();
+		MainWindow.this.rebuildFavoritesMenu();
+	    }
+	});
+	this.favoriteCheckbox.setEnabled(false);
+	favorites.add(this.favoriteCheckbox);
+	gbc.weightx = 0;
+	gbc.anchor = GridBagConstraints.LINE_START;
+	stripe.add(favorites, gbc);
+
+	JPanel rating = new JPanel();
+	rating.setLayout(new GridBagLayout());
+	GridBagConstraints gbc1 = new GridBagConstraints();
+	this.ratingSlider = new JSlider(-5, 5);
+	this.ratingSlider.setMajorTickSpacing(5);
+	this.ratingSlider.setMinorTickSpacing(1);
+	this.ratingSlider.setSnapToTicks(true);
+	this.ratingSlider.setPaintTicks(true);
+	this.ratingSlider.setEnabled(false);
+	gbc1.weightx = 1;
+	gbc1.gridwidth = 3;
+	gbc1.fill = GridBagConstraints.HORIZONTAL;
+	rating.add(this.ratingSlider, gbc1);
+	JLabel jl = new JLabel("-");
+	gbc1.gridwidth = 1;
+	gbc1.fill = GridBagConstraints.NONE;
+	gbc1.anchor = GridBagConstraints.LINE_START;
+	gbc1.gridy = 1;
+	gbc1.gridx = 0;
+	gbc1.weightx = 0;
+	rating.add(jl, gbc1);
+	jl = new JLabel("Rate Song");
+	gbc1.weightx = 1;
+	gbc1.anchor = GridBagConstraints.CENTER;
+	gbc.gridx = 2;
+	rating.add(jl, gbc1);
+	jl = new JLabel("+");
+	gbc1.weightx = 0;
+	gbc1.gridx = 2;
+	gbc1.anchor = GridBagConstraints.LINE_END;
+	rating.add(jl, gbc1);
+
+	gbc.weightx = 1;
+	gbc.gridx = 1;
+	gbc.fill = GridBagConstraints.HORIZONTAL;
+	stripe.add(rating, gbc);
+	
+	JPanel extra = new JPanel();
+	// XXX - what goes here?
+	gbc.gridx = 2;
+	gbc.weightx = 0;
+	gbc.fill = GridBagConstraints.NONE;
+	extra.setPreferredSize(favorites.getPreferredSize());
+	stripe.add(extra, gbc);
+
+	top.add(stripe);
 	
 	this.myFrame.getContentPane().add(top, BorderLayout.PAGE_START);
 	//this.myFrame.getContentPane().add(this.channelLogo, BorderLayout.PAGE_START);
@@ -488,18 +614,9 @@ public class MainWindow implements RadioEventHandler {
 	gbc.anchor = GridBagConstraints.LINE_END;
 	bottom.add(this.powerCheckBox, gbc);
 
-	JMenuBar jmb = new JMenuBar();
-	this.deviceMenu = new JMenu("Pick Device");
-	this.refreshDeviceMenu();
-	jmb.add(this.deviceMenu);
-	gbc.gridx = 2;
-	gbc.insets = new Insets(0, 0, 20, 0);
-	gbc.anchor = GridBagConstraints.LINE_START;
-	bottom.add(jmb, gbc);
-
-	JLabel jl = new JLabel("Satellite: ");
+	jl = new JLabel("Satellite: ");
 	jl.setHorizontalAlignment(SwingConstants.TRAILING);
-	gbc.gridx = 3;
+	gbc.gridx = 2;
 	gbc.gridy = 0;
 	gbc.weightx = 1;
 	gbc.gridheight = 1;
@@ -513,7 +630,7 @@ public class MainWindow implements RadioEventHandler {
 	bottom.add(jl, gbc);
 
 	this.satelliteMeter = new JProgressBar(0, 100);
-	gbc.gridx = 4;
+	gbc.gridx = 3;
 	gbc.gridy = 0;
 	gbc.insets = new Insets(0, 0, 0, 20);
 	gbc.anchor = GridBagConstraints.LINE_START;
@@ -564,8 +681,11 @@ public class MainWindow implements RadioEventHandler {
 	    }
 	}
 
+	this.loadFavorites();
+
 	// We have a device saved... Try and power up
-	if (this.deviceName != null)
+	String deviceName = this.preferences.getDevice();
+	if (deviceName != null)
 	    this.turnPowerOn();
     }
 
@@ -680,43 +800,6 @@ e.printStackTrace();
 	this.smartMuteButton.setSelected(muteState);
     }
 
-    private String deviceName = null;
-
-    // XXX - There appears to be no need to do this other than at startup
-    // javax.comm will not give back a different CommPortIdentifier enumeration
-    // once it has probed the drivers. :-(
-    private void refreshDeviceMenu() {
-	while(this.deviceMenu.getItemCount() > 0)
-	    this.deviceMenu.remove(0);
-
-	String defaultDevice = this.myUserNode().get(DEVICE_NAME_KEY, null);
-	boolean foundDevice = false;
-
-	String[] devices = RadioCommander.getPotentialDevices();
-	for(int i = 0; i < devices.length; i++) {
-	    final String name = devices[i];
-	    if (name.equals(defaultDevice))
-		foundDevice = true;
-
-	    JMenuItem jmi = new JMenuItem(name);
-	    jmi.addActionListener(new ActionListener() {
-		public void actionPerformed(ActionEvent e) {
-		    MainWindow.this.deviceName = name;
-		    MainWindow.this.deviceMenu.setText(name);
-		}
-	    });
-	    this.deviceMenu.add(jmi);
-	}
-
-	if (foundDevice) {
-	    this.deviceName = defaultDevice;
-	    this.deviceMenu.setText(this.deviceName);
-	} else {
-	    this.deviceName = null;
-	    this.deviceMenu.setText("Pick Device");
-	}
-    }
-
     // the RadioEventHandler interface
     public void notify(RadioCommander theRadio, final int type, final Object item) {
 	// This must be handled immediately to make sure we close the Tracker when quitting.
@@ -774,14 +857,15 @@ e.printStackTrace();
 
     private void turnPowerOn() {
 	// Figure out which device was selected
-	if (this.deviceName == null) {
+	String deviceName = this.preferences.getDevice();
+	if (deviceName == null) {
 	    this.powerCheckBox.setSelected(false);
 	    JOptionPane.showMessageDialog(this.myFrame, "Please pick a device before powering up.", "No device selected", JOptionPane.ERROR_MESSAGE);
 	    return;
 	}
 	// Attempt to power up the radio
 	try {
-	    RadioCommander.theRadio().turnOn(this.deviceName);
+	    RadioCommander.theRadio().turnOn(deviceName);
 	}
 	catch(RadioException e) {
 	    this.powerCheckBox.setSelected(false);
@@ -796,14 +880,13 @@ e.printStackTrace();
 	return Preferences.userNodeForPackage(this.getClass());
     }
 
-    private final static String DEVICE_NAME_KEY = "DefaultDevice";
+    private final static String FAVORITE_LIST = "FavoriteChannels";
     private final static String XMTRACKER_URL = "TrackerURL";
     private final static String XMTRACKER_USER = "TrackerUser";
     private final static String XMTRACKER_PASS = "TrackerPassword";
 
     private void poweredUp() {
 	this.channelList = new HashMap();
-	this.deviceMenu.setEnabled(false);
 	this.muteButton.setEnabled(true);
 	this.smartMuteButton.setEnabled(true);
 	this.itmsButton.setEnabled(true);
@@ -811,7 +894,9 @@ e.printStackTrace();
 	this.smartMuteButton.setSelected(false);
 	this.smartMuteInfo = null;
 	this.powerCheckBox.setSelected(true);
-	this.myUserNode().put(DEVICE_NAME_KEY, this.deviceName);
+	this.rebuildFavoritesMenu();
+	this.favoriteCheckbox.setEnabled(true);
+	this.preferences.saveDevice();
 	this.channelChanged(); // We need to fake the first one
 	try {
 	    String rid = RadioCommander.theRadio().getRadioID();
@@ -843,7 +928,6 @@ e.printStackTrace();
 		MainWindow.this.channelGenreLabel.setText("");
 		MainWindow.this.channelArtistLabel.setText("");
 		MainWindow.this.channelTitleLabel.setText("");
-		MainWindow.this.deviceMenu.setEnabled(true);
 		MainWindow.this.powerCheckBox.setSelected(false);
 		MainWindow.this.muteButton.setEnabled(false);
 		MainWindow.this.smartMuteButton.setEnabled(false);
@@ -853,6 +937,8 @@ e.printStackTrace();
 		MainWindow.this.satelliteMeter.setValue(0);
 		MainWindow.this.terrestrialMeter.setValue(0);
 		MainWindow.this.setChannelLogo(-1);
+		MainWindow.this.favoriteMenu.setEnabled(false);
+		MainWindow.this.favoriteCheckbox.setEnabled(false);
 	        MainWindow.this.preferences.turnOff();
 	    }
 	});
@@ -871,6 +957,7 @@ e.printStackTrace();
     private void handleError(final Exception e) {
 	System.err.println(e.getMessage());
 	e.printStackTrace();
+	RadioCommander.theRadio().unregisterEventHandler(this);
 	RadioCommander.theRadio().Dispose();
 	SwingUtilities.invokeLater(new Runnable() {
 	    public void run() {
@@ -888,7 +975,12 @@ e.printStackTrace();
     private void muteChanged() {
     }
     private void channelChanged() {
-	this.setChannelLogo(RadioCommander.theRadio().getChannel());
+	int channel = RadioCommander.theRadio().getChannel();
+
+	this.setChannelLogo(channel);
+
+	Integer sid = new Integer(this.sidForChannel(channel));
+	this.favoriteCheckbox.setSelected(this.favoriteList.contains(sid));
     }
 
     HashMap channelList;
@@ -908,6 +1000,39 @@ e.printStackTrace();
 	this.channelTable.addRowSelectionInterval(row, row);
     }
 
+    private void rebuildFavoritesMenu() {
+	this.favoriteMenu.removeAllItems();
+	this.favoriteMenu.addItem("Favorites");
+	this.favoriteMenu.setSelectedIndex(0);
+	if (this.favoriteList.isEmpty()) {
+	    this.favoriteMenu.setEnabled(false);
+	} else {
+	    this.favoriteMenu.setEnabled(true);
+	    Iterator i = this.favoriteList.iterator();
+	    while(i.hasNext()) {
+		Integer sid = (Integer)i.next();
+		this.favoriteMenu.addItem(sid);
+	    }
+	}
+    }
+
+    HashSet favoriteList = new HashSet();
+
+    private void loadFavorites() {
+	this.favoriteList.clear();
+	byte[] list = this.myUserNode().getByteArray(FAVORITE_LIST, new byte[0]);
+	for(int i = 0; i < list.length; i++)
+	    this.favoriteList.add(new Integer(list[i] & 0xff));
+    }
+    private void saveFavorites() {
+	byte[] list = new byte[this.favoriteList.size()];
+	int n = 0;
+	Iterator i = this.favoriteList.iterator();
+	while(i.hasNext())
+	    list[n++] = (byte)((Integer)i.next()).intValue();
+	this.myUserNode().putByteArray(FAVORITE_LIST, list);
+    }
+
     private void update(final ChannelInfo i) {
 	// We got an update. First, we file it, firing table update events
 	// while we're at it.
@@ -923,6 +1048,8 @@ e.printStackTrace();
 	this.selectCurrentChannel();
 
 	if (RadioCommander.theRadio().getChannel() == i.getChannelNumber()) {
+	    // update the favorite checkbox
+	    this.favoriteCheckbox.setSelected(this.favoriteList.contains(new Integer(i.getServiceID())));
 	    // This is an update for the current channel - fix the labels.
 	    this.channelNumberLabel.setText(Integer.toString(i.getChannelNumber()));
 	    this.channelGenreLabel.setText(i.getChannelGenre());

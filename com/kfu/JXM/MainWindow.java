@@ -1133,7 +1133,7 @@ e.printStackTrace();
 	    disable_it = (newInfo.getChannelArtist().length() == 0 || newInfo.getChannelTitle().length() == 0);
 
 	    // We have new info - make a note for the next transition
-	    this.ratingChannelInfo = new ChannelInfo(newInfo); // Clone it.
+	    this.ratingChannelInfo = newInfo;
 	} else {
 	    disable_it = true;
 	}

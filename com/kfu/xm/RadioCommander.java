@@ -1202,7 +1202,7 @@ t.printStackTrace();
     private ChannelInfo currentChannelInfo = new ChannelInfo();
 	
     private void updateChannelInfo() {
-	this.updateChannelInfo(this.currentChannelInfo);
+	this.updateChannelInfo(new ChannelInfo(this.currentChannelInfo));
     }
     private void updateChannelInfo(ChannelInfo info) {
 	this.notifyGUI(CHANNEL_INFO_UPDATE, info);

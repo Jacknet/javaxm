@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.51 2004/03/11 19:25:20 nsayer Exp $
+ $Id: MainWindow.java,v 1.52 2004/03/12 08:11:07 nsayer Exp $
  
  */
 
@@ -89,7 +89,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
     private class ChannelTableModel extends AbstractTableModel {
         public int getRowCount() {
-	    return MainWindow.this.channelList.size();
+	    return MainWindow.this.sortedSidList.length;
         }
         public int getColumnCount() {
  		return 6;           
@@ -289,6 +289,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	}
 	JXM.myUserNode().putByteArray(CHAN_TABLE_COLS, index);
     }
+
+    private final static Color stripeColor = new Color(.925f, .925f, 1f);
 
     public MainWindow() {
 
@@ -707,7 +709,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		Component c = super.getTableCellRendererComponent(table, value, isSelected, false, row, column);
 		    if (!isSelected) {
 		        c.setForeground(Color.BLACK);
-		        c.setBackground((row % 2 == 0)?Color.WHITE:new Color(.925f, .925f, 1f));
+		        c.setBackground((row % 2 == 0)?Color.WHITE:MainWindow.stripeColor);
 		    } else {
 			c.setForeground(MainWindow.this.channelTable.getSelectionForeground());
 			c.setBackground(MainWindow.this.channelTable.getSelectionBackground());
@@ -778,9 +780,9 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		    // XXX can never happen
 		} else {
 		    int row = lsm.getMinSelectionIndex();
-		    if (row >= MainWindow.this.channelList.size())
+		    if (row >= MainWindow.this.sortedSidList.length)
 			return;
-		    ChannelInfo i = (ChannelInfo)MainWindow.this.channelList.get(new Integer(sidForRow(row)));
+		    ChannelInfo i = (ChannelInfo)MainWindow.this.channelList.get(new Integer(MainWindow.this.sidForRow(row)));
 		    // The problem here is that we will get called even when we do the selecting
 		    // ourselves (as in this.selectCurrentChannel(); ). This means we have to
 		    // efficiently fall through if there's nothing to be done (as will be the case)
@@ -822,7 +824,58 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.channelTable.setPreferredScrollableViewportSize(new Dimension(tw, size.height));
 
 	channelTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-	JScrollPane sp = new JScrollPane(channelTable);
+	class StripedViewport extends JViewport {
+	    public StripedViewport() {
+		MainWindow.this.channelTableModel.addTableModelListener(new TableModelListener() {
+		    public void tableChanged(TableModelEvent e) {
+			StripedViewport.this.repaint();
+		    }
+		});
+		MainWindow.this.channelTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+		    public void valueChanged(ListSelectionEvent e) {
+			StripedViewport.this.repaint();
+		    }
+		});
+	    }
+	    public void paint(Graphics g) {
+		// Paint stripes into the table area not used, well, by the table
+		int stripeHeight = MainWindow.this.channelTable.getRowHeight();
+		int y = (int)this.getY() / stripeHeight;
+
+		if (y % 2 == 0)
+		    y++;
+
+		y *= stripeHeight;
+
+		// Ah, but that may not be the origin relative to the table. Grr.
+		y -= this.getViewPosition().getY() % (stripeHeight * 2);
+
+		while(y < this.getHeight()) {
+		    g.setColor(MainWindow.stripeColor);
+		    g.fillRect((int)this.getX(), y, (int)this.getWidth(), stripeHeight - 1);
+		    y += stripeHeight;
+		    g.setColor(Color.WHITE);
+		    g.fillRect((int)this.getX(), y, (int)this.getWidth(), stripeHeight - 1);
+		    y += stripeHeight;
+		}
+		int selRow = MainWindow.this.channelTable.getSelectedRow();
+		int selectedStripePos = selRow * stripeHeight;
+		selectedStripePos -= this.getViewPosition().getY();
+		//if (selectedStripePos >= this.getY() && selectedStripePos <= this.getY() + this.getHeight()) {
+		    g.setColor(MainWindow.this.channelTable.getSelectionBackground());
+		    g.fillRect(this.getX(), selectedStripePos, (int)this.getWidth(), stripeHeight - 1);
+		//}
+		
+		super.paint(g);
+	    }
+	}
+	JScrollPane sp = new JScrollPane();
+	JViewport jvp = new StripedViewport();
+	jvp.setOpaque(false);
+	jvp.setScrollMode(JViewport.SIMPLE_SCROLL_MODE);
+	//jvp.setView(this.channelTable);
+	sp.setViewport(jvp);
+	sp.setViewportView(this.channelTable);
 	//sp.setMinimumSize(new Dimension(tw + 5, 0));
 	sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 	sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
@@ -1260,6 +1313,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	SwingUtilities.invokeLater(new Runnable() {
 	    public void run() {
 		MainWindow.this.channelList.clear();
+		//MainWindow.this.rebuildSortedSidList();
+		MainWindow.this.sortedSidList = new Integer[0];
 		MainWindow.this.channelTableModel.fireTableDataChanged();
 		MainWindow.this.channelNumberLabel.setText("");
 		MainWindow.this.channelNameLabel.setText("");
@@ -1321,7 +1376,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
 	this.setChannelLogo(channel);
 
-	Integer sid = new Integer(this.sidForChannel(channel));
+	final Integer sid = new Integer(this.sidForChannel(channel));
 	this.currentChannelInfo = (ChannelInfo)this.channelList.get(sid);
 	this.favoriteCheckbox.setSelected(this.favoriteList.contains(sid));
 	this.scrollToCurrentChannel();
@@ -1506,11 +1561,12 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
 	    disable_it = (newInfo.getChannelArtist().length() == 0 || newInfo.getChannelTitle().length() == 0);
 
-	    // We have new info - make a note for the next transition
-	    this.ratingChannelInfo = newInfo;
 	} else {
+	    // We're powering down. Disable the slider when we're done
 	    disable_it = true;
 	}
+	// We have new info - make a note for the next transition
+	this.ratingChannelInfo = newInfo;
 
 	if (toRate != null) {
 	    final int rating = (this.ratingSlider.getValue());

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: RadioCommander.java,v 1.18 2004/04/07 08:03:27 nsayer Exp $
+ $Id: RadioCommander.java,v 1.19 2004/04/07 08:14:03 nsayer Exp $
  
  */
 
@@ -948,6 +948,7 @@ public class RadioCommander implements IAsyncExceptionHandler {
 	        reh.notify(this, code, arg);
 	    }
 	    catch(Throwable t) {
+// The UI must have thrown!
 System.err.println(t.getMessage());
 t.printStackTrace();
 		// ignore for now?

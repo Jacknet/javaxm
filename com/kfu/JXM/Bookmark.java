@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: Bookmark.java,v 1.2 2004/03/09 07:11:04 nsayer Exp $
+ $Id: Bookmark.java,v 1.3 2004/04/07 08:14:02 nsayer Exp $
  
  */
 
@@ -60,10 +60,7 @@ public class Bookmark {
             url = this.sidPattern.matcher(url).replaceAll(Integer.toString(info.getServiceID()));
         }
         catch(UnsupportedEncodingException e) {
-            // Oh, whatever!
-System.err.println(e.getMessage());
-e.printStackTrace();
-            return;
+            // impossible
         }
         PlatformFactory.ourPlatform().openURL(url);
     }

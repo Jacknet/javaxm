@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.85 2004/04/07 08:07:19 nsayer Exp $
+ $Id: MainWindow.java,v 1.86 2004/04/07 08:14:02 nsayer Exp $
  
  */
 
@@ -2030,8 +2030,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     }
 
     private void handleError(final Exception e) {
-	System.err.println(e.getMessage());
-	e.printStackTrace();
+	//System.err.println(e.getMessage());
+	//e.printStackTrace();
 	RadioCommander.theRadio().unregisterEventHandler(this);
 	RadioCommander.theRadio().Dispose();
 	SwingUtilities.invokeLater(new Runnable() {

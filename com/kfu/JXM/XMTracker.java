@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: XMTracker.java,v 1.3 2004/03/09 07:11:04 nsayer Exp $
+ $Id: XMTracker.java,v 1.4 2004/05/11 00:06:04 nsayer Exp $
 
  */
 
@@ -107,7 +107,7 @@ public class XMTracker {
 
     // Call this every once in a while with the current ChannelInfo
     public void update(ChannelInfo info) throws TrackerException {
-        if (!this.enabled || (info.getChannelNumber() == lastChannel && info.getChannelArtist().equals(lastArtist) &&
+        if (!this.enabled || info == null || (info.getChannelNumber() == lastChannel && info.getChannelArtist().equals(lastArtist) &&
                               info.getChannelTitle().equals(lastTitle)))
             return;
 

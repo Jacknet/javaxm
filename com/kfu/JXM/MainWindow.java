@@ -139,6 +139,15 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler {
 				break;
 			case 4: out = ci1.getChannelTitle().compareTo(ci2.getChannelTitle());
 				break;
+			case 5: Integer ticks1 = (Integer)MainWindow.this.tickList.get(new Integer(ci1.getServiceID()));
+				Integer ticks2 = (Integer)MainWindow.this.tickList.get(new Integer(ci2.getServiceID()));
+				if (ticks1 == null)
+					ticks1 = new Integer(0);
+				if (ticks2 == null)
+					ticks2 = new Integer(0);
+				out = ticks1.compareTo(ticks2);
+				break;
+				
 		}
 		out *= MainWindow.this.sortDirection?1:-1;
 		return out;
@@ -146,6 +155,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler {
 	});
 	return sids;
     }
+
+    private HashMap tickList = new HashMap();
 
     private int rowForSID(int sid) {
 	Integer sids[] = this.getSortedSidList();
@@ -169,8 +180,27 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler {
 	return (this.getSortedSidList()[row]).intValue();
     }
 
+    private int totalTicks() {
+	int total = 0;
+	Iterator i = this.tickList.values().iterator();
+	while(i.hasNext())
+	    total += ((Integer)i.next()).intValue();
+	return total;
+    }
+
     private String inUseForSID(int sid) {
-        return "";
+	Integer ticks = (Integer)this.tickList.get(new Integer(sid));
+	if (ticks == null)
+	    ticks = new Integer(0);
+	int percent = (int)(1000f * ((float)ticks.intValue())/((float)this.totalTicks()));
+	if (percent < 1)
+	    return "";
+	StringBuffer sb = new StringBuffer();
+	sb.append(percent / 10);
+	sb.append(".");
+	sb.append(percent % 10);
+	sb.append('%');
+	return sb.toString();
     }
 
     private JLabel channelNumberLabel;
@@ -660,17 +690,25 @@ System.err.println("SHOW ABOUT WINDOW!");
 	    public void run() {
 		if (!RadioCommander.theRadio().isOn())
 		    return;
+		Integer sid;
 		try {
 		    double[] out = RadioCommander.theRadio().getSignalStrength();
 		    MainWindow.this.satelliteMeter.setValue((int)out[RadioCommander.SIGNAL_STRENGTH_SAT]);
 		    MainWindow.this.terrestrialMeter.setValue((int)out[RadioCommander.SIGNAL_STRENGTH_TER]);
+		    sid = new Integer(MainWindow.this.sidForChannel(RadioCommander.theRadio().getChannel()));
 		}
 		catch(RadioException e) {
 		    // sigh. If we get an exception while powering down, then ignore it.
 		    // XXX this is probably a sign we should do more locking
 		    if (RadioCommander.theRadio().isOn())
 		        MainWindow.this.handleError(e);
+		    return;
 		}
+		Integer ticks = (Integer)MainWindow.this.tickList.get(sid);
+		if (ticks == null)
+		    ticks = new Integer(0);
+		ticks = new Integer(ticks.intValue() + 1);
+		MainWindow.this.tickList.put(sid, ticks);
 	    }
 	}, 0, 1000);
 
@@ -906,7 +944,6 @@ e.printStackTrace();
     private final static String XMTRACKER_PASS = "TrackerPassword";
 
     private void poweredUp() {
-	this.channelList = new HashMap();
 	this.loadChannelList();
 	this.muteButton.setEnabled(true);
 	this.smartMuteButton.setEnabled(true);
@@ -1007,7 +1044,7 @@ e.printStackTrace();
 	this.favoriteCheckbox.setSelected(this.favoriteList.contains(sid));
     }
 
-    HashMap channelList;
+    HashMap channelList = new HashMap();
 
     private void deleteChannel(int sid) {
 	this.channelList.remove(new Integer(sid));
@@ -1073,6 +1110,7 @@ e.printStackTrace();
     }
 
     private final static String GRID_NODE = "ChannelGrid";
+    private final static String TICK_NODE = "ChannelUsage";
     private void saveChannelList() {
 	Preferences node = this.myUserNode().node(GRID_NODE);
 	try {
@@ -1101,6 +1139,21 @@ e.printStackTrace();
 		return;
 	    }
 	    node.put(Integer.toString(info.getServiceID()), sb.toString());
+	}
+	node = this.myUserNode().node(TICK_NODE);
+	try {
+	    node.clear();
+	}
+	catch(BackingStoreException e) {
+	    return;
+	}
+	if (this.tickList == null)
+	    return;
+	i = this.tickList.keySet().iterator();
+	while(i.hasNext()) {
+	    Integer sid = (Integer)i.next();
+	    int ticks = ((Integer)this.tickList.get(sid)).intValue();
+	    node.putInt(sid.toString(), ticks);
 	}
     }
 
@@ -1134,6 +1187,25 @@ e.printStackTrace();
 		continue;
 	    }
 	    this.channelList.put(new Integer(info.getServiceID()), info);
+	}
+	node = this.myUserNode().node(TICK_NODE);
+	try {
+	    keys = node.keys();
+	}
+	catch(BackingStoreException e) {
+	    // ignore
+	    return;
+	}
+	this.tickList.clear();
+	for(int i = 0; i < keys.length; i++) {
+	    try {
+		Integer sid = new Integer(Integer.parseInt(keys[i]));
+		int ticks = node.getInt(keys[i], 0);
+		this.tickList.put(sid, new Integer(ticks));
+	    }
+	    catch(NumberFormatException e) {
+		// ignore
+	    }
 	}
 	this.channelTableModel.fireTableDataChanged();
     }

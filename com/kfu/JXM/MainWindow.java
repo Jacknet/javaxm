@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.56 2004/03/14 03:28:31 nsayer Exp $
+ $Id: MainWindow.java,v 1.57 2004/03/14 18:03:22 nsayer Exp $
  
  */
 
@@ -1125,14 +1125,14 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	String user = JXM.myUserNode().get(XMTRACKER_USER, null);
 	String pass = JXM.myUserNode().get(XMTRACKER_PASS, null);
 
-	if (url != null && user != null && pass != null) {
+	if (url != null && user != null && pass != null && url.length() != 0 && user.length() !=0 && pass.length() != 0) {
 	    try {
 		XMTracker.theTracker().setBaseURL(url);
 		XMTracker.theTracker().setCredentials(user, pass);
 	    }
 	    catch(TrackerException e) {
-		JXM.myUserNode().put(XMTRACKER_USER, null);
-		JXM.myUserNode().put(XMTRACKER_PASS, null);
+		JXM.myUserNode().put(XMTRACKER_USER, "");
+		JXM.myUserNode().put(XMTRACKER_PASS, "");
 		this.handleTrackerError(e);
 	    }
 	}

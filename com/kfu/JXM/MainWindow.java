@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.60 2004/03/15 06:01:19 nsayer Exp $
+ $Id: MainWindow.java,v 1.61 2004/03/15 06:31:53 nsayer Exp $
  
  */
 
@@ -1079,21 +1079,27 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
         this.myFrame.setResizable(true);
         this.myFrame.setVisible(true);
 
-	new javax.swing.Timer(1000, new ActionListener() {
-	    public void actionPerformed(ActionEvent e) {
+	java.util.Timer t = new java.util.Timer();
+	t.schedule(new TimerTask() {
+	    public void run() {
 		if (!RadioCommander.theRadio().isOn())
 		    return;
 		Integer sid;
+		final double[] out;
 		try {
-		    double[] out = RadioCommander.theRadio().getSignalStrength();
-		    MainWindow.this.satelliteMeter.setValue((int)out[RadioCommander.SIGNAL_STRENGTH_SAT]);
-		    MainWindow.this.terrestrialMeter.setValue((int)out[RadioCommander.SIGNAL_STRENGTH_TER]);
-		    //sid = new Integer(MainWindow.this.sidForChannel(RadioCommander.theRadio().getChannel()));
+		    out = RadioCommander.theRadio().getSignalStrength();
 		}
 		catch(RadioException ex) {
 		    MainWindow.this.handleError(ex);
 		    return;
 		}
+		// Must take the updates back to the UI thread
+		SwingUtilities.invokeLater(new Runnable() {
+		    public void run() {
+			MainWindow.this.satelliteMeter.setValue((int)out[RadioCommander.SIGNAL_STRENGTH_SAT]);
+			MainWindow.this.terrestrialMeter.setValue((int)out[RadioCommander.SIGNAL_STRENGTH_TER]);
+		    }
+		});
 		if (MainWindow.this.currentChannelInfo == null)
 		    return;
 		sid = new Integer(MainWindow.this.currentChannelInfo.getServiceID());
@@ -1109,7 +1115,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		} else
 		    MainWindow.this.firePercentChanges();
 	    }
-	}).start();
+	}, 1000, 1000);
 
 	this.loadFavorites();
 

@@ -728,6 +728,7 @@ System.err.println("SHOW ABOUT WINDOW!");
 		}
 		MainWindow.this.myUserNode().putInt(SORT_FIELD, MainWindow.this.sortField);
 		MainWindow.this.myUserNode().putBoolean(SORT_DIR, MainWindow.this.sortDirection);
+		MainWindow.this.scrollToCurrentChannel();
 	    }
 	});
 
@@ -1213,8 +1214,10 @@ e.printStackTrace();
 	    }
 	});
     }
+
     private void muteChanged() {
     }
+
     private void channelChanged() {
 	int channel = RadioCommander.theRadio().getChannel();
 
@@ -1222,6 +1225,7 @@ e.printStackTrace();
 
 	Integer sid = new Integer(this.sidForChannel(channel));
 	this.favoriteCheckbox.setSelected(this.favoriteList.contains(sid));
+	this.scrollToCurrentChannel();
     }
 
     HashMap channelList;
@@ -1530,5 +1534,13 @@ e.printStackTrace();
 	}
 	// Next, we pass it around to the various things around here
 	// to see if anybody cares.
+    }
+
+    private void scrollToCurrentChannel() {
+	int row = this.rowForSID(RadioCommander.theRadio().getServiceID());
+	if (row < 0)
+	    return;
+	Rectangle rect = this.channelTable.getCellRect(row, 0, true);
+	this.channelTable.scrollRectToVisible(rect);
     }
 }

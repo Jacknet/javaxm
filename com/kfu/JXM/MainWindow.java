@@ -374,6 +374,7 @@ public static void main(String[] args) { new MainWindow(); }
     private void poweredDown() {
 	RadioCommander.theRadio().unregisterEventHandler(this);
 	this.channelList = null;
+	this.channelTableModel.fireTableDataChanged();
 	this.channelNumberLabel.setText("");
 	this.channelNameLabel.setText("");
 	this.channelGenreLabel.setText("");

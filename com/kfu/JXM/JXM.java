@@ -46,7 +46,7 @@ public class JXM {
     }
 
     public static String version() {
-	return "v0.3";
+	return "v0.4";
     }
     public static String userAgentString() {
 	return "JXM " + version();

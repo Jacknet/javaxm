@@ -2,7 +2,7 @@
 ; Nullsoft Scriptable Install System
 ; Install script for JXM on Windows
 ;
-; $Id: jxm.nsi,v 1.10 2004/04/10 07:59:15 nsayer Exp $
+; $Id: jxm.nsi,v 1.11 2004/04/10 08:20:35 nsayer Exp $
 
 ;Based on a template by Joost Verburg
 
@@ -99,7 +99,6 @@ Section "Working Section" SecWork
   File jxm.jar
   File jxm.ico
   File trayicon.jar
-  File trayicon.png
   File TrayIcon12.dll
   File registry.jar
   File ICE_JNIRegistry.dll
@@ -179,7 +178,6 @@ Section "Uninstall"
   Delete /REBOOTOK "$INSTDIR\jxm.ico"
   Delete /REBOOTOK "$INSTDIR\comm.jar"
   Delete /REBOOTOK "$INSTDIR\win32com.dll"
-  Delete /REBOOTOK "$INSTDIR\trayicon.png"
   Delete /REBOOTOK "$INSTDIR\trayicon.jar"
   Delete /REBOOTOK "$INSTDIR\TrayIcon12.dll"
   Delete /REBOOTOK "$INSTDIR\registry.jar"

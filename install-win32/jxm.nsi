@@ -2,7 +2,7 @@
 ; Nullsoft Scriptable Install System
 ; Install script for JXM on Windows
 ;
-; $Id: jxm.nsi,v 1.11 2004/04/10 08:20:35 nsayer Exp $
+; $Id: jxm.nsi,v 1.12 2004/04/10 15:52:51 nsayer Exp $
 
 ;Based on a template by Joost Verburg
 
@@ -144,7 +144,7 @@ Section "Working Section" SecWork
     # list.
     #
     # Oh, and this crap is why the start menu shortcut is NOT optional. :-)
-    CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\JXM.lnk" '$JAVA_HOME\bin\javaw.exe' '-cp comm.jar;registry.jar;jxm.jar com.kfu.JXM.JXM' "$INSTDIR\jxm.ico" 0
+    CreateShortCut "$SMPROGRAMS\$STARTMENU_FOLDER\JXM.lnk" '$JAVA_HOME\bin\javaw.exe' '-cp comm.jar;registry.jar;trayicon.jar;jxm.jar com.kfu.JXM.JXM' "$INSTDIR\jxm.ico" 0
   
   !insertmacro MUI_STARTMENU_WRITE_END
 

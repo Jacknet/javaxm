@@ -39,7 +39,7 @@ import edu.stanford.ejalbert.*;
 
 import com.kfu.xm.*;
 
-public class MainWindow implements RadioEventHandler {
+public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler {
 
     // A popup menu for a given channel
     private class ChannelPopupMenu extends JPopupMenu {
@@ -201,15 +201,20 @@ public class MainWindow implements RadioEventHandler {
     public void prefs() {
 	this.preferences.show();
     }
+    public void about() {
+System.err.println("SHOW ABOUT WINDOW!");
+    }
 
     public MainWindow() {
 
-    try {
-	UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-    }
-    catch(Exception e) {
-	// Well, we tried
-    }
+	PlatformFactory.ourPlatform().registerCallbackHandler(this);
+
+	try {
+	    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+	}
+	catch(Exception e) {
+	    // Well, we tried
+	}
 
         this.myFrame = new JFrame("JXM");
 	this.myFrame.setJMenuBar(new JMenuBar());
@@ -221,23 +226,25 @@ public class MainWindow implements RadioEventHandler {
 	this.preferences = new PreferencesDialog(this.myFrame);
 
 	// -----
-	// If on a mac, don't do this - use the MRJ stuff instead
-	JMenu jm = new JMenu("File");
-	JMenuItem jmi = new JMenuItem("Preferences...");
-	jmi.addActionListener(new ActionListener() {
-	    public void actionPerformed(ActionEvent e) {
+	// If on a mac, don't do this - use the EAWT stuff instead
+	if (!PlatformFactory.ourPlatform().useMacMenus()) {
+	    JMenu jm = new JMenu("File");
+	    JMenuItem jmi = new JMenuItem("Preferences...");
+	    jmi.addActionListener(new ActionListener() {
+	        public void actionPerformed(ActionEvent e) {
 		MainWindow.this.prefs();
-	    }
-	});
-	jm.add(jmi);
-	jmi = new JMenuItem("Quit");
-	jmi.addActionListener(new ActionListener() {
-	    public void actionPerformed(ActionEvent e) {
-		MainWindow.this.quit();
-	    }
-	});
-	jm.add(jmi);
-	this.myFrame.getJMenuBar().add(jm);
+	        }
+	    });
+	    jm.add(jmi);
+	    jmi = new JMenuItem("Quit");
+	    jmi.addActionListener(new ActionListener() {
+	        public void actionPerformed(ActionEvent e) {
+		    MainWindow.this.quit();
+	        }
+	    });
+	    jm.add(jmi);
+	    this.myFrame.getJMenuBar().add(jm);
+	}
 	// -----
 
 	this.myFrame.getContentPane().setLayout(new BorderLayout());
@@ -750,12 +757,10 @@ e.printStackTrace();
 
     private void openURL(String u) {
 	try {
-	    BrowserLauncher.openURL(u);
+	    PlatformFactory.ourPlatform().openURL(u);
 	}
 	catch(IOException e) {
-System.err.println(e.getMessage());
-e.printStackTrace();
-	    // XXX what do we do about this?
+	    JOptionPane.showMessageDialog(this.myFrame, e.getMessage(), "Error opening URL", JOptionPane.ERROR_MESSAGE);
 	}
     }
 
@@ -802,6 +807,16 @@ e.printStackTrace();
 	    return;
 	}
 	this.smartMuteButton.setSelected(muteState);
+    }
+
+    // the IPlatformCallbackHandler interface
+    public void platformNotify(int type, Object arg) {
+	switch(type) {
+	    case PlatformFactory.PLAT_CB_PREFS:	this.prefs(); break;
+	    case PlatformFactory.PLAT_CB_ABOUT:	this.about(); break;
+	    case PlatformFactory.PLAT_CB_QUIT:	this.quit(); break;
+	    default: throw new IllegalArgumentException("Which platform callback type??");
+	}
     }
 
     // the RadioEventHandler interface

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MacOSX.java,v 1.10 2004/04/10 07:59:16 nsayer Exp $
+ $Id: MacOSX.java,v 1.11 2004/04/17 18:45:40 nsayer Exp $
  
  */
 
@@ -159,7 +159,7 @@ public class MacOSX implements IPlatformHandler {
 	nmi = new NSMenuItem().separatorItem();
 	out.addItem(nmi);
 
-	nmi = new NSMenuItem("Add to memory", new NSSelector("memoryMenuClicked", new Class[] {NSObject.class}), "");
+	nmi = new NSMenuItem("Add to notebook", new NSSelector("memoryMenuClicked", new Class[] {NSObject.class}), "");
 	nmi.setTarget(this);
 	out.addItem(nmi);
 	nmi = new NSMenuItem().separatorItem();

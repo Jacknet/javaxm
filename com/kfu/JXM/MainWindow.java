@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.47 2004/03/11 04:23:28 nsayer Exp $
+ $Id: MainWindow.java,v 1.48 2004/03/11 06:52:06 nsayer Exp $
  
  */
 
@@ -89,8 +89,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
     private class ChannelTableModel extends AbstractTableModel {
         public int getRowCount() {
-	    if (MainWindow.this.channelList == null)
-		return 0;
 	    return MainWindow.this.channelList.size();
         }
         public int getColumnCount() {
@@ -118,7 +116,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
     private Integer[] sortedSidList = new Integer[0];
 
-    // Wow. This operation is stunningly inefficient
+    // Wow. This operation is stunningly inefficient. The horror.
     private void rebuildSortedSidList() {
 	ArrayList sids = new ArrayList();
 	Iterator i = this.channelList.keySet().iterator();
@@ -166,8 +164,15 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	Integer oldList[] = this.sortedSidList;
 	Integer newList[] = (Integer[])sids.toArray(new Integer[0]);
 	this.sortedSidList = newList;
-	if (!Arrays.equals(oldList, newList))
+
+	if (oldList.length != newList.length)
 	    this.channelTableModel.fireTableDataChanged();
+	else {
+	    for(int j = 0; j < oldList.length; j++)
+		if (!oldList[j].equals(newList[j]))
+		    this.channelTableModel.fireTableRowsUpdated(j, j);
+	}
+	//this.channelTableModel.fireTableDataChanged();
     }
 
     private HashMap tickList = new HashMap();
@@ -196,8 +201,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     }
 
     private int sidForChannel(int chan) {
-	if (this.channelList == null)
-	    return -1;
 	Iterator i = this.channelList.values().iterator();
 	while(i.hasNext()) {
 	    ChannelInfo info = (ChannelInfo)(i.next());
@@ -209,8 +212,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
     private int sidForRow(int row) {
 	// This can happen at startup.
-	if (this.sortedSidList.length != this.channelList.size())
-	    this.rebuildSortedSidList();
+	//if (this.sortedSidList.length != this.channelList.size())
+	//    this.rebuildSortedSidList();
 	return (this.sortedSidList[row]).intValue();
     }
 
@@ -650,9 +653,11 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.channelTableModel = new ChannelTableModel();
 	channelTable.setModel(this.channelTableModel);
 
-	final TableCellRenderer orig = this.channelTable.getTableHeader().getDefaultRenderer(); //tc.getHeaderRenderer();
+	//TableCellRenderer orig = this.channelTable.getTableHeader().getDefaultRenderer(); //tc.getHeaderRenderer();
 
-	TableCellRenderer tcr = new DefaultTableCellRenderer() {
+	class TableHeaderRenderer extends DefaultTableCellRenderer {
+	    private TableCellRenderer orig;
+	    public TableHeaderRenderer(TableCellRenderer orig) { this.orig = orig; }
 	    public Component getTableCellRendererComponent(JTable table,  Object value,  boolean isSelected, boolean hasFocus,  int row,  int column) {
 		int modelColumn = MainWindow.this.channelTable.getColumnModel().getColumn(column).getModelIndex();
 		if (MainWindow.this.sortField == modelColumn) {
@@ -663,8 +668,9 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		    sb.append(this.getClass().getResource(MainWindow.this.sortDirection?"/images/arrow-down.png":"/images/arrow-up.png"));
 		    sb.append("\"></html>");
 		    value = sb.toString();
+		    isSelected = true;
 		}
-		return orig.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+		return this.orig.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 		/*Component c = orig.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 		if (MainWindow.this.sortField != modelColumn)
 		    return ;
@@ -673,6 +679,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		return c; */
 	    }
 	};
+	TableCellRenderer tcr = new TableHeaderRenderer(this.channelTable.getTableHeader().getDefaultRenderer());
 
 	byte cols[];
 
@@ -691,8 +698,15 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
 	TableColumnModel tcm = new DefaultTableColumnModel();
 	TableColumn tc;
-	DefaultTableCellRenderer centered = new DefaultTableCellRenderer();
+	// Damn it, don't show a focus ring!
+	class MyTableCellRenderer extends DefaultTableCellRenderer {
+	    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+		return super.getTableCellRendererComponent(table, value, isSelected, false, row, column);
+	    }
+	}
+	DefaultTableCellRenderer centered = new MyTableCellRenderer();
 	centered.setHorizontalAlignment(SwingConstants.CENTER);
+	DefaultTableCellRenderer plain = new MyTableCellRenderer();
 	for(int i = 0; i < cols.length; i++) {
 	    switch(cols[i]) {
 		case 0:
@@ -704,21 +718,25 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		case 1:
 		    tc = new TableColumn(1, 100, null, null);
 		    tc.setMinWidth(100);
+		    tc.setCellRenderer(plain);
 		    tc.setHeaderValue("Genre");
 		    break;
 		case 2:
 		    tc = new TableColumn(2, 100, null, null);
 		    tc.setMinWidth(100);
+		    tc.setCellRenderer(plain);
 		    tc.setHeaderValue("Name");
 		    break;
 		case 3:
 		    tc = new TableColumn(3, 160, null, null);
 		    tc.setMinWidth(160);
+		    tc.setCellRenderer(plain);
 		    tc.setHeaderValue("Artist");
 		    break;
 		case 4:
 		    tc = new TableColumn(4, 160, null, null);
 		    tc.setMinWidth(160);
+		    tc.setCellRenderer(plain);
 		    tc.setHeaderValue("Title");
 		    break;
 		case 5:
@@ -892,9 +910,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
         this.myFrame.setResizable(true);
         this.myFrame.setVisible(true);
 
-	java.util.Timer t = new java.util.Timer();
-	t.schedule(new TimerTask() {
-	    public void run() {
+	new javax.swing.Timer(1000, new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
 		if (!RadioCommander.theRadio().isOn())
 		    return;
 		Integer sid;
@@ -904,11 +921,11 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		    MainWindow.this.terrestrialMeter.setValue((int)out[RadioCommander.SIGNAL_STRENGTH_TER]);
 		    sid = new Integer(MainWindow.this.sidForChannel(RadioCommander.theRadio().getChannel()));
 		}
-		catch(RadioException e) {
+		catch(RadioException ex) {
 		    // sigh. If we get an exception while powering down, then ignore it.
 		    // XXX this is probably a sign we should do more locking
 		    if (RadioCommander.theRadio().isOn())
-		        MainWindow.this.handleError(e);
+		        MainWindow.this.handleError(ex);
 		    return;
 		}
 		if (sid.intValue() < 0) // just skip it if we don't know the SID (yet)
@@ -922,10 +939,10 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		    // If we're not sorting by percentage, then this could not have changed the order.
 		    // Otherwise, it just might.
 		    MainWindow.this.rebuildSortedSidList();
-		}
-		MainWindow.this.firePercentChanges();
+		} else
+		    MainWindow.this.firePercentChanges();
 	    }
-	}, 0, 1000);
+	}).start();
 
 	String url = JXM.myUserNode().get(XMTRACKER_URL, null);
 	String user = JXM.myUserNode().get(XMTRACKER_USER, null);
@@ -1188,6 +1205,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
     private void poweredUp() {
 	this.loadChannelList();
+	this.rebuildSortedSidList();
 	this.muteButton.setEnabled(true);
 	this.smartMuteButton.setEnabled(true);
 	//this.itmsButton.setEnabled(true);
@@ -1225,10 +1243,10 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	}.start(); */
 	this.updateRatingSlider(null);
 	this.saveChannelList();
-	this.channelList = null;
-	this.channelTableModel.fireTableDataChanged();
 	SwingUtilities.invokeLater(new Runnable() {
 	    public void run() {
+		MainWindow.this.channelList.clear();
+		MainWindow.this.channelTableModel.fireTableDataChanged();
 		MainWindow.this.channelNumberLabel.setText("");
 		MainWindow.this.channelNameLabel.setText("");
 		MainWindow.this.channelGenreLabel.setText("");
@@ -1294,7 +1312,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.scrollToCurrentChannel();
     }
 
-    HashMap channelList;
+    private Map channelList = Collections.synchronizedMap(new HashMap());
 
     private void deleteChannel(int sid) {
 	this.channelList.remove(new Integer(sid));
@@ -1367,8 +1385,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	catch(BackingStoreException e) {
 	    return;
 	}
-	if (this.channelList == null)
-	    return;
 	Iterator i = this.channelList.values().iterator();
 	while(i.hasNext()) {
 	    ChannelInfo info = (ChannelInfo)i.next();
@@ -1408,7 +1424,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     }
 
     private void loadChannelList() {
-	this.channelList = new HashMap();
+	this.channelList.clear();
 	Preferences node = JXM.myUserNode().node(GRID_NODE);
 	String[] keys;
 	try {
@@ -1418,7 +1434,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    // ignore
 	    return;
 	}
-	this.channelList.clear();
 	for(int i = 0; i < keys.length; i++) {
 	    String val = node.get(keys[i], null);
 	    if (val == null)
@@ -1461,7 +1476,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		// ignore
 	    }
 	}
-	this.channelTableModel.fireTableDataChanged();
+	//this.channelTableModel.fireTableDataChanged();
     }
 
     private ChannelInfo ratingChannelInfo;
@@ -1562,25 +1577,49 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     }
 
     private synchronized void update(final ChannelInfo i) {
+	// Because of the synchronization, it's possible for this to be called after power-off.
+	if (!RadioCommander.theRadio().isOn())
+	    return;
+
+	// Ok, Mark, you get your way.
+	// Occasionally, usually shortly after powerup, the radio will lose track
+	// of the channel genre and name. If they're blank, then we will prefer the
+	// cache.
+	if (i.getChannelName().length() == 0) {
+	    ChannelInfo cache = (ChannelInfo)this.channelList.get(new Integer(i.getServiceID()));
+	    if (cache != null)
+		i.setChannelName(cache.getChannelName());
+	}
+	if (i.getChannelGenre().length() == 0) {
+	    ChannelInfo cache = (ChannelInfo)this.channelList.get(new Integer(i.getServiceID()));
+	    if (cache != null)
+		i.setChannelGenre(cache.getChannelGenre());
+	}
+
+	// We got an update. Is it a new favorite? If so, remember that for later.
+	boolean newFav =  (!this.channelList.containsKey(new Integer(i.getServiceID()))) && this.favoriteList.contains(new Integer(i.getServiceID()));
 	// We got an update. First, we file it, firing table update events
 	// while we're at it.
-	if (this.channelList == null) // spurious update
-	    return;
-	int oldSize = this.channelList.size();
+	//int oldSize = this.channelList.size();
 	this.channelList.put(new Integer(i.getServiceID()), i);
+	if (newFav)
+	    this.rebuildFavoritesMenu();
+/*
 	int row = this.rowForSID(i.getServiceID());
 	if (this.channelList.size() != oldSize) {
 	    this.channelTableModel.fireTableRowsInserted(row, row);
-	    if (this.channelList.containsKey(new Integer(i.getServiceID())))
-		this.rebuildFavoritesMenu();
 	} else {
 	    this.channelTableModel.fireTableRowsUpdated(row, row);
 	}
+*/
 
 	// Alas, if we're sorting on artist or title, then any update could dirty the sort list
 	this.rebuildSortedSidList();
+	int row = this.rowForSID(i.getServiceID());
+	this.channelTableModel.fireTableRowsUpdated(row, row);
 
 	this.selectCurrentChannel();
+
 
 	if (RadioCommander.theRadio().getChannel() == i.getChannelNumber()) {
 	    this.currentChannelInfo = i;

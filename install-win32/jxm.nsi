@@ -2,7 +2,7 @@
 ; Nullsoft Scriptable Install System
 ; Install script for JXM on Windows
 ;
-; $Id: jxm.nsi,v 1.1 2004/03/18 07:44:53 nsayer Exp $
+; $Id: jxm.nsi,v 1.2 2004/03/18 16:37:20 nsayer Exp $
 
 ;Based on a template by Joost Verburg
 
@@ -69,7 +69,7 @@ Function CheckJRE
   Push $R0
   Push $R1
    ReadRegStr $JAVA_VER HKLM "SOFTWARE\JavaSoft\Java Runtime Environment" "CurrentVersion"
-   IfErrors +1 noErrors:
+   IfErrors +1 noErrors
      MessageBox MB_OK|MB_ICONSTOP "You do not appear to have a Java Runtime Environment installed."
      Exec '"explorer.exe" ${GET_JAVA}'
      Quit

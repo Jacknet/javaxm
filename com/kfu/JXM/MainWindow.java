@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.62 2004/03/18 07:41:17 nsayer Exp $
+ $Id: MainWindow.java,v 1.63 2004/03/18 16:37:18 nsayer Exp $
  
  */
 
@@ -107,7 +107,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	// This is a "throwaway" menu - it's not dynamic
 	private ChannelInfo info;
 	public BookmarkMenu(ChannelInfo info) {
-	    super("Bookmarks");
+	    super("Web Bookmarks");
 	    this.info = info;
 	    for(int i = 0; i < MainWindow.this.bookmarks.length; i++) {
 		final Bookmark b = MainWindow.this.bookmarks[i];
@@ -508,7 +508,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		});
 	    }
 	}
- 	this.bookmarkMenu = new DynamicBookmarkMenu("Bookmarks");
+ 	this.bookmarkMenu = new DynamicBookmarkMenu("Web Bookmarks");
 	this.bookmarkMenu.setEnabled(false);
 	this.myFrame.getJMenuBar().add(this.bookmarkMenu);
 	jm = new JMenu("Windows");

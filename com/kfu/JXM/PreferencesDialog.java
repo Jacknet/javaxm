@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: PreferencesDialog.java,v 1.18 2004/03/14 21:38:43 nsayer Exp $
+ $Id: PreferencesDialog.java,v 1.19 2004/03/18 16:37:19 nsayer Exp $
  
  */
 
@@ -310,7 +310,7 @@ public class PreferencesDialog extends JDialog {
 	gbc.gridy = 4;
 	jp.add(jl, gbc);
 
-	jtp.addTab("Bookmarks", jp);
+	jtp.addTab("Web Bookmarks", jp);
 
 	jp = new JPanel();
 	jp.setLayout(new GridBagLayout());
@@ -416,6 +416,7 @@ public class PreferencesDialog extends JDialog {
 
     private String[][] defaultBookMarks = {
 	{ "Channel Home Page",			"http://www.xmradio.com/programming/channel_page.jsp?ch={NUMBER}" },
+	{ "Channel Guide Page",			"http://www.xmradio.com/programming/channel_guide.jsp?ch={NUMBER}" },
 	{ "View song ratings for channel",	"http://xmpcr.kfu.com/ratings.php?channel={NUMBER}" },
 	{ "XMNation Forum for Channel",		"http://www.xmnation.net/forum_for_channel.php?ch={NUMBER}" },
 	{ "Google search for Artist",		"http://www.google.com/search?q=%22{ARTIST}%22" },

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.44 2004/03/10 03:40:18 nsayer Exp $
+ $Id: MainWindow.java,v 1.45 2004/03/10 06:19:19 nsayer Exp $
  
  */
 
@@ -982,14 +982,19 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.smartMuteButton.setSelected(false);
 	boolean muteState;
 	try {
-	    muteState = !RadioCommander.theRadio().isMuted();
+	    muteState = RadioCommander.theRadio().isMuted();
+	    if (muteState && this.smartMuteInfo != null) {
+		// This is a smart-to-normal mute transition.
+		// So don't invert the state
+	    } else
+		muteState = !muteState;
 	    RadioCommander.theRadio().setMute(muteState);
+	    this.smartMuteInfo = null;
 	}
 	catch(RadioException e) {
 	    this.handleError(e);
 	    return;
 	}
-	this.smartMuteInfo = null;
 	this.muteButton.setSelected(muteState);
     }
 
@@ -999,7 +1004,13 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	boolean muteState;
 	ChannelInfo i = null;
 	try {
-	    muteState = !RadioCommander.theRadio().isMuted();
+	    muteState = RadioCommander.theRadio().isMuted();
+	    RadioCommander.theRadio().setMute(muteState);
+	    if (muteState && this.smartMuteInfo == null) {
+		// This is a normal-to-smart mute transition
+		// So don't invert the state
+	    } else
+		muteState = !muteState;
 	    RadioCommander.theRadio().setMute(muteState);
 	    if (muteState)
 		this.smartMuteInfo = RadioCommander.theRadio().getChannelInfo();

@@ -2,7 +2,7 @@
 ; Nullsoft Scriptable Install System
 ; Install script for JXM on Windows
 ;
-; $Id: jxm.nsi,v 1.7 2004/04/04 22:15:03 nsayer Exp $
+; $Id: jxm.nsi,v 1.8 2004/04/07 07:33:24 nsayer Exp $
 
 ;Based on a template by Joost Verburg
 
@@ -103,14 +103,14 @@ Section "Working Section" SecWork
   File comm.jar
   File win32com.dll
 
-  // Stupid javax.comm!!! It *requires* this file be put in with the JRE.
-  // The jar merely needs to be in the classpath and the DLL merely needs
-  // to be in the windows %PATH%, but the stupid one-liner property file
-  // must be in $JAVA_HOME\lib. It's that sort of thing that causes unrest.
+  ; Stupid javax.comm!!! It *requires* this file be put in with the JRE.
+  ; The jar merely needs to be in the classpath and the DLL merely needs
+  ; to be in the windows %PATH%, but the stupid one-liner property file
+  ; must be in $JAVA_HOME\lib. It's that sort of thing that causes unrest.
   SetOutPath "$JAVA_HOME\lib"
   File javax.comm.properties
 
-  // We used to put the DLL in with the JRE.
+  ; We used to put the DLL in with the JRE.
   ;SetOutPath "$JAVA_HOME\bin"
   ;SetOutPath "$JAVA_HOME\lib\ext"
 

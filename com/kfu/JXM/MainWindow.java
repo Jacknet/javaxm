@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.50 2004/03/11 19:07:18 nsayer Exp $
+ $Id: MainWindow.java,v 1.51 2004/03/11 19:25:20 nsayer Exp $
  
  */
 
@@ -631,6 +631,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.myFrame.getContentPane().add(top, frameGBC);
 
 	this.channelTable = new JTable();
+	this.channelTable.setAutoCreateColumnsFromModel(false);
 	this.channelTable.setShowHorizontalLines(false);
 	this.channelTable.setShowVerticalLines(true);
 	this.channelTable.setGridColor(new Color(.85f, .85f, .85f));
@@ -817,6 +818,9 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
 	//channelTable.setMinimumSize(new Dimension(tw + 5, 0));
 	//channelTable.setPreferredViewportSize(new Dimension((int)channelTable.getMinimumSize().getWidth(), (int)channelTable.getPreferredSize().getHeight()));
+	Dimension size = this.channelTable.getPreferredScrollableViewportSize();
+	this.channelTable.setPreferredScrollableViewportSize(new Dimension(tw, size.height));
+
 	channelTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 	JScrollPane sp = new JScrollPane(channelTable);
 	//sp.setMinimumSize(new Dimension(tw + 5, 0));

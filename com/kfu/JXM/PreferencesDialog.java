@@ -233,7 +233,12 @@ public class PreferencesDialog extends JDialog {
     // -----------------------
     // Below are the properties we export to the world.
 
-    public String getDevice() { return (String)this.deviceMenu.getSelectedItem(); }
+    public String getDevice() {
+	String out = (String)this.deviceMenu.getSelectedItem();
+	if (out == "" | out == "Pick device")
+	    return null;
+	return out;
+    }
     // Call this after a successfull power-up
     public void saveDevice() {
 	this.myNode().put(DEVICE_NAME_KEY, (String)this.deviceMenu.getSelectedItem());

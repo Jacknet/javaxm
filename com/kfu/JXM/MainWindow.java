@@ -861,6 +861,7 @@ e.printStackTrace();
 	if (deviceName == null) {
 	    this.powerCheckBox.setSelected(false);
 	    JOptionPane.showMessageDialog(this.myFrame, "Please pick a device before powering up.", "No device selected", JOptionPane.ERROR_MESSAGE);
+	    this.prefs();
 	    return;
 	}
 	// Attempt to power up the radio

@@ -432,7 +432,7 @@ public class BrowserLauncher {
 							}
 						}
 					} catch (IllegalArgumentException iare) {
-						browser = browser;
+						// browser = browser;	// mbennett: compiler warning no effect
 						errorMessage = iare.getMessage();
 						return null;
 					} catch (IllegalAccessException iae) {

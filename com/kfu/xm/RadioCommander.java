@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: RadioCommander.java,v 1.14 2004/03/19 16:27:17 nsayer Exp $
+ $Id: RadioCommander.java,v 1.15 2004/03/20 01:32:47 nsayer Exp $
  
  */
 
@@ -959,7 +959,8 @@ t.printStackTrace();
     public void turnOn(String device) throws RadioException {
         if (this.myDeviceIn != null || this.myDeviceOut != null)
             throw new IllegalStateException("Radio is already on");
-        
+	this.powerChanging = true;
+	try { 
         try {
             CommPortIdentifier cpi = CommPortIdentifier.getPortIdentifier(device
 );
@@ -1062,6 +1063,10 @@ t.printStackTrace();
 
         // Powering up clears out the duration/progress times
         this.currentSongStarted = this.currentSongEnds = null;
+	}
+	finally {
+	    this.powerChanging = false;
+	}
     }
 
     public void handleException(Exception e) {
@@ -1075,7 +1080,7 @@ t.printStackTrace();
     }
 	
     public boolean isOn() {
-	if (this.poweringDown)
+	if (this.powerChanging)
 	    return false;
         return this.myDeviceIn != null;
     }
@@ -1157,10 +1162,10 @@ finally {
 }
     }
    
-    private boolean poweringDown = false; 
+    private boolean powerChanging = false; 
     public void turnOff() throws RadioException {
         this.checkDisposed();
-	this.poweringDown = true;
+	this.powerChanging = true;
 	try {
 
 	this.theSurfer.cancel();
@@ -1175,7 +1180,7 @@ finally {
         this.notifyGUI(POWERED_OFF);
 	}
 	finally {
-	    this.poweringDown = false;
+	    this.powerChanging = false;
 	}
     }
 	

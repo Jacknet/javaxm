@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.63 2004/03/18 16:37:18 nsayer Exp $
+ $Id: MainWindow.java,v 1.64 2004/03/19 05:15:44 nsayer Exp $
  
  */
 
@@ -43,6 +43,36 @@ import com.kfu.xm.*;
 public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, IPreferenceCallbackHandler {
 
     public static class ChannelInfoPanel extends JPanel {
+	private class SongTimeProgressBar extends JProgressBar {
+	    public SongTimeProgressBar() {
+		super();
+	    }
+	    public void paintBorder(Graphics g) {
+		g.setColor(this.getForeground());
+		g.drawRect(0, 0, this.getWidth() - 1, this.getHeight() - 1);
+	    }
+	    public void paint(Graphics g) {
+		Rectangle bounds = this.getBounds();
+		g.setColor(this.getBackground());
+		// Inside the border, please.
+		g.fillRect(0, 0, (int)bounds.getWidth() - 1, (int)bounds.getHeight() - 1);
+		this.paintBorder(g); // XXX - Why is this necessary?! Why doesn't setBorder(true) work?!
+		int valueWidth = this.getMaximum() - this.getMinimum();
+		int valueSoFar = this.getValue() - this.getMinimum();
+		// We want posSoFar, posSoFar/bounds.getWidth() = valueSoFar / valueWidth, or posSoFar = valueSoFar * bounds.getWidth() / valueWidth;
+		int posSoFar = (int)((((float)valueSoFar) * ((float)bounds.getWidth())) / ((float)valueWidth));
+		int diamondHeightOffset = (int)(bounds.getHeight() * .2f);
+		Polygon p = new Polygon();
+		p.addPoint(posSoFar, diamondHeightOffset);
+		p.addPoint(posSoFar + (((int)bounds.getHeight() - 1) / 2 - diamondHeightOffset), (int)bounds.getHeight() / 2);
+		p.addPoint(posSoFar, (int)bounds.getHeight() - diamondHeightOffset - 1);
+		p.addPoint(posSoFar - (((int)bounds.getHeight() - 1) / 2 - diamondHeightOffset), (int)bounds.getHeight() / 2);
+		p.addPoint(posSoFar, diamondHeightOffset);
+		g.setColor(this.getForeground());
+		g.fillPolygon(p);
+	    }
+	}
+
 	public final static Font chNumFont = new Font(null, Font.BOLD, 18);
 	public final static Font chGenreFont = new Font(null, Font.PLAIN, 12);
 	public final static Font chNameFont = new Font(null, Font.PLAIN, 14);
@@ -50,6 +80,12 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	public final static Font chTitleFont = new Font(null, Font.BOLD, 20);
 
 	private JLabel channelNumberLabel, channelGenreLabel, channelNameLabel, channelArtistLabel, channelTitleLabel;
+
+	private JProgressBar songTimeBar;
+
+	private Date songStart, songEnd;
+
+	private javax.swing.Timer songTimeTimer;
 
 	public ChannelInfoPanel() {
 		this.setLayout(new GridBagLayout());
@@ -86,7 +122,59 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		this.channelTitleLabel.setFont(chTitleFont);
 		gbc.gridy = 1;
 		this.add(this.channelTitleLabel, gbc);
+		this.songTimeBar = new SongTimeProgressBar();
+		this.songTimeBar.setVisible(false);
+		this.songTimeBar.setMinimum(0);
+		this.songTimeBar.setMaximum(1000);
+		this.songTimeBar.setBorderPainted(true); // XXX - this doesn't appear to frigging work.
+		this.songTimeBar.setBackground(this.channelTitleLabel.getBackground());
+		this.songTimeBar.setForeground(this.channelTitleLabel.getForeground());
+		this.songTimeBar.setPreferredSize(new Dimension((int)this.getPreferredSize().getWidth(), 10));
+		gbc.gridy = 2;
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.insets = new Insets(5, 20, 0, 20);
+		this.add(this.songTimeBar, gbc);
+
+		this.songTimeTimer = new javax.swing.Timer(50, new ActionListener() {
+		    public void actionPerformed(ActionEvent e) {
+			ChannelInfoPanel.this.timerTick();
+		    }
+		});
+		this.songTimeTimer.stop();
 	}
+
+	public void timerTick() {
+	    if (this.songStart == null || this.songEnd == null)
+		return;
+
+	    long len = this.songEnd.getTime() - this.songStart.getTime();
+	    long soFar = new Date().getTime() - this.songStart.getTime();
+	    float permill = (((float)soFar) / ((float)len)) * 1000.0f;
+	    int val;
+	    if (permill < 0f)
+		val = 0;
+	    else if (permill >= 1000f)
+		val = 1000;
+	    else
+		val = (int)permill;
+	    this.songTimeBar.setValue(val);
+	    if (val == 1000)
+		this.songTimeBar.setVisible(false);
+	}
+
+	public void setSongTime(Date start, Date end) {
+	    if (start == null || end == null) {
+		this.songStart = this.songEnd = null;
+		this.songTimeTimer.stop();
+		this.songTimeBar.setVisible(false);
+	    } else {
+		this.songStart = start;
+		this.songEnd = end;
+		this.songTimeTimer.start();
+		this.songTimeBar.setVisible(true);
+	    }
+	}
+
 	public void setChannelInfo(ChannelInfo info) {
 	    if (info != null) {
 		this.channelNumberLabel.setText(Integer.toString(info.getChannelNumber()));
@@ -1323,8 +1411,10 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 			case RadioCommander.MUTE_CHANGED:
 				MainWindow.this.muteChanged();
 				break;
-			case RadioCommander.ACTIVATION_CHANGED:
 			case RadioCommander.SONG_TIME_UPDATE:
+				MainWindow.this.channelSongTime((RadioCommander.SongTiming)item);
+				break;
+			case RadioCommander.ACTIVATION_CHANGED:
 				// XXX ignore for now
 				break;
 			default:
@@ -1432,6 +1522,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		MainWindow.this.sortedChannelList = new ChannelInfo[0];
 		MainWindow.this.channelTableModel.fireTableDataChanged();
 		MainWindow.this.nowPlayingPanel.setChannelInfo(null);
+		MainWindow.this.nowPlayingPanel.setSongTime(null, null);
 		MainWindow.this.powerCheckBox.setSelected(false);
 		MainWindow.this.muteButton.setEnabled(false);
 		MainWindow.this.smartMuteButton.setEnabled(false);
@@ -1483,6 +1574,10 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private void muteChanged() {
     }
 
+    private void channelSongTime(RadioCommander.SongTiming t) {
+	this.nowPlayingPanel.setSongTime(t.start(), t.end());
+    }
+
     private void channelChanged() {
 	int channel = RadioCommander.theRadio().getChannel();
 
@@ -1490,6 +1585,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
 	final Integer sid = new Integer(this.sidForChannel(channel));
 	this.currentChannelInfo = (ChannelInfo)this.channelList.get(sid);
+	this.nowPlayingPanel.setChannelInfo(this.currentChannelInfo);
+	this.nowPlayingPanel.setSongTime(null, null);
 	this.favoriteCheckbox.setSelected(this.favoriteList.contains(sid));
 	this.scrollToCurrentChannel();
     }

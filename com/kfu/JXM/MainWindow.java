@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.59 2004/03/14 21:38:43 nsayer Exp $
+ $Id: MainWindow.java,v 1.60 2004/03/15 06:01:19 nsayer Exp $
  
  */
 
@@ -129,10 +129,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     public class ChannelPopupMenu extends JPopupMenu {
 	ChannelInfo channelInfo;
 
-	public ChannelPopupMenu(int sid) {
-	    this(new ChannelInfo((ChannelInfo)MainWindow.this.channelList.get(new Integer(sid))));
-
-	}
 	public ChannelPopupMenu(ChannelInfo info) {
 	    this(info, 0);
 	}
@@ -177,21 +173,20 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
     private class ChannelTableModel extends AbstractTableModel {
         public int getRowCount() {
-	    return MainWindow.this.sortedSidList.length;
+	    return MainWindow.this.sortedChannelList.length;
         }
         public int getColumnCount() {
  		return 6;           
         }
         public Object getValueAt(int row, int column) {
-	    int id = MainWindow.this.sidForRow(row);
-	    ChannelInfo i = (ChannelInfo)MainWindow.this.channelList.get(new Integer(id));
+	    ChannelInfo i = (ChannelInfo)MainWindow.this.sortedChannelList[row];
 	    switch(column) {
 		case 0: return new Integer(i.getChannelNumber());
 		case 1: return i.getChannelGenre();
 		case 2: return i.getChannelName();
 		case 3: return i.getChannelArtist();
 		case 4: return i.getChannelTitle();
-		case 5: return MainWindow.this.inUseForSID(id);
+		case 5: return MainWindow.this.inUseForSID(i.getServiceID());
 		default: throw new IllegalArgumentException("Which column?");
 	    }
         }
@@ -202,23 +197,22 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
     private HashSet filterList = new HashSet();
 
-    private Integer[] sortedSidList = new Integer[0];
+    private ChannelInfo[] sortedChannelList = new ChannelInfo[0];
 
     // Wow. This operation is stunningly inefficient. The horror.
-    private void rebuildSortedSidList() {
-	ArrayList sids = new ArrayList();
-	Iterator i = this.channelList.keySet().iterator();
+    private void rebuildSortedChannelList() {
+	ChannelInfo[] newList = new ChannelInfo[this.channelList.size() - this.filterList.size()];
+	Iterator i = this.channelList.values().iterator();
+	int j = 0;
 	while(i.hasNext()) {
-	    Integer sid = (Integer)i.next();
-	    if (!this.filterList.contains(sid))
-		sids.add(sid);
+	    ChannelInfo info = (ChannelInfo)i.next();
+	    if (!this.filterList.contains(new Integer(info.getServiceID())))
+		newList[j++] = info;
 	}
-	Collections.sort(sids, new Comparator() {
+	Arrays.sort(newList, new Comparator() {
 	    public int compare(Object o1, Object o2) {
-		Integer sid1 = (Integer)o1;
-		Integer sid2 = (Integer)o2;
-		ChannelInfo ci1 = (ChannelInfo)MainWindow.this.channelList.get(sid1);
-		ChannelInfo ci2 = (ChannelInfo)MainWindow.this.channelList.get(sid2);
+		ChannelInfo ci1 = (ChannelInfo)o1;
+		ChannelInfo ci2 = (ChannelInfo)o2;
 		int out = 0;
 		switch(MainWindow.this.sortField) {
 			case 0:	out = new Integer(ci1.getChannelNumber()).compareTo(new Integer(ci2.getChannelNumber()));
@@ -249,14 +243,13 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		return out;
 	    }
 	});
-	Integer oldList[] = this.sortedSidList;
-	Integer newList[] = (Integer[])sids.toArray(new Integer[0]);
-	this.sortedSidList = newList;
+	ChannelInfo oldList[] = this.sortedChannelList;
+	this.sortedChannelList = newList;
 
 	if (oldList.length != newList.length)
 	    this.channelTableModel.fireTableDataChanged();
 	else {
-	    for(int j = 0; j < oldList.length; j++)
+	    for(j = 0; j < oldList.length; j++)
 		if (!oldList[j].equals(newList[j]))
 		    this.channelTableModel.fireTableRowsUpdated(j, j);
 	}
@@ -280,9 +273,9 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     }
 
     private int rowForSID(int sid) {
-	Integer sids[] = this.sortedSidList;
-	for(int i = 0; i < sids.length; i++)
-	    if (sids[i].intValue() == sid)
+	ChannelInfo channels[] = this.sortedChannelList;
+	for(int i = 0; i < channels.length; i++)
+	    if (channels[i].getServiceID() == sid)
 		return i;
 	return -1;
     }
@@ -295,10 +288,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		return info.getServiceID();
 	}
 	return -1;
-    }
-
-    private int sidForRow(int row) {
-	return (this.sortedSidList[row]).intValue();
     }
 
     private int totalTicks() {
@@ -760,10 +749,9 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		int row = MainWindow.this.channelTable.rowAtPoint(e.getPoint());
 		if (row < 0)
 		    return;
-		int sid = MainWindow.this.sidForRow(row);
-		if (sid < 0)
-		    return;
-		JPopupMenu jpm = MainWindow.this.new ChannelPopupMenu(sid);
+		ChannelInfo info = new ChannelInfo(MainWindow.this.sortedChannelList[row]);
+
+		JPopupMenu jpm = MainWindow.this.new ChannelPopupMenu(info);
 		jpm.show(e.getComponent(), e.getX(), e.getY());
 	    }
 	});
@@ -900,9 +888,9 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		    // XXX can never happen
 		} else {
 		    int row = lsm.getMinSelectionIndex();
-		    if (row >= MainWindow.this.sortedSidList.length)
+		    if (row >= MainWindow.this.sortedChannelList.length)
 			return;
-		    ChannelInfo i = (ChannelInfo)MainWindow.this.channelList.get(new Integer(MainWindow.this.sidForRow(row)));
+		    ChannelInfo i = (ChannelInfo)MainWindow.this.sortedChannelList[row];
 		    // The problem here is that we will get called even when we do the selecting
 		    // ourselves (as in this.selectCurrentChannel(); ). This means we have to
 		    // efficiently fall through if there's nothing to be done (as will be the case)
@@ -928,7 +916,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		}
 		JXM.myUserNode().putInt(SORT_FIELD, MainWindow.this.sortField);
 		JXM.myUserNode().putBoolean(SORT_DIR, MainWindow.this.sortDirection);
-		MainWindow.this.rebuildSortedSidList();
+		MainWindow.this.rebuildSortedChannelList();
 		MainWindow.this.scrollToCurrentChannel();
 	    }
 	});
@@ -1100,14 +1088,15 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		    double[] out = RadioCommander.theRadio().getSignalStrength();
 		    MainWindow.this.satelliteMeter.setValue((int)out[RadioCommander.SIGNAL_STRENGTH_SAT]);
 		    MainWindow.this.terrestrialMeter.setValue((int)out[RadioCommander.SIGNAL_STRENGTH_TER]);
-		    sid = new Integer(MainWindow.this.sidForChannel(RadioCommander.theRadio().getChannel()));
+		    //sid = new Integer(MainWindow.this.sidForChannel(RadioCommander.theRadio().getChannel()));
 		}
 		catch(RadioException ex) {
 		    MainWindow.this.handleError(ex);
 		    return;
 		}
-		if (sid.intValue() < 0) // just skip it if we don't know the SID (yet)
-		  return;
+		if (MainWindow.this.currentChannelInfo == null)
+		    return;
+		sid = new Integer(MainWindow.this.currentChannelInfo.getServiceID());
 		Integer ticks = (Integer)MainWindow.this.tickList.get(sid);
 		if (ticks == null)
 		    ticks = new Integer(0);
@@ -1116,7 +1105,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		if (MainWindow.this.sortField == 5) {
 		    // If we're not sorting by percentage, then this could not have changed the order.
 		    // Otherwise, it just might.
-		    MainWindow.this.rebuildSortedSidList();
+		    MainWindow.this.rebuildSortedChannelList();
 		} else
 		    MainWindow.this.firePercentChanges();
 	    }
@@ -1359,7 +1348,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
     private void poweredUp() {
 	this.loadChannelList();
-	this.rebuildSortedSidList();
+	this.rebuildSortedChannelList();
 	this.muteButton.setEnabled(true);
 	this.smartMuteButton.setEnabled(true);
 	//this.itmsButton.setEnabled(true);
@@ -1402,7 +1391,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	SwingUtilities.invokeLater(new Runnable() {
 	    public void run() {
 		MainWindow.this.channelList.clear();
-		MainWindow.this.sortedSidList = new Integer[0];
+		MainWindow.this.sortedChannelList = new ChannelInfo[0];
 		MainWindow.this.channelTableModel.fireTableDataChanged();
 		MainWindow.this.nowPlayingPanel.setChannelInfo(null);
 		MainWindow.this.powerCheckBox.setSelected(false);
@@ -1754,13 +1743,12 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	boolean newFav =  (!this.channelList.containsKey(new Integer(i.getServiceID()))) && this.favoriteList.contains(new Integer(i.getServiceID()));
 	// We got an update. First, we file it, firing table update events
 	// while we're at it.
-	//int oldSize = this.channelList.size();
 	this.channelList.put(new Integer(i.getServiceID()), i);
 	if (newFav)
 	    this.rebuildFavoritesMenu();
 
 	// Alas, if we're sorting on artist or title, then any update could dirty the sort list
-	this.rebuildSortedSidList();
+	this.rebuildSortedChannelList();
 	int row = this.rowForSID(i.getServiceID());
 	this.channelTableModel.fireTableRowsUpdated(row, row);
 

@@ -271,7 +271,7 @@ public class PreferencesDialog extends JDialog {
 	gbc.anchor = GridBagConstraints.LINE_END;
 	jp.add(jl, gbc);
 	this.bmURL = new JTextField();
-	this.bmName.getDocument().addDocumentListener(new DocumentListener() {
+	this.bmURL.getDocument().addDocumentListener(new DocumentListener() {
 	    public void changedUpdate(DocumentEvent e) { this.doIt(); }
 	    public void insertUpdate(DocumentEvent e) { this.doIt(); }
 	    public void removeUpdate(DocumentEvent e) { this.doIt(); }

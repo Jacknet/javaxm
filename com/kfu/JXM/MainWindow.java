@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.94 2004/04/19 23:14:04 nsayer Exp $
+ $Id: MainWindow.java,v 1.95 2004/04/26 08:43:53 ttennebkram Exp $
  
  */
 
@@ -993,6 +993,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	JPanel pictureFrame = new JPanel();
 	pictureFrame.setBorder(BorderFactory.createLoweredBevelBorder());
 	this.channelLogo = new JLabel();
+	this.channelLogo.setToolTipText( "Click to visit this Channel's Home Page" );
 	this.channelLogo.setPreferredSize(new Dimension(150, 100));
 	this.setChannelLogo(-1);
 	this.channelLogo.addMouseListener(new MouseAdapter() {
@@ -1059,6 +1060,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 */
 
 	this.memoryButton = new JButton("Add to notebook");
+	this.memoryButton.setToolTipText( "Adds current Song Info to your \"notebook\"" );
 	this.memoryButton.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
 		MainWindow.this.memorize(MainWindow.this.currentChannelInfo);
@@ -1076,6 +1078,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	searchHolder.setOpaque(false);
 	searchHolder.setBorder(BorderFactory.createTitledBorder(/*BorderFactory.createEtchedBorder(EtchedBorder.LOWERED)*/BorderFactory.createLineBorder(new Color(0,0,0,0), 0) /* the null border */, "Quick Search", TitledBorder.CENTER, TitledBorder.BELOW_BOTTOM, new Font(null, Font.PLAIN, 10)));
 	this.searchField = new JTextField();
+	this.searchField.setToolTipText( "Filters Channel Grid as you type" );
 	this.searchField.getDocument().addDocumentListener(new DocumentListener() {
 	    public void changedUpdate(DocumentEvent e) { this.doit(); }
 	    public void insertUpdate(DocumentEvent e) { this.doit(); }
@@ -1094,6 +1097,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	searchHolder.add(this.searchField, sh_gbc);
 	this.searchFieldClear = new JButton();
 	this.searchFieldClear.setIcon(new XIcon());
+	this.searchFieldClear.setToolTipText( "Clear Quick Search filter" );
 	this.searchFieldClear.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
 		MainWindow.this.searchField.setText("");
@@ -1124,6 +1128,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	favorites.setLayout(new GridBagLayout());
 	GridBagConstraints gbc2 = new GridBagConstraints();
 	this.favoriteMenu = new JComboBox();
+	this.favoriteMenu.setToolTipText( "Jump to a Favorite Channel" );
 	this.favoriteMenu.setPreferredSize(new Dimension(150, (int)this.favoriteMenu.getPreferredSize().getHeight()));
 	this.favoriteMenu.addItem("Favorites");
 	this.favoriteMenu.setSelectedIndex(0);
@@ -1174,7 +1179,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	gbc2.anchor = GridBagConstraints.CENTER;
 	gbc2.fill = GridBagConstraints.HORIZONTAL;
 	favorites.add(this.favoriteMenu, gbc2);
-	this.favoriteCheckbox = new JToggleButton(new ImageIcon(this.getClass().getResource("/images/no_heart.png")));
+	this.favoriteCheckbox = new JToggleButton( new ImageIcon(this.getClass().getResource("/images/no_heart.png")));
+	this.favoriteCheckbox.setToolTipText( "Add/Remove current Channel from your Favorites" );
 	this.favoriteCheckbox.setSelectedIcon(new ImageIcon(this.getClass().getResource("/images/heart.png")));
 	this.favoriteCheckbox.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
@@ -1204,6 +1210,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	rating.setLayout(new GridBagLayout());
 	GridBagConstraints gbc1 = new GridBagConstraints();
 	this.ratingSlider = new JSlider(-5, 5);
+	this.ratingSlider.setToolTipText( "Tabulates your opinion with other JXM listeners" );
 	this.ratingSlider.setMajorTickSpacing(5);
 	this.ratingSlider.setMinorTickSpacing(1);
 	this.ratingSlider.setSnapToTicks(true);
@@ -1242,6 +1249,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	
 	//this.filterPanel = new FilterPanel(this);
 	this.filterMenu = this.filterPanel.getFilterMenu();
+	this.filterMenu.setToolTipText( "Pick a set of Channels to show in the Grid" );
 	gbc.gridx = 2;
 	gbc.weightx = 0;
 	gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -1538,6 +1546,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	gbc = new GridBagConstraints();
 
 	this.muteButton = new JCheckBox("Mute");
+	this.muteButton.setToolTipText( "Mutes radio volume" );
 	this.muteButton.setEnabled(false);
 	this.muteButton.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
@@ -1553,6 +1562,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	bottom.add(this.muteButton, gbc);
 
 	this.smartMuteButton = new JCheckBox("Smart Mute");
+	this.smartMuteButton.setToolTipText( "Mutes radio volume until next Song" );
 	this.smartMuteButton.setEnabled(false);
 	this.smartMuteButton.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
@@ -1564,6 +1574,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	bottom.add(this.smartMuteButton, gbc);
 
 	this.powerCheckBox = new JCheckBox("Power");
+	this.powerCheckBox.setToolTipText( "Turns radio on and off" );
 	this.powerCheckBox.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
 		MainWindow.this.powerToggle();
@@ -1579,6 +1590,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	bottom.add(this.powerCheckBox, gbc);
 
 	this.sleepButton = new JButton("Sleep");
+	this.sleepButton.setToolTipText( "Turn off radio after a specified time" );
 	this.sleepButton.setIcon(this.nullIcon);
 	this.sleepButton.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
@@ -1611,6 +1623,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	bottom.add(this.sleepButton, gbc);
 
 	jl = new JLabel("Satellite: ");
+	jl.setToolTipText( "Signal strength from XM Satellites" );
 	jl.setHorizontalAlignment(SwingConstants.TRAILING);
 	gbc.gridx = 3;
 	gbc.gridy = 0;
@@ -1622,12 +1635,14 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	gbc.anchor = GridBagConstraints.LINE_END;
 	bottom.add(jl, gbc);
 	jl = new JLabel("Terrestrial: ");
+	jl.setToolTipText( "Signal strength from local ground-based repeaters" );
 	jl.setHorizontalAlignment(SwingConstants.TRAILING);
 	gbc.gridy = 1;
 	gbc.insets = new Insets(0, 0, 20, 0);
 	bottom.add(jl, gbc);
 
 	this.satelliteMeter = new SignalProgressBar(0, 100);
+	this.satelliteMeter.setToolTipText( "Signal strength from XM Satellites" );
 	gbc.gridx = 4;
 	gbc.gridy = 0;
 	gbc.weightx = .25;
@@ -1635,6 +1650,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	gbc.anchor = GridBagConstraints.LINE_START;
 	bottom.add(this.satelliteMeter, gbc);
 	this.terrestrialMeter = new SignalProgressBar(0, 100);
+	this.terrestrialMeter.setToolTipText( "Signal strength from local ground-based repeaters" );
 	gbc.gridy = 1;
 	gbc.insets = new Insets(0, 0, 20, 20);
 	bottom.add(this.terrestrialMeter, gbc);

@@ -278,6 +278,9 @@ System.err.println("SHOW ABOUT WINDOW!");
 	}
 
         this.myFrame = new JFrame("JXM");
+	// ew! awt!
+	Image duke = Toolkit.getDefaultToolkit().getImage(this.getClass().getResource("/images/xm_duke.png"));
+	this.myFrame.setIconImage(duke);
 	this.myFrame.setJMenuBar(new JMenuBar());
 	this.myFrame.addWindowListener(new WindowAdapter() {
 	    public void windowClosing(WindowEvent e) {

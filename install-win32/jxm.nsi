@@ -2,7 +2,7 @@
 ; Nullsoft Scriptable Install System
 ; Install script for JXM on Windows
 ;
-; $Id: jxm.nsi,v 1.5 2004/03/22 05:13:33 nsayer Exp $
+; $Id: jxm.nsi,v 1.6 2004/03/31 15:15:55 nsayer Exp $
 
 ;Based on a template by Joost Verburg
 
@@ -101,12 +101,14 @@ Section "Working Section" SecWork
 
   SetOutPath "$JAVA_HOME\bin"
   File win32com.dll
+  File ICE_JNIRegistry.dll
 
   SetOutPath "$JAVA_HOME\lib"
   File javax.comm.properties
 
   SetOutPath "$JAVA_HOME\lib\ext"
   File comm.jar
+  File registry.jar
 
   ;Store installation folder
 #  WriteRegStr HKCU "Software\Modern UI Test" "" $INSTDIR
@@ -158,8 +160,10 @@ Section "Uninstall"
   Delete /REBOOTOK "$INSTDIR\jxm.jar"
   Delete /REBOOTOK "$INSTDIR\jxm.ico"
   Delete /REBOOTOK "$JAVA_HOME\bin\win32com.dll"
+  Delete /REBOOTOK "$JAVA_HOME\bin\ICE_JNIRegistry.dll"
   Delete /REBOOTOK "$JAVA_HOME\lib\javax.comm.properties"
   Delete /REBOOTOK "$JAVA_HOME\lib\ext\comm.jar"
+  Delete /REBOOTOK "$JAVA_HOME\lib\ext\registry.jar"
 
   RMDir "$INSTDIR"
   

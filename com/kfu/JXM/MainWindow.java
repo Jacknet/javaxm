@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.58 2004/03/14 21:16:41 nsayer Exp $
+ $Id: MainWindow.java,v 1.59 2004/03/14 21:38:43 nsayer Exp $
  
  */
 
@@ -1122,22 +1122,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    }
 	}).start();
 
-	String url = JXM.myUserNode().get(XMTRACKER_URL, null);
-	String user = JXM.myUserNode().get(XMTRACKER_USER, null);
-	String pass = JXM.myUserNode().get(XMTRACKER_PASS, null);
-
-	if (url != null && user != null && pass != null && url.length() != 0 && user.length() !=0 && pass.length() != 0) {
-	    try {
-		XMTracker.theTracker().setBaseURL(url);
-		XMTracker.theTracker().setCredentials(user, pass);
-	    }
-	    catch(TrackerException e) {
-		JXM.myUserNode().put(XMTRACKER_USER, "");
-		JXM.myUserNode().put(XMTRACKER_PASS, "");
-		this.handleTrackerError(e);
-	    }
-	}
-
 	this.loadFavorites();
 
 	this.loadTickList();
@@ -1372,9 +1356,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private final static String SORT_DIR = "SortDirection";
     private final static String SORT_FIELD = "SortColumn";
     private final static String FAVORITE_LIST = "FavoriteChannels";
-    private final static String XMTRACKER_URL = "TrackerURL";
-    private final static String XMTRACKER_USER = "TrackerUser";
-    private final static String XMTRACKER_PASS = "TrackerPassword";
 
     private void poweredUp() {
 	this.loadChannelList();

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: PreferencesDialog.java,v 1.17 2004/03/14 02:58:52 nsayer Exp $
+ $Id: PreferencesDialog.java,v 1.18 2004/03/14 21:38:43 nsayer Exp $
  
  */
 
@@ -385,6 +385,8 @@ public class PreferencesDialog extends JDialog {
 	    }
 	    catch(TrackerException e) {
 		this.trackerEnabled.setSelected(false);
+		// fail safe: Explicitely disable it for next time
+		JXM.myUserNode().putBoolean(XMTRACKER_ENABLED, false);
 		this.handleTrackerException(e);
 	    }
 	} else {

@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: SearchSystem.java,v 1.2 2004/04/05 07:00:19 nsayer Exp $
+ $Id: SearchSystem.java,v 1.3 2004/04/17 18:35:00 nsayer Exp $
  
  */
 
@@ -105,12 +105,12 @@ public class SearchSystem {
 	    if (list == null)
 		list = "";
 	    list = list.trim();
-	    this.acceptableChannelsString = list;
 	    if (list.length() == 0) {
 		this.acceptableChannels = new int[0];
 	    } else {
 		this.acceptableChannels = parseChannelList(list);
 	    }
+	    this.acceptableChannelsString = list;
 	}
 	public void setArtist(String artist) {
 	    if (artist != null && artist.trim().length() == 0)
@@ -205,6 +205,10 @@ public class SearchSystem {
     private JPanel searchConfig;
     private DefaultListModel searchList = new DefaultListModel();
     private JList configList;
+    private JTextField channelEditor, artistEditor, titleEditor;
+    private JButton deleteButton;
+    private SearchMatcher searchBeingEdited;
+    private boolean ignoreUpdates = false;
 
     private JDialog searchMatches;
     private DefaultListModel matches = new DefaultListModel();
@@ -226,11 +230,14 @@ public class SearchSystem {
 		GridBagConstraints gbc = new GridBagConstraints();
 		JLabel jl = new JLabel("Channels:");
 		jl.setHorizontalAlignment(SwingConstants.TRAILING);
+		gbc.insets = new Insets(0, 10, 0, 10);
+		gbc.anchor = GridBagConstraints.LINE_END;
+		gbc.fill = GridBagConstraints.NONE;
+		gbc.weightx = 0;
 		this.add(jl, gbc);
 		jl = new JLabel("Artist:");
 		jl.setHorizontalAlignment(SwingConstants.TRAILING);
 		gbc.gridy = 1;
-		gbc.weightx = 1;
 		this.add(jl, gbc);
 		jl = new JLabel("Title:");
 		jl.setHorizontalAlignment(SwingConstants.TRAILING);
@@ -240,6 +247,8 @@ public class SearchSystem {
 		this.chanLabel.setHorizontalAlignment(SwingConstants.LEADING);
 		gbc.gridx = 1;
 		gbc.gridy = 0;
+		gbc.weightx = 1;
+		gbc.anchor = GridBagConstraints.LINE_START;
 		this.add(this.chanLabel, gbc);
 		this.artLabel = new JLabel();
 		this.artLabel.setHorizontalAlignment(SwingConstants.LEADING);
@@ -249,6 +258,7 @@ public class SearchSystem {
 		this.titLabel.setHorizontalAlignment(SwingConstants.LEADING);
 		gbc.gridy = 2;
 		this.add(this.titLabel, gbc);
+		this.validate();
 	    }
 	    public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
 		SearchMatcher sm = (SearchMatcher)value;
@@ -267,13 +277,152 @@ public class SearchSystem {
 	this.configList.setCellRenderer(new SearchConfigRenderer());
 	this.configList.addListSelectionListener(new ListSelectionListener() {
 	    public void valueChanged(ListSelectionEvent e) {
+		SearchSystem.this.deleteButton.setEnabled(SearchSystem.this.configList.getSelectedValue() != null);
+		if (SearchSystem.this.configList.getSelectedValues().length != 1) {
+		    SearchSystem.this.ignoreUpdates = true;
+		    try {
+			SearchSystem.this.channelEditor.setText("");
+			SearchSystem.this.channelEditor.setEnabled(false);
+			SearchSystem.this.artistEditor.setText("");
+			SearchSystem.this.artistEditor.setEnabled(false);
+			SearchSystem.this.titleEditor.setText("");
+			SearchSystem.this.titleEditor.setEnabled(false);
+		    }
+		    finally {
+			SearchSystem.this.ignoreUpdates = false;
+		    }
+		} else {
+		    SearchSystem.this.searchBeingEdited = (SearchMatcher)SearchSystem.this.configList.getSelectedValue();
+		    SearchSystem.this.ignoreUpdates = true;
+		    try {
+			SearchSystem.this.channelEditor.setText(SearchSystem.this.searchBeingEdited.getChannels());
+			SearchSystem.this.channelEditor.setEnabled(true);
+			SearchSystem.this.artistEditor.setText(SearchSystem.this.searchBeingEdited.getArtist());
+			SearchSystem.this.artistEditor.setEnabled(true);
+			SearchSystem.this.titleEditor.setText(SearchSystem.this.searchBeingEdited.getTitle());
+			SearchSystem.this.titleEditor.setEnabled(true);
+		    }
+		    finally {
+			SearchSystem.this.ignoreUpdates = false;
+		    }
+		}
 	    }
 	});
 	gbc = new GridBagConstraints();
+	gbc.gridwidth = 2;
 	gbc.weightx = 1;
 	gbc.weighty = 1;
 	gbc.fill = GridBagConstraints.BOTH;
 	this.searchConfig.add(this.configList, gbc);
+
+	JPanel jp = new JPanel();
+	jp.setLayout(new GridBagLayout());
+	GridBagConstraints gbc1 = new GridBagConstraints();
+
+	JLabel jl = new JLabel("Channels: ");
+	gbc1.insets = new Insets(0, 10, 0, 10);
+	gbc1.fill = GridBagConstraints.NONE;
+	gbc1.anchor = GridBagConstraints.LINE_END;
+	gbc1.weightx = 0;
+	jp.add(jl, gbc1);
+	jl = new JLabel("Artist: ");
+	gbc1.gridy = 1;
+	jp.add(jl, gbc1);
+	jl = new JLabel("Title: ");
+	gbc1.gridy = 2;
+	jp.add(jl, gbc1);
+	this.channelEditor = new JTextField();
+	this.channelEditor.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		try {
+		    SearchSystem.this.searchBeingEdited.setChannels(SearchSystem.this.channelEditor.getText());
+		    SearchSystem.this.searchList.set(SearchSystem.this.configList.getSelectedIndex(), SearchSystem.this.searchBeingEdited);
+		}
+		catch(IllegalArgumentException ex) {
+		    Toolkit.getDefaultToolkit().beep();
+		    SearchSystem.this.channelEditor.requestFocus();
+		}
+	    }
+	});
+	this.channelEditor.addFocusListener(new FocusListener() {
+	    public void focusGained(FocusEvent e) { }
+	    public void focusLost(FocusEvent e) {
+		SearchSystem.this.channelEditor.postActionEvent();
+	    }
+	});
+	this.channelEditor.setInputVerifier(new InputVerifier() {
+	    public boolean verify(JComponent tf) {
+		String val = ((JTextField)tf).getText();
+		try {
+		    parseChannelList(val);
+		    return true;
+		}
+		catch(IllegalArgumentException ex) {
+		    return false;
+		}
+	    }
+	});
+	gbc1.weightx = 1;
+	gbc1.gridx = 1;
+	gbc1.gridy = 0;
+	gbc1.fill = GridBagConstraints.HORIZONTAL;
+	jp.add(this.channelEditor, gbc1);
+	this.artistEditor = new JTextField();
+	this.artistEditor.getDocument().addDocumentListener(new DocumentListener() {
+	    public void changedUpdate(DocumentEvent e) { this.doit(); }
+	    public void insertUpdate(DocumentEvent e) { this.doit(); }
+	    public void removeUpdate(DocumentEvent e) { this.doit(); }
+	    private void doit() {
+		if (SearchSystem.this.ignoreUpdates)
+		    return;
+		SearchSystem.this.searchBeingEdited.setArtist(SearchSystem.this.artistEditor.getText());
+		SearchSystem.this.searchList.set(SearchSystem.this.configList.getSelectedIndex(), SearchSystem.this.searchBeingEdited);
+	    }
+	});
+	gbc1.gridy = 1;
+	jp.add(this.artistEditor, gbc1);
+	this.titleEditor = new JTextField();
+	this.titleEditor.getDocument().addDocumentListener(new DocumentListener() {
+	    public void changedUpdate(DocumentEvent e) { this.doit(); }
+	    public void insertUpdate(DocumentEvent e) { this.doit(); }
+	    public void removeUpdate(DocumentEvent e) { this.doit(); }
+	    private void doit() {
+		if (SearchSystem.this.ignoreUpdates)
+		    return;
+		SearchSystem.this.searchBeingEdited.setTitle(SearchSystem.this.titleEditor.getText());
+		SearchSystem.this.searchList.set(SearchSystem.this.configList.getSelectedIndex(), SearchSystem.this.searchBeingEdited);
+	    }
+	});
+	gbc1.gridy = 2;
+	jp.add(this.titleEditor, gbc1);
+
+	gbc.weighty = 0;
+	gbc.gridy = 1;
+	this.searchConfig.add(jp, gbc);
+	JButton jb = new JButton("+");
+	jb.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		SearchSystem.this.searchList.add(SearchSystem.this.searchList.size(), new SearchMatcher());
+		SearchSystem.this.configList.setSelectedIndex(SearchSystem.this.searchList.size() - 1);
+	    }
+	});
+	gbc.gridy = 2;
+	gbc.gridwidth = 1;
+	gbc.fill = GridBagConstraints.NONE;
+	gbc.anchor = GridBagConstraints.LINE_END;
+	this.searchConfig.add(jb, gbc);
+	this.deleteButton = new JButton("-");
+	this.deleteButton.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		Object[] list = SearchSystem.this.configList.getSelectedValues();
+		for(int i = 0; i < list.length; i++)
+		    SearchSystem.this.searchList.removeElement(list[i]);
+	    }
+	});
+	this.deleteButton.setEnabled(false);
+	gbc.gridx = 1;
+	gbc.anchor = GridBagConstraints.LINE_START;
+	this.searchConfig.add(this.deleteButton, gbc);
 
 	this.searchMatches = new JDialog(this.parent.getFrame(), "JXM - Search matches", false);
 	this.searchMatches.getContentPane().setLayout(new GridBagLayout());

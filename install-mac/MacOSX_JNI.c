@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MacOSX_JNI.c,v 1.2 2004/03/20 18:53:32 nsayer Exp $
+ $Id: MacOSX_JNI.c,v 1.3 2004/03/20 18:55:30 nsayer Exp $
 
  Build with this command:
 
@@ -37,7 +37,7 @@
 
 #include "MacOSX_JNI.h"
 
-char *getBundleNameForDevice(char *fname) {
+const char *getBundleNameForDevice(const char *fname) {
     static char retval[1024]; // that really ought to be enough. I'm too lazy to alloc and release.
     mach_port_t masterPort;
     io_iterator_t matchingServices;
@@ -99,7 +99,7 @@ char *getBundleNameForDevice(char *fname) {
 }
 
 JNIEXPORT jstring JNICALL Java_com_kfu_Platform_MacOSX_getBundleNameForDevice(JNIEnv *env, jclass _ignore, jstring filenameObj) {
-    char *fname, *ret;
+    const char *fname, *ret;
 
     fname = (*env)->GetStringUTFChars(env, filenameObj, NULL);
     ret = getBundleNameForDevice(fname);

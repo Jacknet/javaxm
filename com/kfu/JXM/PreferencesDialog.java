@@ -200,6 +200,7 @@ public class PreferencesDialog extends JDialog {
 		Bookmark b = (Bookmark)PreferencesDialog.this.bookmarks.remove(index);
 		PreferencesDialog.this.bookmarks.add(index - 1, b);
 		PreferencesDialog.this.bookmarkList.setSelectedIndex(index - 1);
+		PreferencesDialog.this.bookmarkList.ensureIndexIsVisible(index - 1);
 	    }
 	});
 	jp1.add(this.moveUpButton);
@@ -212,6 +213,7 @@ public class PreferencesDialog extends JDialog {
 		Bookmark b = (Bookmark)PreferencesDialog.this.bookmarks.remove(index);
 		PreferencesDialog.this.bookmarks.add(index + 1, b);
 		PreferencesDialog.this.bookmarkList.setSelectedIndex(index + 1);
+		PreferencesDialog.this.bookmarkList.ensureIndexIsVisible(index + 1);
 	    }
 	});
 	jp1.add(this.moveDownButton);

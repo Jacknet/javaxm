@@ -501,6 +501,7 @@ public class PreferencesDialog extends JDialog {
     }
 
     private void handleTrackerException(Exception e) {
+	JOptionPane.showMessageDialog(this, e.getMessage(), "XM Tracker error", JOptionPane.ERROR_MESSAGE);
     }
 
     private final static String DEVICE_NAME_KEY = "DefaultDevice";

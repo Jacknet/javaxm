@@ -803,9 +803,9 @@ public class RadioCommander implements IAsyncExceptionHandler {
                 Log("Timeout #" + Integer.toString(i + 1) + " waiting for " + expectedReplyClass.toString());
                 continue;
             }
-			catch(IllegalStateException e) {
-				throw new RadioException("Radio reset while processing command.");
-			}
+	    catch(IllegalStateException e) {
+		throw new RadioException("Radio reset while processing command.");
+	    }
         }
         this.Dispose();
         throw new RadioException("Command processing failed after 3 retries");
@@ -870,9 +870,10 @@ public class RadioCommander implements IAsyncExceptionHandler {
                     }
                 }
                 catch(IOException e) {
+		    boolean disposing = (myDeviceIn == null);
                     Dispose();
 		    // If we're disposing, then ignore these. They can happen when read() is interrupted in some javax.comm implementations
-		    if (myDeviceIn != null)
+		    if (!disposing)
                         notifyGUI(EXCEPTION, e);
                 }
                 catch(RadioException e) {
@@ -941,6 +942,8 @@ public class RadioCommander implements IAsyncExceptionHandler {
 	        reh.notify(this, code, arg);
 	    }
 	    catch(Throwable t) {
+System.err.println(t.getMessage());
+t.printStackTrace();
 		// ignore for now?
 	    }
 	}
@@ -1261,9 +1264,7 @@ public class RadioCommander implements IAsyncExceptionHandler {
 	    info = this.getNextChannelInfo(this.lastChannel);
 	}
 	catch(RadioException e) {
-	    // If we get an exception while powering down, just ignore it.
-	    if (this.myDeviceIn != null)
-	        this.handleException(e);
+	    this.handleException(e);
 	    return;
 	}
 

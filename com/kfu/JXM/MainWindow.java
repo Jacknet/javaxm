@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.68 2004/03/19 22:54:50 nsayer Exp $
+ $Id: MainWindow.java,v 1.69 2004/03/20 18:49:01 nsayer Exp $
  
  */
 
@@ -58,9 +58,12 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	}
 
 	private SpinnerListModel compactSpinnerModel;
+	private JSpinner theSpinner;
 	private JLabel compactViewName, compactViewArtist, compactViewTitle;
 
 	public void refreshSpinnerModel() {
+	    this.timerIgnore = true;
+	    try {
 	    ArrayList al = new ArrayList();
 	    ChannelInfo[] sourceList = MainWindow.this.sortedChannelList;
 	    for(int i = 0; i < sourceList.length; i++)
@@ -68,6 +71,10 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    Collections.sort(al);
 	    this.compactSpinnerModel.setList(al);
 	    //this.compactSpinnerModel.setValue(new Integer(MainWindow.this.currentChannelInfo.getChannelNumber()));
+	    }
+	    finally {
+		this.timerIgnore = false;
+	    }
 	}
 
 	public void show() {
@@ -83,15 +90,44 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	}
 
 	private boolean timerIgnore = false;
-	public void setTimerOff() {
+	private boolean changeInProgress = false;
+	public synchronized void setTimerOff(final int chan) {
+	    this.changeTimer.cancel();
+	    this.changeTimer = null;
 	    this.timerIgnore = true;
 	    try {
-		MainWindow.this.setChannel(((Integer)this.compactSpinnerModel.getValue()).intValue());
-		this.changeTimer.cancel();
-		this.changeTimer = null;
+		// If the radio powered off in the meantime, then just forget it.
+		if (!RadioCommander.theRadio().isOn())
+		    return;
+		// If they did nothing, well, then we're done.
+		if (chan == RadioCommander.theRadio().getChannel())
+		    return;
+		SwingUtilities.invokeAndWait(new Runnable() {
+		    public void run() {
+			// Ignore further pounding while we're busy
+			CompactViewPanel.this.theSpinner.setEnabled(false);
+		    }
+		});
+		// This is a separate invoke so we can be *sure* that
+		// we're disabled *before* we go set the channel
+		SwingUtilities.invokeAndWait(new Runnable() {
+		    public void run() {
+			MainWindow.this.setChannel(chan);
+		    }
+		});
+		// And *this* is an invokeLater so we can get back
+		// into timerIgnore=false position before re-enabling the spinner.
+		SwingUtilities.invokeLater(new Runnable() {
+		    public void run() {
+			CompactViewPanel.this.theSpinner.setEnabled(true);
+		    }
+		});
 	    }
+	    catch(InterruptedException ex) { } // ignore
+	    catch(InvocationTargetException ex) { } // Can't happen
 	    finally {
 		this.timerIgnore = false;
+		this.changeInProgress = false;
 	    }
 	}
 
@@ -107,32 +143,38 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    this.addMouseMotionListener(mia);
 	    this.addMouseListener(mia);
 	    this.compactSpinnerModel = new SpinnerListModel();
-	    JSpinner jsp = new JSpinner(this.compactSpinnerModel);
-	    jsp.setPreferredSize(new Dimension(60, (int)jsp.getPreferredSize().getHeight()));
+	    this.theSpinner = new JSpinner(this.compactSpinnerModel);
+	    this.theSpinner.setPreferredSize(new Dimension(60, (int)this.theSpinner.getPreferredSize().getHeight()));
 	    // If the spinner stays put for 1 second, then change the channel. This lets the user slam through a bunch of changes quickly.
-	    jsp.addChangeListener(new ChangeListener() {
+	    this.theSpinner.addChangeListener(new ChangeListener() {
 		public void stateChanged(ChangeEvent e) {
-		    // ARGH! If *WE'RE* why it's frigging changing, then we don't frigging care!
+		    synchronized(CompactViewPanel.this) {
 		    if (CompactViewPanel.this.timerIgnore)
 			return;
-		    int chan = ((Integer)CompactViewPanel.this.compactSpinnerModel.getValue()).intValue();
+		    // ARGH! If *WE'RE* why it's frigging changing, then we don't frigging care!
+		    CompactViewPanel.this.changeInProgress = true;
+		    final int chan = ((Integer)CompactViewPanel.this.compactSpinnerModel.getValue()).intValue();
 		    int sid = MainWindow.this.sidForChannel(chan);
 		    if (sid >= 0) {
 			ChannelInfo info = (ChannelInfo)MainWindow.this.channelList.get(new Integer(sid));
-			if (info != null)
-			    CompactViewPanel.this.setChannelInfo(info);
+			if (info != null) {
+			    CompactViewPanel.this.compactViewName.setText(info.getChannelName());
+			    CompactViewPanel.this.compactViewArtist.setText(info.getChannelArtist());
+			    CompactViewPanel.this.compactViewTitle.setText(info.getChannelTitle());
+			}
 		    }
 		    if (CompactViewPanel.this.changeTimer != null)
 			CompactViewPanel.this.changeTimer.cancel();
 		    CompactViewPanel.this.changeTimer = new java.util.Timer();
 		    CompactViewPanel.this.changeTimer.schedule(new TimerTask() {
 			public void run() {
-			    CompactViewPanel.this.setTimerOff();
+			    CompactViewPanel.this.setTimerOff(chan);
 			}
 		    }, 1000);
 		}
+		}
 	    });
-	    fake.add(jsp);
+	    fake.add(this.theSpinner);
 	    this.compactViewName = new JLabel(" ");
 	    this.compactViewName.setPreferredSize(new Dimension(150, (int)this.compactViewName.getPreferredSize().getHeight()));
 	    fake.add(this.compactViewName);
@@ -157,13 +199,22 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    this.pack();
 	}
 	public void setChannelInfo(ChannelInfo i) {
+	// If we're in the middle of a change, we don't care about external updates, unless it's to power off.
+	    if (this.changeInProgress && i != null)
+		return;
 	    if (i == null) {
 		//this.compactSpinnerModel.setList();
 		this.compactViewName.setText("");
 		this.compactViewArtist.setText("");
 		this.compactViewTitle.setText("");
 	    } else {
-		this.compactSpinnerModel.setValue(new Integer(i.getChannelNumber()));
+		this.timerIgnore = true;
+		try {
+		    this.compactSpinnerModel.setValue(new Integer(i.getChannelNumber()));
+		}
+		finally {
+		    this.timerIgnore = false;
+		}
 		this.compactViewName.setText(i.getChannelName());
 		this.compactViewArtist.setText(i.getChannelArtist());
 		this.compactViewTitle.setText(i.getChannelTitle());

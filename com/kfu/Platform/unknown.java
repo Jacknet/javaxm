@@ -27,11 +27,16 @@ import com.kfu.JXM.*;
 
 public class unknown implements IPlatformHandler {
 
+    String path;
+
     public boolean useMacMenus() { return false; }
 
     public boolean needsBrowserPath() { return true; }
-    public void setBrowserPath(String ignore) { throw new IllegalArgumentException("We don't care"); }
-    public void openURL(String url) throws IOException { throw new IOException("Don't know how to surf on unknown platforms."); }
+    public void setBrowserPath(String path) { this.path = path; }
+
+    public void openURL(String url) throws IOException {
+	Runtime.getRuntime().exec(new String[] {this.path, url});
+    }
 
     public boolean isDeviceValid(String in) { return true; }
 

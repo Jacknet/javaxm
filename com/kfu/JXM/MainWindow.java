@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.55 2004/03/14 02:58:52 nsayer Exp $
+ $Id: MainWindow.java,v 1.56 2004/03/14 03:28:31 nsayer Exp $
  
  */
 
@@ -122,22 +122,26 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	}
     };
 
+    public final static int CHAN_POPUP_NO_MEM = 1;	// This popup won't add to memory
+    public final static int CHAN_POPUP_NO_TUNE = 2;	// This popup won't tune to channel
+
     // A popup menu for a given channel
     public class ChannelPopupMenu extends JPopupMenu {
 	ChannelInfo channelInfo;
 
 	public ChannelPopupMenu(int sid) {
-	    this((ChannelInfo)MainWindow.this.channelList.get(new Integer(sid)));
+	    this(new ChannelInfo((ChannelInfo)MainWindow.this.channelList.get(new Integer(sid))));
+
 	}
 	public ChannelPopupMenu(ChannelInfo info) {
-	    this(info, false);
+	    this(info, 0);
 	}
-	public ChannelPopupMenu(ChannelInfo info, boolean inMemory) {
+	public ChannelPopupMenu(ChannelInfo info, int flag) {
 	    super();
 	    this.channelInfo = info;
 
 	    JMenuItem jmi = new JMenuItem("Tune to channel");
-	    if (!RadioCommander.theRadio().isOn()) {
+	    if (flag == MainWindow.CHAN_POPUP_NO_TUNE || !RadioCommander.theRadio().isOn()) {
 		jmi.setEnabled(false);
 	    } else {
 		jmi.addActionListener(new ActionListener() {
@@ -148,7 +152,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    }
 	    this.add(jmi);
 	    jmi = new JMenuItem("Add to memory");
-	    if (inMemory) {
+	    if (flag == MainWindow.CHAN_POPUP_NO_MEM) {
 		jmi.setEnabled(false);
 	    } else {
 		jmi.addActionListener(new ActionListener() {
@@ -552,7 +556,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		if (e.isPopupTrigger()) {
 		    didPopup = true;
 		    ChannelInfo info = new ChannelInfo(MainWindow.this.currentChannelInfo);
-		    JPopupMenu popup = MainWindow.this.new ChannelPopupMenu(info);
+		    JPopupMenu popup = MainWindow.this.new ChannelPopupMenu(info, MainWindow.CHAN_POPUP_NO_TUNE);
 		    popup.show(e.getComponent(), e.getX(), e.getY());
 		}
 	    }
@@ -575,6 +579,19 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.nowPlayingPanel.setBorder(BorderFactory.createTitledBorder(
 	    BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Now Playing",
 	    TitledBorder.CENTER, TitledBorder.DEFAULT_POSITION));
+	this.nowPlayingPanel.addMouseListener(new MouseAdapter() {
+	    public void mousePressed(MouseEvent e) { this.maybePopup(e); }
+	    public void mouseReleased(MouseEvent e) { this.maybePopup(e); }
+	    private void maybePopup(MouseEvent e) {
+		if (!RadioCommander.theRadio().isOn())
+		    return;
+		if (!e.isPopupTrigger())
+		    return;
+		ChannelInfo info = new ChannelInfo(MainWindow.this.currentChannelInfo);
+		JPopupMenu jpm = MainWindow.this.new ChannelPopupMenu(info, MainWindow.CHAN_POPUP_NO_TUNE);
+		jpm.show(e.getComponent(), e.getX(), e.getY());
+	    }
+	});
 	toptop.add(this.nowPlayingPanel);
 	toptop.add(Box.createHorizontalStrut(5));
 	JPanel buttons = new JPanel();
@@ -745,7 +762,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		int sid = MainWindow.this.sidForRow(row);
 		if (sid < 0)
 		    return;
-		JPopupMenu jpm = new ChannelPopupMenu(sid);
+		JPopupMenu jpm = MainWindow.this.new ChannelPopupMenu(sid);
 		jpm.show(e.getComponent(), e.getX(), e.getY());
 	    }
 	});

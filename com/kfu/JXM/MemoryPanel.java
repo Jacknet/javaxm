@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MemoryPanel.java,v 1.1 2004/03/14 02:59:52 nsayer Exp $
+ $Id: MemoryPanel.java,v 1.2 2004/03/14 03:28:31 nsayer Exp $
  
  */
 
@@ -69,7 +69,7 @@ public class MemoryPanel extends JDialog {
                 if (row < 0)
                     return;
                 MemoryListItem item = (MemoryListItem)MemoryPanel.this.memoryListModel.getElementAt(row);
-                JPopupMenu jpm = MemoryPanel.this.parent.new ChannelPopupMenu(item.getChannelInfo(), true);
+                JPopupMenu jpm = MemoryPanel.this.parent.new ChannelPopupMenu(item.getChannelInfo(), MainWindow.CHAN_POPUP_NO_MEM);
                 jpm.show(e.getComponent(), e.getX(), e.getY());
             }
         });

@@ -203,7 +203,8 @@ public static void main(String[] args) { new MainWindow(); }
 	channelTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 	channelTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
 	    public void valueChanged(ListSelectionEvent e) {
-		if (e.getValueIsAdjusting())
+		MainWindow.this.selectionInProgress = e.getValueIsAdjusting();
+		if (MainWindow.this.selectionInProgress)
 		    return;
 		ListSelectionModel lsm = (ListSelectionModel)e.getSource();
 		if (lsm.isSelectionEmpty()) {
@@ -331,15 +332,17 @@ public static void main(String[] args) { new MainWindow(); }
     private void turnPowerOn() {
 	// Figure out which device was selected
 	if (this.deviceName == null) {
+	    // XXX - complain
 	    this.powerCheckBox.setSelected(false);
 	    return;
 	}
-	// Attempt to power up or down the radio
+	// Attempt to power up the radio
 	try {
 	    RadioCommander.theRadio().turnOn(this.deviceName);
 	}
 	catch(RadioException e) {
-	    // So much for that.
+	    this.powerCheckBox.setSelected(false);
+	    // XXX - complain
 	    return;
 	}
 	this.poweredUp();
@@ -375,7 +378,10 @@ public static void main(String[] args) { new MainWindow(); }
 	this.channelList.remove(new Integer(sid));
     }
 
+    private boolean selectionInProgress = false;
     private void selectCurrentChannel() {
+	if (this.selectionInProgress)
+	    return;
 	int sid = RadioCommander.theRadio().getServiceID();
 	int row = this.rowForSID(sid);
 	if (row < 0)

@@ -1,10 +1,11 @@
-# $Id: Makefile,v 1.11 2004/03/30 17:14:59 nsayer Exp $
+# $Id: Makefile,v 1.12 2004/04/29 15:21:45 nsayer Exp $
 
 all:
 	rm -rf out
 	mkdir out
 	( cd out ; unzip ../secondstring\*.jar )
-	find . -name \*.java -exec javac -classpath /System/Library/Java:out:comm.jar -deprecation -d out -sourcepath . {} \;
+	find . -name \*.java -exec javac -target 1.4 -classpath /System/Library/Java:out:comm.jar:install-win32/registry.jar:install-win32/trayicon.jar -deprecation -d out -sourcepath . {} \;
+	(cd logos ; zip ../logos.jar *gif )
 	mkdir out/logos
 	cp logos/*gif out/logos
 	mkdir out/images
@@ -12,7 +13,7 @@ all:
 	cp COPYING out
 
 jar:
-	cd out && jar cfm ../jxm.jar ../Manifest COPYING com edu logos images
+	cd out && jar cfm ../jxm.jar ../Manifest COPYING com edu images logos
 
 # this is sort of optimized for Nick only.
 run:

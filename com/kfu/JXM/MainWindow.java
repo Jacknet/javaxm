@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.54 2004/03/13 18:00:01 nsayer Exp $
+ $Id: MainWindow.java,v 1.55 2004/03/14 02:58:52 nsayer Exp $
  
  */
 
@@ -42,7 +42,69 @@ import com.kfu.xm.*;
 
 public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, IPreferenceCallbackHandler {
 
+    public static class ChannelInfoPanel extends JPanel {
+	public final static Font chNumFont = new Font(null, Font.BOLD, 18);
+	public final static Font chGenreFont = new Font(null, Font.PLAIN, 12);
+	public final static Font chNameFont = new Font(null, Font.PLAIN, 14);
+	public final static Font chArtistFont = new Font(null, Font.BOLD, 20);
+	public final static Font chTitleFont = new Font(null, Font.BOLD, 20);
+
+	private JLabel channelNumberLabel, channelGenreLabel, channelNameLabel, channelArtistLabel, channelTitleLabel;
+
+	public ChannelInfoPanel() {
+		this.setLayout(new GridBagLayout());
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.fill = GridBagConstraints.BOTH;
+
+		this.channelNumberLabel = new JLabel();
+		this.channelNumberLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		this.channelNumberLabel.setFont(chNumFont);
+		gbc.weightx = 0.25;
+		gbc.gridx = 0;
+		gbc.gridy = 0;
+		this.add(this.channelNumberLabel, gbc);
+		this.channelNameLabel = new JLabel();
+		this.channelNameLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		this.channelNameLabel.setFont(chNameFont);
+		gbc.gridy = 1;
+		this.add(this.channelNameLabel, gbc);
+		this.channelGenreLabel = new JLabel();
+		this.channelGenreLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		this.channelGenreLabel.setFont(chGenreFont);
+		gbc.gridy = 2;
+		this.add(this.channelGenreLabel, gbc);
+		this.channelArtistLabel = new JLabel();
+		this.channelArtistLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		this.channelArtistLabel.setFont(chArtistFont);
+		gbc.gridx = 1;
+		gbc.weightx = 0.75;
+		gbc.gridwidth = 2;
+		gbc.gridy = 0;
+		this.add(this.channelArtistLabel, gbc);
+		this.channelTitleLabel = new JLabel();
+		this.channelTitleLabel.setHorizontalAlignment(SwingConstants.CENTER);
+		this.channelTitleLabel.setFont(chTitleFont);
+		gbc.gridy = 1;
+		this.add(this.channelTitleLabel, gbc);
+	}
+	public void setChannelInfo(ChannelInfo info) {
+	    if (info != null) {
+		this.channelNumberLabel.setText(Integer.toString(info.getChannelNumber()));
+		this.channelGenreLabel.setText(info.getChannelGenre());
+		this.channelNameLabel.setText(info.getChannelName());
+		this.channelArtistLabel.setText(info.getChannelArtist());
+		this.channelTitleLabel.setText(info.getChannelTitle());
+	    } else {
+		this.channelNumberLabel.setText("");
+		this.channelGenreLabel.setText("");
+		this.channelNameLabel.setText("");
+		this.channelArtistLabel.setText("");
+		this.channelTitleLabel.setText("");
+	    }
+	}
+    }
     private class BookmarkMenu extends JMenu {
+	// This is a "throwaway" menu - it's not dynamic
 	private ChannelInfo info;
 	public BookmarkMenu(ChannelInfo info) {
 	    super("Bookmarks");
@@ -61,18 +123,40 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     };
 
     // A popup menu for a given channel
-    private class ChannelPopupMenu extends JPopupMenu {
+    public class ChannelPopupMenu extends JPopupMenu {
 	ChannelInfo channelInfo;
 
 	public ChannelPopupMenu(int sid) {
-	    this.channelInfo = (ChannelInfo)MainWindow.this.channelList.get(new Integer(sid));
+	    this((ChannelInfo)MainWindow.this.channelList.get(new Integer(sid)));
+	}
+	public ChannelPopupMenu(ChannelInfo info) {
+	    this(info, false);
+	}
+	public ChannelPopupMenu(ChannelInfo info, boolean inMemory) {
+	    super();
+	    this.channelInfo = info;
 
 	    JMenuItem jmi = new JMenuItem("Tune to channel");
-	    jmi.addActionListener(new ActionListener() {
-		public void actionPerformed(ActionEvent e) {
-		    MainWindow.this.setChannel(ChannelPopupMenu.this.channelInfo.getChannelNumber());
-		}
-	    });
+	    if (!RadioCommander.theRadio().isOn()) {
+		jmi.setEnabled(false);
+	    } else {
+		jmi.addActionListener(new ActionListener() {
+		    public void actionPerformed(ActionEvent e) {
+			MainWindow.this.setChannel(ChannelPopupMenu.this.channelInfo.getChannelNumber());
+		    }
+		});
+	    }
+	    this.add(jmi);
+	    jmi = new JMenuItem("Add to memory");
+	    if (inMemory) {
+		jmi.setEnabled(false);
+	    } else {
+		jmi.addActionListener(new ActionListener() {
+		    public void actionPerformed(ActionEvent e) {
+			MainWindow.this.memoryPanel.memorize(ChannelPopupMenu.this.channelInfo);
+		    }
+		});
+	    }
 	    this.add(jmi);
 	    this.add(new MainWindow.BookmarkMenu(this.channelInfo));
 	}
@@ -236,13 +320,10 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	return sb.toString();
     }
 
+    private MemoryPanel memoryPanel;
     private PreferencesDialog preferences;
     private AboutDialog aboutDialog;
-    private JLabel channelNumberLabel;
-    private JLabel channelNameLabel;
-    private JLabel channelGenreLabel;
-    private JLabel channelArtistLabel;
-    private JLabel channelTitleLabel;
+    private ChannelInfoPanel nowPlayingPanel;
     private JLabel channelLogo;
     private ChannelTableModel channelTableModel;
     private JTable channelTable;
@@ -266,7 +347,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    MainWindow.this.turnPowerOff();
 	this.saveChannelTableLayout();
 	this.saveTickList();
-	this.saveMemory();
+	this.memoryPanel.quit();
 	System.exit(0);
     }
     public void prefs() {
@@ -286,8 +367,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	JXM.myUserNode().putByteArray(CHAN_TABLE_COLS, index);
     }
 
-    private final static Color stripeColor = new Color(.925f, .925f, 1f);
-    private final static Color gridColor = new Color(.85f, .85f, .85f);
+    public final static Color stripeColor = new Color(.925f, .925f, 1f);
+    public final static Color gridColor = new Color(.85f, .85f, .85f);
 
     private class ArrowIcon implements Icon, SwingConstants {
 	private int dir;
@@ -332,6 +413,13 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private final Icon upArrow = new ArrowIcon(SwingConstants.NORTH);
     private final Icon downArrow = new ArrowIcon(SwingConstants.SOUTH);
 
+    private static void frontOrShow(Window w) {
+	if (w.isVisible())
+	    w.toFront();
+	else
+	    w.show();
+    }
+
     public MainWindow() {
 
 	PlatformFactory.ourPlatform().registerCallbackHandler(this);
@@ -355,10 +443,13 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.preferences = new PreferencesDialog(this.myFrame, this);
 	this.aboutDialog = new AboutDialog(this.myFrame);
 
+	JMenu jm;
+	JMenuItem jmi;
+
 	// If on a mac, don't do this - use the EAWT stuff instead
 	if (!PlatformFactory.ourPlatform().useMacMenus()) {
-	    JMenu jm = new JMenu("JXM");
-	    JMenuItem jmi = new JMenuItem("Preferences...");
+	    jm = new JMenu("JXM");
+	    jmi = new JMenuItem("Preferences...");
 	    jmi.addActionListener(new ActionListener() {
 	        public void actionPerformed(ActionEvent e) {
 		MainWindow.this.prefs();
@@ -377,7 +468,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	// -----
 	// PUT MENUS HERE
 	class DynamicBookmarkMenu extends JMenu {
-	    // Stupid java! How many times do we have to reimplement this same thing!?
+	    // Stupid Nick! How many times do we have to reimplement this same thing!?
+	    // This one fetches the current channel info every time it is opened.
 	    private ChannelInfo info;
 	    public DynamicBookmarkMenu(String name) {
 		super(name);
@@ -404,10 +496,28 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
  	this.bookmarkMenu = new DynamicBookmarkMenu("Bookmarks");
 	this.bookmarkMenu.setEnabled(false);
 	this.myFrame.getJMenuBar().add(this.bookmarkMenu);
+	jm = new JMenu("Windows");
+	if (PlatformFactory.ourPlatform().useMacMenus()) {
+	    jmi = new JMenuItem("Main Window");
+	    jmi.addActionListener(new ActionListener() {
+		public void actionPerformed(ActionEvent e) {
+		    MainWindow.frontOrShow(MainWindow.this.myFrame);
+		}
+	    });
+	    jm.add(jmi);
+	}
+	jmi = new JMenuItem("Memory");
+	jmi.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		MainWindow.frontOrShow(MainWindow.this.memoryPanel);
+	    }
+	});
+	jm.add(jmi);
+	this.myFrame.getJMenuBar().add(jm);
 	// -----
 	if (!PlatformFactory.ourPlatform().useMacMenus()) {
-	    JMenu jm = new JMenu("Help");
-	    JMenuItem jmi = new JMenuItem("About JXM...");
+	    jm = new JMenu("Help");
+	    jmi = new JMenuItem("About JXM...");
 	    jmi.addActionListener(new ActionListener() {
 	        public void actionPerformed(ActionEvent e) {
 		MainWindow.this.about();
@@ -442,26 +552,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		if (e.isPopupTrigger()) {
 		    didPopup = true;
 		    ChannelInfo info = new ChannelInfo(MainWindow.this.currentChannelInfo);
-		    // Stupid java! We have to do this separately because although JMenu and JPopupMenu both have add(JMenuItem),
-		    // there is no common subclass!
-		    class BookmarkPopupMenu extends JPopupMenu {
-			private ChannelInfo info;
-			public BookmarkPopupMenu(ChannelInfo info) {
-			    super();
-			    this.info = info;
-			    for(int i = 0; i < MainWindow.this.bookmarks.length; i++) {
-				final Bookmark b = MainWindow.this.bookmarks[i];
-				JMenuItem jmi = new JMenuItem(b.getName());
-				jmi.addActionListener(new ActionListener() {
-				    public void actionPerformed(ActionEvent e) {
-					MainWindow.this.bookmarkSurf(b, BookmarkPopupMenu.this.info);
-				    }
-				});
-				this.add(jmi);
-			    }
-			}
-		    };
-		    JPopupMenu popup = new BookmarkPopupMenu(info);
+		    JPopupMenu popup = MainWindow.this.new ChannelPopupMenu(info);
 		    popup.show(e.getComponent(), e.getX(), e.getY());
 		}
 	    }
@@ -480,45 +571,11 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	toptop.add(Box.createHorizontalStrut(5));
 
 	// First, the "now playing" panel
-	JPanel jp = new JPanel();
-	jp.setBorder(BorderFactory.createTitledBorder(
+	this.nowPlayingPanel = new ChannelInfoPanel();
+	this.nowPlayingPanel.setBorder(BorderFactory.createTitledBorder(
 	    BorderFactory.createEtchedBorder(EtchedBorder.LOWERED), "Now Playing",
 	    TitledBorder.CENTER, TitledBorder.DEFAULT_POSITION));
-	jp.setLayout(new GridBagLayout());
-	GridBagConstraints gbc = new GridBagConstraints();
-	gbc.fill = GridBagConstraints.BOTH;
-
-	this.channelNumberLabel = new JLabel();
-	this.channelNumberLabel.setHorizontalAlignment(SwingConstants.CENTER);
-	this.channelNumberLabel.setFont(new Font(null, Font.BOLD, 18));
-	gbc.weightx = 0.25;
-	gbc.gridx = 0;
-	gbc.gridy = 0;
-	jp.add(this.channelNumberLabel, gbc);
-	this.channelNameLabel = new JLabel();
-	this.channelNameLabel.setHorizontalAlignment(SwingConstants.CENTER);
-	this.channelNameLabel.setFont(new Font(null, Font.PLAIN, 14));
-	gbc.gridy = 1;
-	jp.add(this.channelNameLabel, gbc);
-	this.channelGenreLabel = new JLabel();
-	this.channelGenreLabel.setHorizontalAlignment(SwingConstants.CENTER);
-	this.channelGenreLabel.setFont(new Font(null, Font.PLAIN, 12));
-	gbc.gridy = 2;
-	jp.add(this.channelGenreLabel, gbc);
-	this.channelArtistLabel = new JLabel();
-	this.channelArtistLabel.setHorizontalAlignment(SwingConstants.CENTER);
-	this.channelArtistLabel.setFont(new Font(null, Font.BOLD, 20));
-	gbc.gridx = 1;
-	gbc.weightx = 0.75;
-	gbc.gridwidth = 2;
-	gbc.gridy = 0;
-	jp.add(this.channelArtistLabel, gbc);
-	this.channelTitleLabel = new JLabel();
-	this.channelTitleLabel.setHorizontalAlignment(SwingConstants.CENTER);
-	this.channelTitleLabel.setFont(new Font(null, Font.BOLD, 20));
-	gbc.gridy = 1;
-	jp.add(this.channelTitleLabel, gbc);
-	toptop.add(jp);
+	toptop.add(this.nowPlayingPanel);
 	toptop.add(Box.createHorizontalStrut(5));
 	JPanel buttons = new JPanel();
 	buttons.setLayout(new BoxLayout(buttons, BoxLayout.PAGE_AXIS));
@@ -536,7 +593,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.memoryButton = new JButton("Add to memory");
 	this.memoryButton.addActionListener(new ActionListener() {
 	    public void actionPerformed(ActionEvent e) {
-		MainWindow.this.memorize(MainWindow.this.currentChannelInfo);
+		MainWindow.this.memoryPanel.memorize(MainWindow.this.currentChannelInfo);
 	    }
 	});
 	this.memoryButton.setEnabled(false);
@@ -548,7 +605,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	top.add(Box.createVerticalStrut(10));
 	JPanel stripe = new JPanel();
 	stripe.setLayout(new GridBagLayout());
-	gbc = new GridBagConstraints();
+	GridBagConstraints gbc = new GridBagConstraints();
 
 	JPanel favorites = new JPanel();
 	this.favoriteMenu = new JComboBox();
@@ -1066,7 +1123,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.loadFavorites();
 
 	this.loadTickList();
-	this.loadMemory();
+	this.memoryPanel = new MemoryPanel(this);
 
 	// We have a device saved... Try and power up
 	String deviceName = this.preferences.getDevice();
@@ -1174,7 +1231,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    case PlatformFactory.PLAT_CB_SMART_MUTE:	this.smartMuteClicked(); break;
 	    case PlatformFactory.PLAT_CB_NORM_MUTE:	this.muteClicked(); break;
 	    case PlatformFactory.PLAT_CB_CHANNEL:	this.setChannel(((Integer)arg).intValue()); break;
-	    case PlatformFactory.PLAT_CB_MEMORY:	this.memorize((ChannelInfo)arg); break;
+	    case PlatformFactory.PLAT_CB_MEMORY:	this.memoryPanel.memorize((ChannelInfo)arg); break;
 	    default: throw new IllegalArgumentException("Which platform callback type??");
 	}
     }
@@ -1267,6 +1324,8 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	}
     }
 
+    public JFrame getFrame() { return this.myFrame; }
+
     private void turnPowerOn() {
 	// Figure out which device was selected
 	String deviceName = this.preferences.getDevice();
@@ -1291,7 +1350,6 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 
     private final static String CHAN_TABLE_COLS = "ChannelTableColumnOrder";
     private final static String GRID_NODE = "ChannelGrid";
-    private final static String MEMORY_NODE = "MemoryList";
     private final static String TICK_NODE = "ChannelUsage";
     private final static String SORT_DIR = "SortDirection";
     private final static String SORT_FIELD = "SortColumn";
@@ -1347,11 +1405,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		MainWindow.this.channelList.clear();
 		MainWindow.this.sortedSidList = new Integer[0];
 		MainWindow.this.channelTableModel.fireTableDataChanged();
-		MainWindow.this.channelNumberLabel.setText("");
-		MainWindow.this.channelNameLabel.setText("");
-		MainWindow.this.channelGenreLabel.setText("");
-		MainWindow.this.channelArtistLabel.setText("");
-		MainWindow.this.channelTitleLabel.setText("");
+		MainWindow.this.nowPlayingPanel.setChannelInfo(null);
 		MainWindow.this.powerCheckBox.setSelected(false);
 		MainWindow.this.muteButton.setEnabled(false);
 		MainWindow.this.smartMuteButton.setEnabled(false);
@@ -1720,11 +1774,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	    // update the rating slider
 	    this.updateRatingSlider(i);
 	    // This is an update for the current channel - fix the labels.
-	    this.channelNumberLabel.setText(Integer.toString(i.getChannelNumber()));
-	    this.channelGenreLabel.setText(i.getChannelGenre());
-	    this.channelNameLabel.setText(i.getChannelName());
-	    this.channelArtistLabel.setText(i.getChannelArtist());
-	    this.channelTitleLabel.setText(i.getChannelTitle());
+	    this.nowPlayingPanel.setChannelInfo(i);
 	    if (this.smartMuteInfo != null && !i.equals(this.smartMuteInfo)) {
 		this.smartMuteClicked(); // Quickie hack! Since we're muted, this will unmute.
 	    }
@@ -1751,83 +1801,4 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.channelTable.scrollRectToVisible(rect);
     }
 
-    private void loadMemory() {
-	Preferences node = JXM.myUserNode().node(MEMORY_NODE);
-	String[] keys;
-	try {
-	    keys = node.keys();
-	}
-	catch(BackingStoreException e) {
-	    // ignore
-	    return;
-	}
-	this.memoryListModel.removeAllElements();
-	for(int i = 0; i < keys.length; i++) {
-	    String record = node.get(keys[i], "");
-	    String[] fields = record.split(":");
-	    if (fields.length != 7)
-		continue;
-	    try {
-		Date when = new Date(Long.parseLong(fields[0]));
-		int chan = Integer.parseInt(fields[1]);
-		int sid = Integer.parseInt(fields[2]);
-		String name = URLDecoder.decode(fields[3], "US-ASCII");
-		String genre = URLDecoder.decode(fields[4], "US-ASCII");
-		String artist = URLDecoder.decode(fields[5], "US-ASCII");
-		String title = URLDecoder.decode(fields[6], "US-ASCII");
-		ChannelInfo ci = new ChannelInfo(chan, sid, genre, name, artist, title);
-		MemoryListItem mli = new MemoryListItem(when, ci);
-		int j;
-		for(j = 0; j < this.memoryListModel.getSize(); j++)
-		    if (((MemoryListItem)this.memoryListModel.getElementAt(j)).getDate().getTime() > when.getTime())
-			continue;
-		this.memoryListModel.add(j, mli);
-	    }
-	    catch(NumberFormatException e) {
-		// ignore
-	    }
-	    catch(UnsupportedEncodingException e) {
-		// impossible
-	    }
-	}
-    }
-    private void saveMemory() {
-	Preferences node = JXM.myUserNode().node(MEMORY_NODE);
-	try {
-	    node.clear();
-	}
-	catch(BackingStoreException e) {
-	    return;
-	}
-	for(int i = 0; i < this.memoryListModel.getSize(); i++) {
-	    try{
-	    MemoryListItem mli = ((MemoryListItem)this.memoryListModel.getElementAt(i));
-	    StringBuffer sb = new StringBuffer();
-	    sb.append(Long.toString(mli.getDate().getTime()));
-	    sb.append(":");
-	    sb.append(mli.getChannelInfo().getChannelNumber());
-	    sb.append(":");
-	    sb.append(mli.getChannelInfo().getServiceID());
-	    sb.append(":");
-	    sb.append(URLEncoder.encode(mli.getChannelInfo().getChannelName(), "US-ASCII"));
-	    sb.append(":");
-	    sb.append(URLEncoder.encode(mli.getChannelInfo().getChannelGenre(), "US-ASCII"));
-	    sb.append(":");
-	    sb.append(URLEncoder.encode(mli.getChannelInfo().getChannelArtist(), "US-ASCII"));
-	    sb.append(":");
-	    sb.append(URLEncoder.encode(mli.getChannelInfo().getChannelTitle(), "US-ASCII"));
-	    node.put(Integer.toString(i), sb.toString());
-	    }
-	    catch(UnsupportedEncodingException e) {
-		// impossible;
-	    }
-	}
-    }
-
-    private DefaultListModel memoryListModel = new DefaultListModel();
-
-    private void memorize(ChannelInfo i) {
-	MemoryListItem mli = new MemoryListItem(i);
-	this.memoryListModel.add(this.memoryListModel.getSize(), mli);
-    }
 }

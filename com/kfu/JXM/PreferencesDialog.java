@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: PreferencesDialog.java,v 1.16 2004/03/13 18:13:20 nsayer Exp $
+ $Id: PreferencesDialog.java,v 1.17 2004/03/14 02:58:52 nsayer Exp $
  
  */
 
@@ -367,9 +367,9 @@ public class PreferencesDialog extends JDialog {
 	jp.add(ok);
 	this.getContentPane().add(jp, BorderLayout.PAGE_END);
 
-	this.pack();
 	this.reloadFromDefaults();
 	this.doBookmarkRebuild();
+	this.pack();
     }
 
     private void trackerCheckboxClicked() {

@@ -195,6 +195,14 @@ public class RadioCommander implements IAsyncExceptionHandler {
             this.setByte(2, (byte)0);     // program type
         }
     }
+    private class cmdThisChannelInfoBySID extends Command {
+        public cmdThisChannelInfoBySID(int channel) {
+            super((byte)0x25, 3);
+            this.setByte(0, (byte)7);     // selection method - label SID select
+            this.setByte(1, (byte)channel);
+            this.setByte(2, (byte)0);     // program type
+        }
+    }
     private class cmdNextChannelInfo extends Command {
         public cmdNextChannelInfo(int channel) {
             super((byte)0x25, 3);
@@ -804,7 +812,7 @@ public class RadioCommander implements IAsyncExceptionHandler {
     }
     
     private void sendCommand(byte[] command) throws RadioException {
-		this.checkDisposed();
+	this.checkDisposed();
         try {
             this.myDeviceOut.write(command);
             this.myDeviceOut.flush();
@@ -1030,16 +1038,14 @@ public class RadioCommander implements IAsyncExceptionHandler {
 	}, 100, 100);
 
 
-/*	
-		// Argh! The last channel is stored by service ID, not by channel number.
-		// So we're going to have to ask the surfer to look it up in the cache. Ick!
-		int chan = this.mySurfer.getChannelNumerByServiceID(reply.getLastAudioService());
-		if (chan < 0)
-			chan = 1;
+	// Argh! The last channel is stored by service ID, not by channel number.
+	// So we're going to have to ask the surfer to look it up in the cache. Ick!
+	int chan = this.getChannelInfoByServiceID(reply.getLastAudioService()).getChannelNumber();
+	if (chan < 0)
+		chan = 1;
 		
-		// Let's try going back where we once were. If it doesn't work, we'll wind up with -1, which is fine.
-		this.setChannel(chan);
-*/
+	// Let's try going back where we once were. If it doesn't work, we'll wind up with -1, which is fine.
+	this.setChannel(chan);
 
 	// If it didn't work, then pick the preview channel
 	if (this.currentChannel == -1)
@@ -1048,7 +1054,7 @@ public class RadioCommander implements IAsyncExceptionHandler {
         // Powering up clears out the duration/progress times
         this.currentSongStarted = this.currentSongEnds = null;
     }
-	
+
     public void handleException(Exception e) {
         this.Dispose(); // Probably unnecessary, but just in case
         this.notifyGUI(EXCEPTION, e);
@@ -1319,6 +1325,15 @@ public class RadioCommander implements IAsyncExceptionHandler {
     // We pass all requests through to the surfer so he can cache the results
     public ChannelInfo getChannelInfo() throws RadioException {
 	return this.getChannelInfo(this.getChannel());
+    }
+
+    public ChannelInfo getChannelInfoByServiceID(int sid) throws RadioException {
+        respChannelInfo result = (respChannelInfo)this.performCommand(new cmdThisChannelInfoBySID(sid), respChannelInfo.class);
+	ChannelInfo info = result.getChannelInfo();
+	this.tryToExtendChannelInfo(info);
+
+	this.updateChannelInfo(info);
+	return info;
     }
 
     public ChannelInfo getChannelInfo(int channel) throws RadioException {

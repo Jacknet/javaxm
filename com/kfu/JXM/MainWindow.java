@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.91 2004/04/10 18:58:32 nsayer Exp $
+ $Id: MainWindow.java,v 1.92 2004/04/16 06:37:45 nsayer Exp $
  
  */
 
@@ -683,6 +683,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
     private JCheckBox powerCheckBox;
     private JCheckBox muteButton;
     private JCheckBox smartMuteButton;
+    private JButton sleepButton;
     private JFrame myFrame;
     private JMenu bookmarkMenu;
     private JMenuItem powerMenuItem;
@@ -1572,10 +1573,44 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	gbc.anchor = GridBagConstraints.LINE_END;
 	bottom.add(this.powerCheckBox, gbc);
 
-	jl = new JLabel("Satellite: ");
-	jl.setHorizontalAlignment(SwingConstants.TRAILING);
+	this.sleepButton = new JButton("Sleep");
+	this.sleepButton.setIcon(this.nullIcon);
+	this.sleepButton.addActionListener(new ActionListener() {
+	    public void actionPerformed(ActionEvent e) {
+		// Undo blinking
+		MainWindow.this.sleepButtonBlink(false);
+		int i;
+		for(i = sleepSettings.length - 1; i >= 0; i--) {
+		    if (MainWindow.this.sleepTime >= sleepSettings[i])
+			break;
+		}
+		if (i == sleepSettings.length - 1) // We were maxed. Turn off.
+		    MainWindow.this.sleepTime = -1;
+		else
+		    MainWindow.this.sleepTime = sleepSettings[i + 1];
+		if (MainWindow.this.sleepTime < 0)
+		    MainWindow.this.sleepButton.setText("Sleep");
+		else
+		    MainWindow.this.sleepButton.setText(Integer.toString(MainWindow.this.sleepTime) + " min");
+	    }
+	});
+	this.sleepButton.setEnabled(false);
+	this.sleepButton.setPreferredSize(new Dimension(75, (int)this.sleepButton.getMinimumSize().getHeight()));
 	gbc.gridx = 2;
 	gbc.gridy = 0;
+	gbc.gridheight = 2;
+	gbc.weightx = .1;
+	gbc.ipadx = 2;
+	gbc.ipady = 2;
+	gbc.anchor = GridBagConstraints.CENTER;
+	bottom.add(this.sleepButton, gbc);
+
+	jl = new JLabel("Satellite: ");
+	jl.setHorizontalAlignment(SwingConstants.TRAILING);
+	gbc.gridx = 3;
+	gbc.gridy = 0;
+	gbc.ipadx = 0;
+	gbc.ipady = 0;
 	gbc.weightx = .75;
 	gbc.gridheight = 1;
 	gbc.insets = new Insets(0, 0, 0, 0);
@@ -1588,7 +1623,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	bottom.add(jl, gbc);
 
 	this.satelliteMeter = new SignalProgressBar(0, 100);
-	gbc.gridx = 3;
+	gbc.gridx = 4;
 	gbc.gridy = 0;
 	gbc.weightx = .25;
 	gbc.insets = new Insets(0, 0, 0, 20);
@@ -1629,9 +1664,19 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		    MainWindow.this.handleError(ex);
 		    return;
 		}
+		Calendar c = Calendar.getInstance();
+		c.setTime(new Date());
+		int newMinute = c.get(Calendar.MINUTE);
+		final boolean doSleepTick = MainWindow.this.lastMinute != newMinute;
+		MainWindow.this.lastMinute = newMinute;
+		final boolean doSleepBlink = MainWindow.this.sleepTime == 0;
 		// Must take the updates back to the UI thread
 		SwingUtilities.invokeLater(new Runnable() {
 		    public void run() {
+			if (doSleepTick)
+			    MainWindow.this.sleepTimerTick();
+			if (doSleepBlink)
+			    MainWindow.this.sleepButtonBlink(true);
 			MainWindow.this.satelliteMeter.setValue((int)out[RadioCommander.SIGNAL_STRENGTH_SAT]);
 			MainWindow.this.terrestrialMeter.setValue((int)out[RadioCommander.SIGNAL_STRENGTH_TER]);
 		    }
@@ -2107,6 +2152,7 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 	this.bookmarkMenu.setEnabled(true);
 	this.powerCheckBox.setSelected(true);
 	this.powerMenuItem.setText("Turn Radio Off");
+	this.sleepButton.setEnabled(true);
 	this.channelChanged(); // We need to fake the first one
 	try {
 	    String rid = RadioCommander.theRadio().getRadioID();
@@ -2165,10 +2211,84 @@ public class MainWindow implements RadioEventHandler, IPlatformCallbackHandler, 
 		MainWindow.this.favoriteMenu.setSelectedIndex(0);
 		MainWindow.this.favoriteCheckbox.setEnabled(false);
 		MainWindow.this.bookmarkMenu.setEnabled(false);
+		MainWindow.this.sleepButton.setEnabled(false);
+		MainWindow.this.sleepButton.setText("Sleep");
+		MainWindow.this.sleepButtonBlink(false); // end blinking
+		MainWindow.this.sleepTime = -1;
 	        MainWindow.this.preferences.turnOff();
 	    }
 	});
     }
+
+    // -1 means sleep timer disabled
+    private int sleepTime = -1;
+
+    // The last clock minute we saw.
+    private int lastMinute;
+
+    // The button cycles through these settings.
+    private final static int[] sleepSettings = {5, 15, 30, 60, 120};
+
+    private void sleepTimerTick() {
+	if (this.sleepTime < 0)
+	    return;
+	this.sleepTime--;
+	if (this.sleepTime < 0)
+	    this.turnPowerOff();
+	else if (this.sleepTime == 0) {
+	    this.sleepButton.setText("< 1 min");
+	    this.sleepButtonBlink(true);
+	} else
+	    this.sleepButton.setText(Integer.toString(this.sleepTime) + " min");
+    }
+
+    private Color savedSleepButtonForeground = null;
+    private boolean blinkCycle = false;
+    private void sleepButtonBlink(boolean doingBlink) {
+	if (!doingBlink) {
+	    if (this.savedSleepButtonForeground != null)
+		this.sleepButton.setForeground(this.savedSleepButtonForeground);
+	    this.sleepButton.setFont(this.sleepButton.getFont().deriveFont(Font.PLAIN));
+	    //this.sleepButton.setIcon(this.moonIcon);
+	    this.sleepButton.setIcon(this.nullIcon);
+	    return;
+	}
+	this.sleepButton.setFont(this.sleepButton.getFont().deriveFont(Font.BOLD));
+	if (this.savedSleepButtonForeground == null)
+	    this.savedSleepButtonForeground = this.sleepButton.getForeground();
+	this.sleepButton.setForeground(Color.RED);
+	blinkCycle = !blinkCycle;
+	this.sleepButton.setIcon(blinkCycle?this.blinkIcon:this.blankIcon);
+    }
+    private Icon blankIcon = new BlinkingIcon(0);
+    private Icon blinkIcon = new BlinkingIcon(1);
+    //private Icon moonIcon = new BlinkingIcon(2);
+    private Icon nullIcon = new BlinkingIcon(2);
+    class BlinkingIcon implements Icon {
+	private int which;
+	public BlinkingIcon(int which) { this.which = which; }
+	public int getIconHeight() { return (which==2)?0:10; }
+	public int getIconWidth() { return this.getIconHeight(); }
+	private int moonFactor = 4;
+	public void paintIcon(Component c, Graphics g, int x, int y) {
+	    g.translate(x, y);
+	    g.setColor(new Color(0, 0, 0, 0));
+	    g.fillRect(0, 0, this.getIconWidth() - 1, this.getIconHeight() - 1);
+	    if (which == 0)
+		; // do nothing more
+	    else if (which == 1) {
+		g.setColor(c.getForeground());
+		g.fillArc(0, 0, this.getIconWidth(), this.getIconHeight(), 0, 360);
+	    } /*else if (which == 2) {
+		g.setColor(Color.YELLOW);
+		g.fillArc(0, 0, this.getIconWidth(), this.getIconHeight(), 0, 360);
+		g.setColor(new Color(0, 0, 0, 0));
+		g.fillArc(moonFactor, 0, this.getIconWidth() - moonFactor, this.getIconHeight(), 0, 360);
+	    } */
+	    g.translate(-x, -y);
+	}
+    }
+
 
     private void handleTrackerError(final Exception e) {
 	XMTracker.theTracker().Disable();

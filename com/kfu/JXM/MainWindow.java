@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.108 2004/07/22 21:11:53 nsayer Exp $
+ $Id: MainWindow.java,v 1.109 2004/08/02 18:38:25 nsayer Exp $
  
  */
 
@@ -2790,7 +2790,18 @@ public class MainWindow
 		// just ignore it.
 		if (i.equals(this.channelList.get(new Integer(i.getServiceID()))))
 			return;
-	
+
+		// We must do something special. If XM pulls what in Baseball
+		// is called a double-switch (channel A is retired, channel B
+		// gets channel A's old number), then we have to trash the
+		// old record. But since the cahce is held by service-ID, we
+		// must search for channel number collisions ourselves.
+		for (Iterator it = this.channelList.values().iterator(); it.hasNext(); ) {
+			ChannelInfo ifo = (ChannelInfo)it.next();
+			if (i.getServiceID() != ifo.getServiceID() && i.getChannelNumber() == ifo.getChannelNumber())
+				it.remove();
+		}
+
 		this.searchSystem.update(i);
 	
 		// We got an update. Is it a new favorite? If so, remember that for later.

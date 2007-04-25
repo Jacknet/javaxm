@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: PreferencesDialog.java,v 1.32 2004/09/07 22:44:21 nsayer Exp $
+ $Id: PreferencesDialog.java,v 1.33 2007/04/25 22:05:12 nsayer Exp $
  
  */
 
@@ -38,6 +38,7 @@ import com.kfu.xm.*;
 public class PreferencesDialog extends JDialog {
     private JTabbedPane theTabs;
     private JComboBox deviceMenu;
+    private JCheckBox deviceIsXmDirect;
     private JLabel radioID;
     private JTextField trackerURL;
     private JTextField trackerUser;
@@ -67,10 +68,12 @@ public class PreferencesDialog extends JDialog {
 		    this.reloadFromDefaults();
 		super.setVisible(b);
 	}
+/*
 	public void show() {
 		this.reloadFromDefaults();
-		super.show();
+		super.setVisible(true);
 	}
+*/
 
     public final static int TAB_DEVICE = 0;
     public final static int TAB_TRACKER = 1;
@@ -81,13 +84,13 @@ public class PreferencesDialog extends JDialog {
 
 	public void showTab(int tab) {
 		this.theTabs.setSelectedIndex(tab);
-		this.show();
+		this.setVisible(true);
     }
 	public void addNewSongSearch(ChannelInfo info) {
 		this.reloadFromDefaults();
 		this.theTabs.setSelectedIndex(TAB_SEARCH);
 		this.handler.getSearchSystem().addNewSong(info);
-		super.show();
+		super.setVisible(true);
 	}
 
     public PreferencesDialog(JFrame parent, IPreferenceCallbackHandler handler) {
@@ -107,8 +110,18 @@ public class PreferencesDialog extends JDialog {
 		GridBagConstraints gbc = new GridBagConstraints();
 		JPanel jp2 = new JPanel();
 		this.deviceMenu = new JComboBox();
-		this.refreshDeviceMenu();
 		jp2.add(this.deviceMenu);
+
+                this.deviceIsXmDirect = new JCheckBox("XM Direct");
+                this.deviceIsXmDirect.addActionListener(new ActionListener() {
+		    public void actionPerformed(ActionEvent e) {
+			PreferencesDialog.this.refreshDeviceMenu();
+		    }
+		});
+                jp2.add(this.deviceIsXmDirect);
+
+                this.deviceIsXmDirect.setSelected(JXM.myUserNode().getBoolean(DEVICE_IS_XMDIRECT_KEY, false));
+		this.refreshDeviceMenu();
 		gbc.gridx = 0;
 		gbc.gridy = 0;
 		gbc.anchor = GridBagConstraints.PAGE_END;
@@ -467,7 +480,7 @@ public class PreferencesDialog extends JDialog {
 		ok.addActionListener(new ActionListener() {
 		    public void actionPerformed(ActionEvent e) {
 			PreferencesDialog.this.reloadFromDefaults();
-			PreferencesDialog.this.hide();
+			PreferencesDialog.this.setVisible(false);
 		    }
 		});
 		jp.add(ok);
@@ -475,7 +488,7 @@ public class PreferencesDialog extends JDialog {
 		ok.addActionListener(new ActionListener() {
 		    public void actionPerformed(ActionEvent e) {
 			PreferencesDialog.this.saveToDefaults();
-			PreferencesDialog.this.hide();
+			PreferencesDialog.this.setVisible(false);
 		    }
 		});
 		jp.add(ok);
@@ -668,6 +681,7 @@ public class PreferencesDialog extends JDialog {
     public void turnOn(String radioID) {
 		this.radioID.setText(radioID);
 		this.deviceMenu.setEnabled(false);
+		this.deviceIsXmDirect.setEnabled(false);
 		this.theTabs.setEnabledAt(TAB_FILTERS, true);
     }
 
@@ -675,6 +689,7 @@ public class PreferencesDialog extends JDialog {
     public void turnOff() {
 		this.radioID.setText("");
 		this.deviceMenu.setEnabled(true);
+		this.deviceIsXmDirect.setEnabled(true);
 		if (this.theTabs.getSelectedIndex() == TAB_FILTERS)
 		    this.theTabs.setSelectedIndex(TAB_DEVICE);
 		this.theTabs.setEnabledAt(TAB_FILTERS, false);
@@ -685,19 +700,20 @@ public class PreferencesDialog extends JDialog {
     }
 
     private final static String DEVICE_NAME_KEY = "DefaultDevice";
+    private final static String DEVICE_IS_XMDIRECT_KEY = "DeviceIsXmDirect";
     private void refreshDeviceMenu() {
-        this.deviceMenu = new JComboBox();
+        this.deviceMenu.removeAllItems();
         this.deviceMenu.addItem("Pick device");
 
         String[] devices = RadioCommander.getPotentialDevices();
         for(int i = 0; i < devices.length; i++) {
             final String name = devices[i];
-	    if (!PlatformFactory.ourPlatform().isDeviceValid(name))
+	    if (!deviceIsXmDirect.isSelected() && !PlatformFactory.ourPlatform().isDeviceValid(name))
 		continue;
             this.deviceMenu.addItem(name);
         }
 		// This is good: If there is no DEVICE_NAME_KEY value, we won't change the selection
-		// will be garbage. If it's a nonexistent device, same thing. If there's only one device
+		// If it's a nonexistent device, same thing. If there's only one device
 		// and the platform says we can trust it, then that will be it. Otherwise, the user
 		// will have to choose. If "" is a legal device name, well, that's just Unamerican.
 		this.deviceMenu.setSelectedItem(JXM.myUserNode().get(DEVICE_NAME_KEY, ""));
@@ -719,9 +735,13 @@ public class PreferencesDialog extends JDialog {
 		    return null;
 		return out;
     }
+    public boolean isDeviceXmDirect() {
+        return this.deviceIsXmDirect.isSelected();
+    }
     // Call this after a successfull power-up
     public void saveDevice() {
 		JXM.myUserNode().put(DEVICE_NAME_KEY, (String)this.deviceMenu.getSelectedItem());
+		JXM.myUserNode().putBoolean(DEVICE_IS_XMDIRECT_KEY, this.deviceIsXmDirect.isSelected());
     }
 
     public int getSleepAction() { return this.sleepAction.getSelectedIndex(); }

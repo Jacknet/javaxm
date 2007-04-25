@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MemoryPanel.java,v 1.7 2004/04/10 17:45:17 nsayer Exp $
+ $Id: MemoryPanel.java,v 1.8 2007/04/25 22:05:11 nsayer Exp $
  
  */
 
@@ -250,6 +250,6 @@ public class MemoryPanel extends JDialog {
 	MemoryListItem mli = new MemoryListItem(i);
 	this.memoryListModel.add(this.memoryListModel.getSize(), mli);
 	this.memoryList.setSelectedValue(mli, true);
-	this.show();
+	this.setVisible(true);
     }
 }

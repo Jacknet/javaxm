@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.110 2004/09/07 22:43:59 nsayer Exp $
+ $Id: MainWindow.java,v 1.111 2007/04/25 22:05:11 nsayer Exp $
  
  */
 
@@ -109,7 +109,7 @@ public class MainWindow
 			}
 		}
 	
-		public void show() {
+		public void setVisible(boolean visible) {
 			this.refreshSpinnerModel();
 			this.timerIgnore = true;
 			try {
@@ -118,7 +118,7 @@ public class MainWindow
 			finally {
 				this.timerIgnore = false;
 			}
-			super.show();
+			super.setVisible(visible);
 			this.setChannelInfo(MainWindow.this.currentChannelInfo);
 		}
 	
@@ -740,11 +740,11 @@ public class MainWindow
 	}
 	public void prefs() {
 		this.forceNormalView();
-		this.preferences.show();
+		this.preferences.setVisible(true);
 	}
 	public void about() {
 		this.forceNormalView();
-		this.aboutDialog.show();
+		this.aboutDialog.setVisible(true);
 	}
 
 	private void saveChannelTableLayout() {
@@ -841,7 +841,7 @@ public class MainWindow
 		if (w.isVisible())
 			w.toFront();
 		else
-			w.show();
+			w.setVisible(true);
 	}
 
 	private static final int DEFAULT_TABLE_ROWS = 15;
@@ -1793,6 +1793,7 @@ public class MainWindow
 				// ignore
 			}
 		}
+
 		// We have a device saved... Try and power up
 		String deviceName = this.preferences.getDevice();
 		if (deviceName != null)
@@ -1872,11 +1873,11 @@ public class MainWindow
 
 	private void toggleCompactView() {
 		if (this.compactView.isVisible()) {
-			this.compactView.hide();
-			this.myFrame.show();
+			this.compactView.setVisible(false);
+			this.myFrame.setVisible(true);
 		} else {
-			this.myFrame.hide();
-			this.compactView.show();
+			this.myFrame.setVisible(false);
+			this.compactView.setVisible(true);
 		}
 	}
 
@@ -2046,7 +2047,7 @@ public class MainWindow
 			JButton jb = new JButton("Activate later");
 			jb.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					ActivationDialog.this.hide();
+					ActivationDialog.this.setVisible(false);
 				}
 			});
 			gbc.gridwidth = 1;
@@ -2060,7 +2061,7 @@ public class MainWindow
 				public void actionPerformed(ActionEvent e) {
 					StringSelection s = new StringSelection(ActivationDialog.this.radioID);
 					Toolkit.getDefaultToolkit().getSystemClipboard().setContents(s,s);
-					ActivationDialog.this.hide();
+					ActivationDialog.this.setVisible(false);
 					try {
 						PlatformFactory.ourPlatform().openURL("http://www.xmradio.com/activation/");
 					}
@@ -2095,7 +2096,7 @@ public class MainWindow
 	
 			jb.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					ActivationDialog.this.hide();
+					ActivationDialog.this.setVisible(false);
 				}
 			});
 	
@@ -2112,7 +2113,7 @@ public class MainWindow
 		if (isActivated) {
 			// We transitioned from de-activated to activated.
 			if (this.activationDialog != null) {
-				this.activationDialog.hide();
+				this.activationDialog.setVisible(false);
 				// XXX - do we need to do anything else to get rid of it?
 				this.activationDialog = null;
 			}
@@ -2128,7 +2129,7 @@ public class MainWindow
 				return;
 			}
 			this.activationDialog = new ActivationDialog(this.myFrame, radioID);
-			this.activationDialog.show();
+			this.activationDialog.setVisible(true);
 		}
 	}
 
@@ -2175,10 +2176,11 @@ public class MainWindow
 			this.preferences.showTab(PreferencesDialog.TAB_DEVICE);
 			return;
 		}
+                boolean isXmDirect = this.preferences.isDeviceXmDirect();
 		// Attempt to power up the radio
 		try {
 			RadioCommander.theRadio().registerEventHandler(this);
-			RadioCommander.theRadio().turnOn(deviceName, initialChannel);
+			RadioCommander.theRadio().turnOn(deviceName, initialChannel, isXmDirect);
 		}
 		catch(RadioException e) {
 			RadioCommander.theRadio().unregisterEventHandler(this);

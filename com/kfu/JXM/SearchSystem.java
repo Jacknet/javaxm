@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: SearchSystem.java,v 1.10 2004/07/22 21:11:54 nsayer Exp $
+ $Id: SearchSystem.java,v 1.11 2007/04/25 22:05:12 nsayer Exp $
  
  */
 
@@ -560,7 +560,7 @@ public class SearchSystem {
 
     private void turnOff() {
 	this.matches.removeAllElements();
-	this.searchMatches.hide();
+	this.searchMatches.setVisible(false);
     }
 
     public void update(final ChannelInfo info) {
@@ -600,7 +600,7 @@ public class SearchSystem {
 	    // Every time we add to the list, pop it open if it's not the current channel
 	    if(!this.searchMatches.isVisible() && chan != RadioCommander.theRadio().getChannel()) {
 		this.parent.forceNormalView();
-		this.searchMatches.show();
+		this.searchMatches.setVisible(true);
 	    }
 	} else {
 	    int chan = info.getChannelNumber();
@@ -611,7 +611,7 @@ public class SearchSystem {
 		    this.matches.removeElement(ci);
 		    if (this.matches.size() == 0 && this.searchMatches.isVisible()) {
 			// When we remove the last item from the list, hide it.
-			this.searchMatches.hide();
+			this.searchMatches.setVisible(false);
 		    }
 		    break;
 		}

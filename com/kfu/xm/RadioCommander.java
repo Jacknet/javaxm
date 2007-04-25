@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: RadioCommander.java,v 1.21 2004/04/19 14:15:09 nsayer Exp $
+ $Id: RadioCommander.java,v 1.22 2007/04/25 22:05:12 nsayer Exp $
  
  */
 
@@ -138,6 +138,11 @@ public class RadioCommander implements IAsyncExceptionHandler {
             this.buf[buf.length - 2] = (byte)0xed;
             this.buf[buf.length - 1] = (byte)0xed;
         }
+        protected Command(byte type, int commandLength, byte suffix1, byte suffix2) {
+            this(type, commandLength);
+            this.buf[buf.length - 2] = suffix1;
+            this.buf[buf.length - 1] = suffix2;
+        }
         protected void setByte(int pos, byte val) {
             this.buf[pos + 5] = val;
         }
@@ -229,6 +234,29 @@ public class RadioCommander implements IAsyncExceptionHandler {
             this.setByte(4, (byte)(extended_info?1:0));
         }
     }
+    private class cmdMagicXMDirect extends Command {
+        // XXX Since this response is magical, we have no idea what the bytes mean.
+        // We simply need to perform them in a certain order.
+        public cmdMagicXMDirect(int which) {
+            super((byte)0x74, (which==1?3:2), (byte)0x74, (byte)0x0d);
+            switch(which) {
+                case 0:
+                    this.setByte((byte)0, (byte)0);
+                    this.setByte((byte)1, (byte)1);
+                    break;
+                case 1:
+                    this.setByte((byte)0, (byte)2);
+                    this.setByte((byte)1, (byte)1);
+                    this.setByte((byte)2, (byte)1);
+                    break;
+                case 2:
+                    this.setByte((byte)0, (byte)0xb);
+                    this.setByte((byte)1, (byte)0);
+                    break;
+                default: throw new IllegalArgumentException("Bad magic command");
+            }
+        }
+    }
 	
     private Response makeResponse(byte[] data) { // caller strips the 0x5a 0xa5, length, and postscript
         Response out = null;
@@ -283,6 +311,12 @@ public class RadioCommander implements IAsyncExceptionHandler {
                 break;
             case (byte)0xE1:
                 out = new respDeactivationIndicated(data);
+                break;
+            case (byte)0xE4:
+                out = new respMagicXMDirect(data);
+                break;
+            case (byte)0xF2:
+                out = new respMagicXMDirectIgnore(data);
                 break;
             case (byte)0xFF:
                 out = new respFatalError(data);
@@ -732,6 +766,25 @@ public class RadioCommander implements IAsyncExceptionHandler {
             return out;
         }
     }
+    private class respMagicXMDirectIgnore extends Response {
+        public respMagicXMDirectIgnore(byte[] data) {
+            super(data);
+        }
+        public boolean isInternal() {
+            return true;
+        }
+        public void handle() {
+            // XXX Since this response is magical,
+            // we have no idea what the bytes mean.
+            // We just need to ignore it.
+        }
+    }
+    private class respMagicXMDirect extends Response {
+        public respMagicXMDirect(byte[] data) {
+            super(data);
+        }
+        // XXX Since this response is magical, we have no idea what the bytes mean.
+    }
     private class respFatalError extends Response {
         public respFatalError(byte[] data) {
             super(data);
@@ -763,7 +816,7 @@ public class RadioCommander implements IAsyncExceptionHandler {
     private InputStream myDeviceIn;
     private OutputStream myDeviceOut;
     private SerialPort mySerialPort;
-    
+
     public static String[] getPotentialDevices() {
 	ArrayList l = new ArrayList();
         Enumeration e = CommPortIdentifier.getPortIdentifiers();
@@ -799,7 +852,19 @@ public class RadioCommander implements IAsyncExceptionHandler {
                     throw new RadioException("Radio turned off unexpectedly.");
                 
                 this.sendCommand(command.getData());
-                return waitForReply(expectedReplyClass);
+                if (expectedReplyClass != null) {
+                    return waitForReply(expectedReplyClass);
+                } else {
+                    // XXX ugly XMDirect hack. This command does not wait for a response.
+                    // Just pause and then move along.
+                    try {
+                        Thread.sleep(250);
+                    }
+                    catch(InterruptedException ex) {
+                        // ignore
+                    }
+                    return null;
+                }
             }
             catch(RadioTimeoutException e) {
                 Log("Timeout #" + Integer.toString(i + 1) + " waiting for " + expectedReplyClass.toString());
@@ -852,7 +917,12 @@ public class RadioCommander implements IAsyncExceptionHandler {
             while(true) {
                 try {
                     if (this.getNextChar() != (byte)0x5a)
-                        throw new RadioException("Mismatch waiting for first flag");
+                        continue;
+                        // The XMDirect "magic" responses have variable
+                        // trailers. Because of that, we must eat them
+                        // here, requiring us to be "tolerant" for the first
+                        // byte.
+                        //throw new RadioException("Mismatch waiting for first flag");
                     if (this.getNextChar() != (byte)0xa5)
                         throw new RadioException("Mismatch waiting for second flag");
                     int length = this.getNextChar() & 0xff;
@@ -861,8 +931,10 @@ public class RadioCommander implements IAsyncExceptionHandler {
                     byte buf[] = new byte[length];
                     for(int i = 0; i < length; i++)
                         buf[i] = this.getNextChar();
-                    this.getNextChar(); // throw away first trailer
-                    this.getNextChar(); // throw away second trailer
+                    if (buf[0] != (byte)0xE4) { // XXX - ugly hack for XMDirect
+                        this.getNextChar(); // throw away first trailer
+                        this.getNextChar(); // throw away second trailer
+                    }
                     Response r = makeResponse(buf);
                     if (r == null)
                         continue;
@@ -957,11 +1029,17 @@ t.printStackTrace();
     }
 
     public void turnOn(String device) throws RadioException {
-	this.turnOn(device, -1);
+	this.turnOn(device, -1, false);
+    }
+    public void turnOn(String device, boolean isXmDirect) throws RadioException {
+	this.turnOn(device, -1, isXmDirect);
+    }
+    public void turnOn(String device, int initialChannel) throws RadioException {
+	this.turnOn(device, initialChannel, false);
     }
 
     // Device *must* be one of the strings returned from getPotentialDevices() !
-    public void turnOn(String device, int initialChannel) throws RadioException {
+    public void turnOn(String device, int initialChannel, boolean isXmDirect) throws RadioException {
         if (this.myDeviceIn != null || this.myDeviceOut != null)
             throw new IllegalStateException("Radio is already on");
 	this.powerChanging = true;
@@ -1005,7 +1083,14 @@ t.printStackTrace();
         replyQueue = new ArrayList();
         this.myReplyWatcher = new replyWatcher();
         this.myReplyWatcher.start();
-		
+
+        if (isXmDirect) {
+            Log("Sending special XM Direct commands");
+            this.performCommand(new cmdMagicXMDirect(0), respMagicXMDirect.class);
+            this.performCommand(new cmdMagicXMDirect(1), respMagicXMDirect.class);
+            this.performCommand(new cmdMagicXMDirect(2), null); // We get no response back from this one.
+        }
+
         Log("Sending power-up");
         respPoweredOn reply = (respPoweredOn)this.performCommand(new cmdPowerUp(), respPoweredOn.class);	
         Log("Got power-up reply");
@@ -1373,12 +1458,14 @@ finally {
         ChannelInfo info = result.getChannelInfo();
         if (info.getChannelNumber() == 0)
             return null;
-        
-        this.tryToExtendChannelInfo(info);
+       
+        // Can't do this except on the current channel 
+        //this.tryToExtendChannelInfo(info);
         return info;
     }
 	
     private void tryToExtendChannelInfo(ChannelInfo info) throws RadioException {
+
         respExtendedChannelInfo result2 = (respExtendedChannelInfo)this.performCommand(new cmdExtendedChannelInfo(info.getChannelNumber()), respExtendedChannelInfo.class);
         String a = result2.getArtist();
         if (a != null)
@@ -1387,7 +1474,7 @@ finally {
         if (t != null)
             info.setChannelTitle(t);
     }
-	
+
     // We pass all requests through to the surfer so he can cache the results
     public ChannelInfo getChannelInfo() throws RadioException {
 	return this.getChannelInfo(this.getChannel());
@@ -1396,7 +1483,9 @@ finally {
     public ChannelInfo getChannelInfoByServiceID(int sid) throws RadioException {
         respChannelInfo result = (respChannelInfo)this.performCommand(new cmdThisChannelInfoBySID(sid), respChannelInfo.class);
 	ChannelInfo info = result.getChannelInfo();
-	this.tryToExtendChannelInfo(info);
+
+        if (info.getChannelNumber() == this.getChannel())
+	    this.tryToExtendChannelInfo(info);
 
 	this.updateChannelInfo(info);
 	return info;
@@ -1409,7 +1498,9 @@ finally {
         respChannelInfo result = (respChannelInfo)this.performCommand(new cmdThisChannelInfo(channel), respChannelInfo.class);
         //Log("Got channel info request reply");
         ChannelInfo info = result.getChannelInfo();
-        this.tryToExtendChannelInfo(info);
+
+        if (this.getChannel() == channel)
+            this.tryToExtendChannelInfo(info);
 
 	this.updateChannelInfo(info);
         return info;

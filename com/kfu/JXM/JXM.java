@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: JXM.java,v 1.19 2007/04/25 22:05:11 nsayer Exp $
+ $Id: JXM.java,v 1.20 2007/11/25 17:24:14 nsayer Exp $
  
  */
 
@@ -35,15 +35,15 @@ public class JXM {
     public static void main(String[] args) {
 	commandLine = args;
         try {
-            Class.forName("javax.comm.CommPortIdentifier");
+            Class.forName("gnu.io.CommPortIdentifier");
         }
         catch(Exception e) {
             try {
-                JOptionPane.showMessageDialog(null, e.toString() + "\nIs javax.comm properly installed?",
-                                              "Cannot load javax.comm",
+                JOptionPane.showMessageDialog(null, e.toString() + "\nIs RXTX properly installed?",
+                                              "Cannot load RXTX",
                                               JOptionPane.ERROR_MESSAGE);
             } catch(HeadlessException ee) {
-                System.err.println("Can't find javax.comm (" + e.getMessage() +
+                System.err.println("Can't find RXRX (" + e.getMessage() +
                                "). Is it installed?");
             }
             System.exit(-1);
@@ -52,7 +52,7 @@ public class JXM {
     }
 
     public static String version() {
-	return "1.4";
+	return "1.4.3";
     }
     public static String userAgentString() {
 	return "JXM v" + version();

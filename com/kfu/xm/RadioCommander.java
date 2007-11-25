@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: RadioCommander.java,v 1.22 2007/04/25 22:05:12 nsayer Exp $
+ $Id: RadioCommander.java,v 1.23 2007/11/25 17:24:14 nsayer Exp $
  
  */
 
@@ -26,7 +26,7 @@ package com.kfu.xm;
 import java.io.*;
 import java.util.*;
 
-import javax.comm.*;
+import gnu.io.*;
 
 public class RadioCommander implements IAsyncExceptionHandler {
 	

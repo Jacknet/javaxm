@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MacOSX.java,v 1.13 2004/04/29 15:25:07 nsayer Exp $
+ $Id: MacOSX.java,v 1.14 2007/11/25 17:27:01 nsayer Exp $
  
  */
 
@@ -63,6 +63,7 @@ public class MacOSX implements IPlatformHandler {
 
     public boolean isDeviceValid(String devname) {
 	// Eliminate the /dev/-less names and the CU devices
+
 	if (!devname.startsWith("/dev/tty."))
 	    return false;
 

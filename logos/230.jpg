@@ -1,0 +1,212 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>XM Satellite Radio - America&#039;s #1 Satellite Radio Service</title>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <meta name="keywords" content="XM satellite radio, Are You On, xm radio, XM, commercial-free music, listen to music online, streaming radio, online radio, live music" />
+  <meta name="description" content="XM is America&#039;s #1 Satellite Radio Service - Over 170 channels to find what turns you on, featuring the most music including 69 commercial-free channels and the best news, sports, talk, and entertainment. Beyond AM. Beyond FM. XM." />
+  
+  <script language="JavaScript" type="text/javascript" src="/__utm.js"></script>
+  <script language="JavaScript" type="text/javascript" src="/js/core.js"></script>
+  
+  <link rel="stylesheet" type="text/css" href="/css/global.css" />
+  <link rel="stylesheet" type="text/css" href="/css/topNav.css" />
+  
+
+<link rel="stylesheet" href="/css/homepage.css" type="text/css" /> 
+
+
+
+<script language="JavaScript" type="text/javascript" src="/js/swfobject_source.js"></script>
+
+
+</head>
+
+<body>
+<div id="containerDiv">
+
+	<div id="header">
+		<a href="/index.xmc"><img src="/images/global/xm_logo.gif" width="135" height="51" alt="XM Satellite Radio" align="left" /></a>
+		<div id="nav">
+		<img src="/images/global/tagline_beyond.gif" width="236" height="22" alt="Beyond AM. Beyond FM. XM" /><br />
+		<ul id="globalNav_UL">
+			<li id="whatIs_LI"><a href="/whatisxm/index.xmc" id="whatIs_A"><span>What Is XM</span></a></li>
+			<li id="onXM_LI"><a href="/onxm/index.xmc" id="onXM_A"><span>On XM</span></a></li>
+			<li id="shopXM_LI"><a href="/shop/index.xmc" id="shopXM_A"><span>Shop</span></a></li>
+		</ul>
+		<br class="clearboth" />
+		</div><!-- /nav -->
+		<div id="search" class="smallYellow">
+			<a href="/help/index.xmc">Help &amp; Support</a> | <a href="https://xmro-secure.xmradio.com/listenercare/login.xm">Your Account</a>
+			<form class="search" name="sitesearch" id="sitesearch" action="/search/sitesearch.xmc" method="get">
+				<input type="text" name="searchKeywords" id="searchKeywords" class="search" value="Site Search" size="12" onfocus="if (this.value == 'Site Search') this.value = '';" />
+				<input type="image" name="gosearch" class="gosearch" src="/common/images/topNav/btn_arrow_yellow.gif" align="top" />
+				<input type="hidden" id="resultsPerPage" name="resultsPerPage" value="10" />
+				<input type="hidden" id="resultsPage" name="resultsPage" value="1" />
+			</form>
+				<ul id="headerButtons_UL">
+					<li id="activateRadio_LI"><a href="https://xmro-secure.xmradio.com/listenercare/login2.xm"><span>Activate Radio</span></a></li>
+					<li id="listenOnlineNow_LI"><a href="http://xmro.xmradio.com/"><span>Listen Online Now</span></a></li>
+				</ul>
+				<br class="clearBoth" />
+		</div><!-- /search -->
+
+	</div><!-- /header -->
+	
+
+
+
+
+
+
+
+
+
+<div style="position:absolute;top:0px;left:0px;"><!-- Start of DoubleClick Spotlight Tag: Please do not remove-->
+<!-- Activity Name for this tag is:XM Homepage -->
+<!-- Web site URL where tag should be placed: http://www.xmradio.com -->
+<!-- This tag must be placed within the opening <body> tag, as close to the beginning of it as possible-->
+<!-- Creation Date:1/2/2007 -->
+<SCRIPT language="JavaScript">
+var axel = Math.random()+"";
+var a = axel * 10000000000000;
+document.write('<IMG SRC="http://ad.doubleclick.net/activity;src=1141787;type=xmsat236;cat=xmhom809;ord='+ a + '?" WIDTH=1 HEIGHT=1 BORDER=0>');
+</SCRIPT>
+<NOSCRIPT>
+<IMG SRC="http://ad.doubleclick.net/activity;src=1141787;type=xmsat236;cat=xmhom809;ord=1?" WIDTH=1 HEIGHT=1 BORDER=0>
+</NOSCRIPT>
+<!-- End of DoubleClick Spotlight Tag: Please do not remove-->
+<!-- Begin of Ad.com pixel Valentines tracking Mullen-->
+<img src="http://leadback.advertising.com/adcedge/lb?site=695501&srvc=1&betr=xm_cs=1&betq=2745=371584" width="1" height="1" border ="0">
+<!-- End of Ad.com pixel -->
+</div>
+
+
+	<div class="mainContainer">
+		<div id="flash_tuner"><img src="/flash/home/tuner/nonFlash/tuner_getflash.jpg" height="291" width="767" border="0" alt="Get Flash" usemap="#tuner_getflash_Map" /><map name="tuner_getflash_Map"><area shape="rect" alt="" coords="190,164,412,186" href="http://www.adobe.com/shockwave/download/download.cgi?P1_Prod_Version=ShockwaveFlash"></map></div>
+				<script type="text/javascript">
+					var so = new SWFObject("/flash/home/top_window.swf", "home_top_window", "767", "291", "9", "#000000");
+					so.addVariable("todaysDate", "2007-11-24");
+					so.addVariable("tuner_xml_loc", "/flash/home/tuner/xml/_settings.xml");
+					so.addVariable("rotatePromo_xml_loc", "/flash/home/promo/xml/_settings.xml");
+					so.addVariable("staticPromo_xml_loc", "/flash/home/static_promo/xml/_settings.xml");
+					so.write("flash_tuner");
+				</script>
+	</div>
+	
+	
+	<!-- END TOP RED BOX -->
+	
+	<div class="padBottomMed"></div>
+			
+			
+
+	
+	<div class="mainContainer">
+		<div class="mainContainer_top">
+			&nbsp;
+		</div>
+		<div class="mainContainer_left"><!-- MAIN LEFT CONTENT -->
+			<div id="flash_expander"><img src="/flash/home/home_slider/nonFlash/home_slider_getflash.jpg" height="215" width="559" border="0" alt="Get Flash" /></div>
+					<script type="text/javascript">
+					var so_slider = new SWFObject("/flash/home/home_slider/expander.swf", "home_expander", "559", "216", "9", "#a3a3a3");
+					so_slider.addVariable("xml_loc", "/flash/home/home_slider/_xml/expander.xml");
+					so_slider.addVariable("todaysDate", "2007-11-24");
+					so_slider.write("flash_expander");
+					</script>
+		</div>
+		<div class="mainContainer_promo"><!-- FIRST PROMO BOX -->
+			<div class="promoSmall"><!-- FIRST PROMO BOX -->
+				<div class="promoSmallTop">
+					&nbsp;
+				</div>
+				<div class="promoSmallBody">
+					<h1><img src="/images/titles/home_xm_in_your_car.gif" width="105" height="11" alt="XM in Your Car" /></h1>
+					<a href="/whatisxm/inyourvehicle/index.xmc"><img src="/images/tempFPO/FPO_girl_in_car.jpg" width="162" height="67" alt="XM in your Vehicle" /></A>
+				</div>
+				<div class="promoSmallBottom">
+					&nbsp;
+				</div>
+			</div>
+			<div class="padBottomMed"></div>
+			<div class="promoSmall"><!-- SECOND PROMO BOX -->
+				<div class="promoSmallTop">
+					&nbsp;
+				</div>
+				<div class="promoSmallBody">
+					<h1><img src="/images/titles/home_quick_links.gif" width="61" height="12" alt="Quick Links" /></h1>
+				<div class="promoSmallInset">
+					<div class="promoSmallInsetTop">
+						&nbsp;
+					</div>
+					<div class="promoSmallInsetBody">
+						<ul>		
+							<li><a href="/parentalcontrols/index.jsp">Parental Controls</a></li>
+							<li><a href="/video/index.xmc?vidname=XMerator">XM's New TV Ad</a></li>	
+							<li><a href="http://friends.experiencexm.com" target="_new">Refer Your Friends</a></li>
+							<li><a href="/feedback" target="_new">XM Feedback</a></li> 
+						</ul>
+					</div>
+					<div class="promoSmallInsetBottom">
+						&nbsp;
+					</div>
+				</div>
+				</div>
+				<div class="promoSmallBottom">
+					&nbsp;
+				</div>
+			</div>
+		</div>	
+
+
+</div><!--/mainContainer_mid -->
+
+	<!--THIS IS THE ENDING BOTTOM TO THE RED BOX-->
+	<div class="mainContainer">
+		<div class="mainContainer_bot footerPaddingBottom">
+			&nbsp;
+		</div>
+	</div>
+	
+<!-- END RED BODY BUBBLE -->
+
+<!-- BEGIN GLOBAL FOOTER -->
+
+<div id="footertop">
+	&nbsp;
+</div>
+<div id="footercontent">
+	<div id="footerPadding">
+		<ul>
+			<li class="category">About XM:&nbsp;</li>
+			<li><a href="/about/corporate-information.xmc">Corporate Info</a>&nbsp;|&nbsp;</li>
+			<li><a href="http://xmradio.mediaroom.com/">News Room</a>&nbsp;|&nbsp;</li>
+			<li><a href="http://phx.corporate-ir.net/phoenix.zhtml?c=115922&p=irol-IRHome">Investor Info</a>&nbsp;|&nbsp;</li>
+			<li><a href="http://jobs-xmradio.icims.com/">Careers</a>&nbsp;|&nbsp;</li>
+			<li><a href="/dealer_resources/dealer_application.jsp">Become a Dealer</a>&nbsp;|&nbsp;</li>
+			<li><a href="/sponsors/index.xmc">Sponsor Spotlight</a></li>
+		</ul>
+		<br />
+		<ul>
+			<li class="category">Other XM Websites:&nbsp;</li>
+			<li><a href="/latino">Espa&ntilde;ol</a>&nbsp;|&nbsp;</li>
+			<li><a href="http://www.xmradio.ca">Canada</a></li>
+		</ul>
+		<br />
+		<ul>
+			<li class="category">Additional Information:&nbsp;</li>
+			<li><a href="/about/privacy-policy.xmc">Your Privacy Rights</a>&nbsp;|&nbsp;</li>
+			<li><a href="/about/terms-and-conditions.xmc">Website Terms &amp; Conditions</a>&nbsp;|&nbsp;</li>
+			<li><a href="/upgradebattery/index.xmc">Important Safety Information</a></li>
+		</ul>
+		<br />
+		<p>&copy; Copyright 2001-07 XM Satellite Radio. All Rights Reserved.</p>
+	</div><!-- /footerPadding -->
+</div><!-- /footercontent -->
+
+<!-- END GLOBAL FOOTER -->
+
+
+</div><!-- /containerDiv -->
+</body>
+</html>

@@ -2,7 +2,7 @@
 ; Nullsoft Scriptable Install System
 ; Install script for JXM on Windows
 ;
-; $Id: jxm.nsi,v 1.16 2004/06/27 16:58:27 nsayer Exp $
+; $Id: jxm.nsi,v 1.17 2007/11/25 17:27:01 nsayer Exp $
 
 ;Based on a template by Joost Verburg
 
@@ -16,7 +16,7 @@
 
   ;Name and file
   Name "JXM 1.2"
-  OutFile "c:\docume~1\nsayer\desktop\jxm.exe"
+  OutFile "c:\docume~1\Nick\desktop\jxm.exe"
 
   ;Default installation folder
   InstallDir "$PROGRAMFILES\JXM"

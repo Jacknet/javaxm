@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: MainWindow.java,v 1.111 2007/04/25 22:05:11 nsayer Exp $
+ $Id: MainWindow.java,v 1.112 2007/11/25 17:24:14 nsayer Exp $
  
  */
 
@@ -1004,10 +1004,15 @@ public class MainWindow
 		toptop.add(Box.createHorizontalStrut(20));
 
 		JPanel pictureFrame = new JPanel();
+                //SpringLayout pfLayout = new SpringLayout();
+                //pictureFrame.setLayout(pfLayout);
+                pictureFrame.setBackground(Color.WHITE);
+                pictureFrame.setOpaque(true);
 		pictureFrame.setBorder(BorderFactory.createLoweredBevelBorder());
 		this.channelLogo = new JLabel();
 		this.channelLogo.setToolTipText( "Click to visit this Channel's Home Page" );
-		this.channelLogo.setPreferredSize(new Dimension(150, 100));
+                this.channelLogo.setBackground(Color.WHITE);
+                this.channelLogo.setOpaque(true);
 		this.setChannelLogo(-1);
 
 		this.channelLogo.addMouseListener(new MouseAdapter() {
@@ -1038,7 +1043,15 @@ public class MainWindow
 			}
 		});
 
-		pictureFrame.add(this.channelLogo);
+		pictureFrame.add(this.channelLogo, BorderLayout.CENTER);
+		pictureFrame.setMaximumSize(new Dimension(170, 70));
+		pictureFrame.setMinimumSize(new Dimension(170, 70));
+/*
+                pfLayout.putConstraint(SpringLayout.NORTH, this.channelLogo, 5, SpringLayout.NORTH, pictureFrame);
+                pfLayout.putConstraint(SpringLayout.SOUTH, this.channelLogo, 5, SpringLayout.SOUTH, pictureFrame);
+                pfLayout.putConstraint(SpringLayout.EAST, this.channelLogo, 5, SpringLayout.EAST, pictureFrame);
+                pfLayout.putConstraint(SpringLayout.WEST, this.channelLogo, 5, SpringLayout.WEST, pictureFrame);
+*/
 		toptop.add(pictureFrame);
 		toptop.add(Box.createHorizontalStrut(5));
 
@@ -1864,9 +1877,9 @@ public class MainWindow
 	MediaTracker myMT = new MediaTracker(this.channelLogo);
 	private void setChannelLogo(int chan) {
 		Icon logo;
-		logo = this.findLogo(chan + ".png");
+		logo = this.findLogo(chan + ".jpg");
 		if (logo == null) {
-			logo = this.findLogo("default.gif");
+			logo = this.findLogo("default.png");
 		}
 		this.channelLogo.setIcon(logo);
 	}

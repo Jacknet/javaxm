@@ -7,7 +7,7 @@
 	<key>CFBundleName</key>
 	<string>JXM</string>
 	<key>CFBundleVersion</key>
-	<string>1.2</string>
+	<string>1.4.3</string>
 	<key>CFBundleAllowMixedLocalizations</key>
 	<string>true</string>
 	<key>CFBundleExecutable</key>
@@ -17,11 +17,11 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.2</string>
+	<string>1.4.3</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleGetInfoString</key>
-	<string>JXM v1.2</string>
+	<string>JXM v1.4.3</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleIconFile</key>
@@ -36,7 +36,7 @@
 			<array>
 			<string>/System/Library/Java</string>
 			<string>$JAVAROOT/jxm.jar</string>
-			<string>$JAVAROOT/comm.jar</string>
+			<string>$JAVAROOT/RXTXcomm.jar</string>
 			</array>
 		<key>Properties</key>
 		<dict>

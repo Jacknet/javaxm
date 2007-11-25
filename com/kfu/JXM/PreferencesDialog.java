@@ -17,7 +17,7 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
- $Id: PreferencesDialog.java,v 1.33 2007/04/25 22:05:12 nsayer Exp $
+ $Id: PreferencesDialog.java,v 1.34 2007/11/25 17:24:14 nsayer Exp $
  
  */
 
@@ -548,10 +548,8 @@ public class PreferencesDialog extends JDialog {
     private final static String BOOKMARKS = "Bookmarks";
 
     private String[][] defaultBookMarks = {
-		{ "Channel Home Page",			"http://www.xmradio.com/programming/channel_page.jsp?ch={NUMBER}" },
-		{ "Channel Guide Page",			"http://www.xmradio.com/programming/channel_guide.jsp?ch={NUMBER}" },
+		{ "Channel Home Page",			"http://www.xmradio.com/onxm/channelpage.xmc?ch={NUMBER}" },
 		{ "View song ratings for channel",	"http://xmpcr.kfu.com/ratings.php?channel={NUMBER}" },
-		{ "Forum for Channel",		"http://xmpcr.kfu.com/forums/forum_for_channel.php?ch={NUMBER}" },
 		{ "Google search for Artist",		"http://www.google.com/search?q=%22{ARTIST}%22" },
 		{ "Google search for Title",		"http://www.google.com/search?q=%22{TITLE}%22" },
 		{ "Google search for Artist and Title",	"http://www.google.com/search?q=%22{ARTIST}%22+%22{TITLE}%22" },

@@ -1835,7 +1835,7 @@ public class MainWindow
 	   }
 	}
 
-	private Bookmark channelMark = new Bookmark("", "http://www.xmradio.com/programming/channel_page.jsp?ch={NUMBER}");
+	private Bookmark channelMark = new Bookmark("", "https://www.siriusxm.com/channels?ch={NUMBER}");
 	private void surfToChannel(int chan) {
 		if (this.currentChannelInfo == null)
 			return;
@@ -2050,7 +2050,7 @@ public class MainWindow
 			gbc.gridwidth = 2;
 			JLabel jl = new JLabel(
 				"<html>Clicking \"Activate Now\" will take you to<br>" +
-				"XM Radio's radio activation web site. Your<br>" +
+				"SiriusXM's radio activation web site. Your<br>" +
 				"Radio ID will be copied into the clipboard<br>" +
 				"for you. When the activation procedure asks<br>" +
 				"for your radio ID, you may simply paste it<br>"+
@@ -2076,10 +2076,10 @@ public class MainWindow
 					Toolkit.getDefaultToolkit().getSystemClipboard().setContents(s,s);
 					ActivationDialog.this.setVisible(false);
 					try {
-						PlatformFactory.ourPlatform().openURL("http://www.xmradio.com/activation/");
+						PlatformFactory.ourPlatform().openURL("https://care.siriusxm.com/newradioinformation_initialView.action");
 					}
 					catch(IOException ex) {
-						JOptionPane.showMessageDialog(ActivationDialog.this.frame, ex.getMessage(), "Could not open XM activation page", JOptionPane.ERROR_MESSAGE);
+						JOptionPane.showMessageDialog(ActivationDialog.this.frame, ex.getMessage(), "Could not open SiriusXM activation page", JOptionPane.ERROR_MESSAGE);
 					}
 				}
 			});

@@ -124,7 +124,7 @@ Section "Working Section" SecWork
   WriteUninstaller "$INSTDIR\Uninstall.exe"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\JXM" "DisplayName" "JXM" 
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\JXM" "UninstallString" '"$INSTDIR\Uninstall.exe"'
-  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\JXM" "URLInfoAbout" 'http://www.javaxm.com/'
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\JXM" "URLInfoAbout" 'http://javaxm.sourceforge.net/'
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\JXM" "DisplayIcon" "$INSTDIR\jxm.ico"
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\JXM" "NoModify" 1
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\JXM" "NoRepair" 1

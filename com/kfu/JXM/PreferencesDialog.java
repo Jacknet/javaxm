@@ -146,54 +146,59 @@ public class PreferencesDialog extends JDialog {
 
 		// XM Tracker Tab
 		// =================================
-		jp = new JPanel();
-		jp.setLayout(new GridBagLayout());
-		gbc = new GridBagConstraints();
-		gbc.insets = new Insets(5, 5, 0, 0);
-		gbc.gridx = gbc.gridy = 0;
-		gbc.weightx = 0.25;
-		gbc.anchor = GridBagConstraints.LINE_END;
-		jl = new JLabel("Base URL:");
-		jp.add(jl, gbc);
-		gbc.gridy = 1;
-		jl = new JLabel("Username:");
-		jp.add(jl, gbc);
-		gbc.gridy = 2;
-		jl = new JLabel("Password:");
-		jp.add(jl, gbc);
+		/*
+			XM Tracker deprecated since the site no longer exists.
+			Will re-enable once a new implementation is created.
+			Do not spawn this tab.
+		*/
+		// jp = new JPanel();
+		// jp.setLayout(new GridBagLayout());
+		// gbc = new GridBagConstraints();
+		// gbc.insets = new Insets(5, 5, 0, 0);
+		// gbc.gridx = gbc.gridy = 0;
+		// gbc.weightx = 0.25;
+		// gbc.anchor = GridBagConstraints.LINE_END;
+		// jl = new JLabel("Base URL:");
+		// jp.add(jl, gbc);
+		// gbc.gridy = 1;
+		// jl = new JLabel("Username:");
+		// jp.add(jl, gbc);
+		// gbc.gridy = 2;
+		// jl = new JLabel("Password:");
+		// jp.add(jl, gbc);
 	
-		this.trackerURL = new JTextField();
-		this.trackerURL.setPreferredSize(new Dimension(250, (int)this.trackerURL.getPreferredSize().getHeight()));
-		gbc.weightx = 0.75;
-		gbc.gridx = 1;
-		gbc.gridy = 0;
-		gbc.anchor = GridBagConstraints.LINE_START;
-		jp.add(this.trackerURL, gbc);
+		// this.trackerURL = new JTextField();
+		// this.trackerURL.setPreferredSize(new Dimension(250, (int)this.trackerURL.getPreferredSize().getHeight()));
+		// gbc.weightx = 0.75;
+		// gbc.gridx = 1;
+		// gbc.gridy = 0;
+		// gbc.anchor = GridBagConstraints.LINE_START;
+		// jp.add(this.trackerURL, gbc);
 	
-		this.trackerUser = new JTextField();
-		this.trackerUser.setPreferredSize(new Dimension(100, (int)this.trackerUser.getPreferredSize().getHeight()));
-		gbc.gridy = 1;
-		jp.add(this.trackerUser, gbc);
+		// this.trackerUser = new JTextField();
+		// this.trackerUser.setPreferredSize(new Dimension(100, (int)this.trackerUser.getPreferredSize().getHeight()));
+		// gbc.gridy = 1;
+		// jp.add(this.trackerUser, gbc);
 	
-		this.trackerPassword = new JPasswordField();
-		this.trackerPassword.setEchoChar((char)0x2022); // Unicode 'Bullet'
-		this.trackerPassword.setPreferredSize(new Dimension(100, (int)this.trackerPassword.getPreferredSize().getHeight()));
-		gbc.gridy = 2;
-		jp.add(this.trackerPassword, gbc);
+		// this.trackerPassword = new JPasswordField();
+		// this.trackerPassword.setEchoChar((char)0x2022); // Unicode 'Bullet'
+		// this.trackerPassword.setPreferredSize(new Dimension(100, (int)this.trackerPassword.getPreferredSize().getHeight()));
+		// gbc.gridy = 2;
+		// jp.add(this.trackerPassword, gbc);
 	
-		this.trackerEnabled = new JCheckBox("Enable XM Tracker");
-		this.trackerEnabled.addActionListener(new ActionListener() {
-		    public void actionPerformed(ActionEvent e) {
-			PreferencesDialog.this.trackerCheckboxClicked();
-		    }
-		});
-		gbc.gridx = 0;
-		gbc.gridy = 3;
-		gbc.gridwidth = 2;
-		gbc.anchor = GridBagConstraints.CENTER;
-		jp.add(this.trackerEnabled, gbc);
+		// this.trackerEnabled = new JCheckBox("Enable XM Tracker");
+		// this.trackerEnabled.addActionListener(new ActionListener() {
+		//     public void actionPerformed(ActionEvent e) {
+		// 	PreferencesDialog.this.trackerCheckboxClicked();
+		//     }
+		// });
+		// gbc.gridx = 0;
+		// gbc.gridy = 3;
+		// gbc.gridwidth = 2;
+		// gbc.anchor = GridBagConstraints.CENTER;
+		// jp.add(this.trackerEnabled, gbc);
 	
-		this.theTabs.insertTab("XM Tracker", null, jp, null, TAB_TRACKER);
+		// this.theTabs.insertTab("XM Tracker", null, jp, null, TAB_TRACKER);
 
 
 		// Bookmarks Tab
@@ -548,13 +553,10 @@ public class PreferencesDialog extends JDialog {
     private final static String BOOKMARKS = "Bookmarks";
 
     private String[][] defaultBookMarks = {
-		{ "Channel Home Page",			"http://www.xmradio.com/onxm/channelpage.xmc?ch={NUMBER}" },
-		{ "View song ratings for channel",	"http://xmpcr.kfu.com/ratings.php?channel={NUMBER}" },
+		{ "Channel Home Page",			"https://www.siriusxm.com/channels?ch={NUMBER}" },
 		{ "Google search for Artist",		"http://www.google.com/search?q=%22{ARTIST}%22" },
 		{ "Google search for Title",		"http://www.google.com/search?q=%22{TITLE}%22" },
 		{ "Google search for Artist and Title",	"http://www.google.com/search?q=%22{ARTIST}%22+%22{TITLE}%22" },
-		{ "iTunes search for Artist",		"itms://phobos.apple.com/WebObjects/MZSearch.woa/wa/com.apple.jingle.search.DirectAction/advancedSearchResults?artistTerm={ARTIST}" },
-		{ "iTunes search for Artist and Title",	"itms://phobos.apple.com/WebObjects/MZSearch.woa/wa/com.apple.jingle.search.DirectAction/advancedSearchResults?artistTerm={ARTIST}&songTerm={TITLE}" },
     };
 
     private void reloadFromDefaults() {

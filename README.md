@@ -9,7 +9,7 @@ The goal of this repo is to provide quality of life improvements to the JXM sour
 
 ## Prerequisites
 ### RXTX
-At this time, JXM uses [`gnu.io`](https://docs.oracle.com/cd/E17802_01/products/products/javacomm/reference/api/javax/comm/package-summary.html) to interface with the XM receiver via serial. This requires the installation of the **[RXTX library](http://rxtx.qbang.org/wiki/index.php/Main_Page)**.
+At this time, JXM uses [`gnu.io`](http://rxtx.qbang.org/wiki/index.php/Using_RXTX) to interface with the XM receiver via serial. This requires the installation of the **[RXTX library](http://rxtx.qbang.org/wiki/index.php/Main_Page)**.
 
 32-bit operating environments can download [either a binary of the library](http://rxtx.qbang.org/pub/rxtx/rxtx-2.1-7-bins-r2.zip) or [build from source](http://rxtx.qbang.org/pub/rxtx/rxtx-2.1-7r2.zip).
 
@@ -25,7 +25,7 @@ Those using other 64-bit environments or wish to omit the Oracle download step m
 
 [Windows Tray Icon package](http://jeans.studentenweb.org/java/trayicon/trayicon.html) by Jean Struyf
 
-`gnu.io` and `javax.comm` implementation by he [RXTX](http://www.rxtx.org/) project
+`gnu.io` and `javax.comm` implementation by the [RXTX](http://www.rxtx.org/) project
 
 Fuzzy logic string matching classes by the [SecondString](http://secondstring.sf.net/) project
 
